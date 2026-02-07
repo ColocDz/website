@@ -21,8 +21,10 @@ A website designed for people searching for colocation opportunities. It will of
 ---
 
 ## 4.Tech stack
- React + Vite + Router + Context + Node + Express + MongoDB + Mongoose
+ NextJs + Typescript + Tailwind + Router + Context + Node + Express + MongoDB + Mongoose
  
+
+ (more powerful than plain “React + TypeScript”.)
 ---
 
 ## 5.Setup steps (will update later)
