@@ -7,17 +7,19 @@ import { MobileSidebar } from '@/components/mobile-sidebar';
 import { MdOutlinePostAdd } from 'react-icons/md';
 import { IoIosLogOut } from 'react-icons/io';
 import { FaHome, FaUser, FaCog } from 'react-icons/fa';
+import { AiFillMessage } from "react-icons/ai";
 
 export default function ProfilePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
 
   const menuItems = [
-    { label: 'Home', path: '/', icon: <FaHome /> },
-    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
-    { label: 'Profile', path: '/profile', icon: <FaUser /> },
-    { label: 'Settings', path: '/settings', icon: <FaCog /> },
-    { label: 'Log Out', path: '/logout', icon: <IoIosLogOut /> },
+      { label: "Home", path: "/", icon: <FaHome /> },
+      { label: "Add Post", path: "/adding-post", icon: <MdOutlinePostAdd /> },
+      { label: "Profile", path: "/profile", icon: <FaUser /> },
+      { label: "Messages", path: "/messages", icon: <AiFillMessage /> },
+      { label: "Settings", path: "/settings", icon: <FaCog /> },
+      {label: "Log Out", path: "/logout", icon: <IoIosLogOut />},
   ];
 
   // Posts data for user's listings

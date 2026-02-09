@@ -1,6 +1,7 @@
 'use client';
 
 import { SidebarMenu } from "@/components/ui/sidebar"
+import { AiFillMessage } from "react-icons/ai";
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -15,12 +16,14 @@ export default function HomePage() {
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [email, setEmail] = useState('');
 
+
   const menuItems = [
-    { label: 'Home', path: '/', icon: <FaHome /> },
-    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
-    { label: 'Profile', path: '/profile', icon: <FaUser /> },
-    { label: 'Settings', path: '/settings', icon: <FaCog /> },
-    { label: 'Log Out', path: '/logout', icon: <IoIosLogOut /> },
+      { label: "Home", path: "/", icon: <FaHome /> },
+      { label: "Add Post", path: "/adding-post", icon: <MdOutlinePostAdd /> },
+      { label: "Profile", path: "/profile", icon: <FaUser /> },
+      { label: "Messages", path: "/messages", icon: <AiFillMessage /> },
+      { label: "Settings", path: "/settings", icon: <FaCog /> },
+      {label: "Log Out", path: "/logout", icon: <IoIosLogOut />},
   ];
 
   const testimonials = [
