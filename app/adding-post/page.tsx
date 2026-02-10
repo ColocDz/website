@@ -1,19 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Menu, X, Upload } from 'lucide-react';
 import { MobileSidebar } from '@/components/mobile-sidebar';
 import { MdOutlinePostAdd } from 'react-icons/md';
 import { IoIosLogOut } from 'react-icons/io';
 import { FaHome, FaUser, FaCog } from 'react-icons/fa';
-import { AiFillMessage } from "react-icons/ai";
+import { AiFillMessage } from 'react-icons/ai';
 
 export default function AddingPostPage() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name:'',  //will have to be auto from the DB
-    gender:'',  // will have to be auto from the DB
     title: '',
     type: 'Apartment',
     description: '',
@@ -24,13 +24,18 @@ export default function AddingPostPage() {
     amenities: '',
   });
 
+  const handleLogoutClick = () => {
+    localStorage.removeItem('isLoggedIn');
+    router.push('/');
+  };
+
   const menuItems = [
-      { label: "Home", path: "/", icon: <FaHome /> },
-      { label: "Add Post", path: "/adding-post", icon: <MdOutlinePostAdd /> },
-      { label: "Profile", path: "/profile", icon: <FaUser /> },
-      { label: "Messages", path: "/messages", icon: <AiFillMessage /> },
-      { label: "Settings", path: "/settings", icon: <FaCog /> },
-      {label: "Log Out", path: "/logout", icon: <IoIosLogOut />},
+    { label: 'Home', path: '/', icon: <FaHome /> },
+    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
+    { label: 'Profile', path: '/profile', icon: <FaUser /> },
+    { label: 'Messages', path: '/messages', icon: <AiFillMessage /> },
+    { label: 'Settings', path: '/settings', icon: <FaCog /> },
+    { label: 'Log Out', path: '#', icon: <IoIosLogOut />, onClick: handleLogoutClick },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -40,10 +45,6 @@ export default function AddingPostPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
-  };
-
-  const autoFill = () =>{
-
   };
 
   return (
@@ -96,39 +97,6 @@ export default function AddingPostPage() {
               <div className="bg-gray-50 p-8 rounded border border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Basic Information</h2>
                 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.title}
-                      onChange={handleChange}
-                      placeholder="e.g., Spacious 2-bedroom apartment downtown"
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
-                    />                  
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Gender</label>
-                    <input
-                      type="text"
-                      name="gender"
-                      value={formData.title}
-                      onChange={handleChange}
-                      placeholder="e.g., Spacious 2-bedroom apartment downtown"
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
-                    />
-                </div>  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Title</label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      placeholder="e.g., Spacious 2-bedroom apartment downtown"
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
-                    />
-                  </div>              
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Listing Type</label>
@@ -145,8 +113,19 @@ export default function AddingPostPage() {
                       <option>Shared Space</option>
                     </select>
                   </div>
-
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      placeholder="e.g., Spacious 2-bedroom apartment downtown"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                    />
+                  </div>
                 </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
                   <textarea
