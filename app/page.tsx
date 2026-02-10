@@ -1,29 +1,46 @@
 'use client';
 
 import { SidebarMenu } from "@/components/ui/sidebar"
-import { AiFillMessage } from "react-icons/ai";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Menu, X, Star } from 'lucide-react';
 import { MobileSidebar } from '@/components/mobile-sidebar';
 import { MdOutlinePostAdd } from 'react-icons/md';
 import { IoIosLogOut } from 'react-icons/io';
 import { FaHome, FaUser, FaCog } from 'react-icons/fa';
+import { AiFillMessage } from 'react-icons/ai';
 
 export default function HomePage() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [email, setEmail] = useState('');
 
+  useEffect(() => {
+    const handleLogout = async () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('logout') === 'true') {
+        localStorage.removeItem('isLoggedIn');
+        router.replace('/');
+      }
+    };
+    handleLogout();
+  }, [router]);
+
+  const handleLogoutClick = () => {
+    localStorage.removeItem('isLoggedIn');
+    router.push('/');
+  };
 
   const menuItems = [
-      { label: "Home", path: "/", icon: <FaHome /> },
-      { label: "Add Post", path: "/adding-post", icon: <MdOutlinePostAdd /> },
-      { label: "Profile", path: "/profile", icon: <FaUser /> },
-      { label: "Messages", path: "/messages", icon: <AiFillMessage /> },
-      { label: "Settings", path: "/settings", icon: <FaCog /> },
-      {label: "Log Out", path: "/logout", icon: <IoIosLogOut />},
+    { label: 'Home', path: '/', icon: <FaHome /> },
+    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
+    { label: 'Profile', path: '/profile', icon: <FaUser /> },
+    { label: 'Messages', path: '/messages', icon: <AiFillMessage /> },
+    { label: 'Settings', path: '/settings', icon: <FaCog /> },
+    { label: 'Log Out', path: '#', icon: <IoIosLogOut />, onClick: handleLogoutClick },
   ];
 
   const testimonials = [
