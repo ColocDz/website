@@ -1,28 +1,42 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Menu, X, Send, Search } from 'lucide-react';
 import { MobileSidebar } from '@/components/mobile-sidebar';
 import { MdOutlinePostAdd } from 'react-icons/md';
 import { IoIosLogOut } from 'react-icons/io';
 import { FaHome, FaUser, FaCog } from 'react-icons/fa';
-import { AiFillMessage } from "react-icons/ai";
-
+import { AiFillMessage } from 'react-icons/ai';
 
 export default function MessagesPage() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedChat, setSelectedChat] = useState(0);
+  const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    setIsDesktop(window.innerWidth >= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleLogoutClick = () => {
+    localStorage.removeItem('isLoggedIn');
+    router.push('/');
+  };
 
   const menuItems = [
-      { label: "Home", path: "/", icon: <FaHome /> },
-      { label: "Add Post", path: "/adding-post", icon: <MdOutlinePostAdd /> },
-      { label: "Profile", path: "/profile", icon: <FaUser /> },
-      { label: "Messages", path: "/messages", icon: <AiFillMessage /> },
-      { label: "Settings", path: "/settings", icon: <FaCog /> },
-      {label: "Log Out", path: "/logout", icon: <IoIosLogOut />},
+    { label: 'Home', path: '/', icon: <FaHome /> },
+    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
+    { label: 'Profile', path: '/profile', icon: <FaUser /> },
+    { label: 'Messages', path: '/messages', icon: <AiFillMessage /> },
+    { label: 'Settings', path: '/settings', icon: <FaCog /> },
+    { label: 'Log Out', path: '#', icon: <IoIosLogOut />, onClick: handleLogoutClick },
   ];
 
   const conversations = [
@@ -117,58 +131,27 @@ export default function MessagesPage() {
 
         {/* Messages Layout */}
         <div className="flex h-[calc(100vh-80px)]">
-          {/* Conversations List - Hidden on mobile, visible on tablet and up */}
-          <div className="hidden md:flex flex-col w-80 border-r border-gray-200 bg-gray-50">
-            {/* Search */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search conversations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded pl-10 focus:ring-2 focus:ring-black focus:border-transparent"
-                />
-                <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          {/* Conversations List - Shown on mobile when no chat selected, always on desktop */}
+          {(selectedChat === null || isDesktop) && (
+          <div className="w-full md:w-80 flex flex-col border-r border-gray-200 bg-gray-50">
+              {/* Search */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search conversations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded pl-10 focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                  <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Conversations */}
-            <div className="flex-1 overflow-y-auto">
-              {conversations.map((conversation, idx) => (
-                <button
-                  key={conversation.id}
-                  onClick={() => setSelectedChat(idx)}
-                  className={`w-full p-4 border-b border-gray-200 text-left hover:bg-gray-100 transition-colors ${
-                    selectedChat === idx ? 'bg-white border-l-4 border-l-black' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={conversation.avatar || "/placeholder.svg"}
-                      alt={conversation.name}
-                      width={48}
-                      height={48}
-                      className="rounded-full"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className={`font-semibold text-gray-900 ${conversation.unread ? 'font-bold' : ''}`}>
-                          {conversation.name}
-                        </p>
-                        <span className="text-xs text-gray-600">{conversation.timestamp}</span>
-                      </div>
-                      <p className={`text-sm truncate ${conversation.unread ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
-                        {conversation.lastMessage}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Chat Area */}
+          {/* Chat Area - Hidden on mobile when no chat selected, shown when chat is selected */}
+          {(selectedChat !== null || isDesktop) && selectedChat !== null && (
           <div className="flex-1 flex flex-col">
             {/* Chat Header */}
             <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
@@ -177,14 +160,14 @@ export default function MessagesPage() {
                   <X size={24} />
                 </button>
                 <Image
-                  src={currentChat.avatar || "/placeholder.svg"}
-                  alt={currentChat.name}
+                  src={conversations[selectedChat]?.avatar || "/placeholder.svg"}
+                  alt={conversations[selectedChat]?.name || ""}
                   width={40}
                   height={40}
                   className="rounded-full"
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">{currentChat.name}</p>
+                  <p className="font-semibold text-gray-900">{conversations[selectedChat]?.name}</p>
                   <p className="text-xs text-gray-600">Active now</p>
                 </div>
               </div>
@@ -192,47 +175,48 @@ export default function MessagesPage() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-              {currentChat.messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}
-                >
+              {conversations[selectedChat]?.messages.map((msg) => (
                   <div
-                    className={`max-w-xs px-4 py-2 rounded-lg ${
-                      msg.sender === 'You'
-                        ? 'bg-black text-white'
-                        : 'bg-white border border-gray-300 text-gray-900'
-                    }`}
+                    key={msg.id}
+                    className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p>{msg.text}</p>
-                    <p className={`text-xs mt-1 ${msg.sender === 'You' ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {msg.time}
-                    </p>
+                    <div
+                      className={`max-w-xs px-4 py-2 rounded-lg ${
+                        msg.sender === 'You'
+                          ? 'bg-black text-white'
+                          : 'bg-white border border-gray-300 text-gray-900'
+                      }`}
+                    >
+                      <p>{msg.text}</p>
+                      <p className={`text-xs mt-1 ${msg.sender === 'You' ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {msg.time}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-gray-200 bg-white">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 flex items-center gap-2"
-                >
-                  <Send size={18} />
-                </button>
+              {/* Message Input */}
+              <div className="p-4 border-t border-gray-200 bg-white">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 flex items-center gap-2"
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
