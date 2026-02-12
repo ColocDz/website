@@ -365,7 +365,7 @@ export default function SettingsPage() {
               {/* ID Card Tab */}
               {activeTab === 'businesses' && (
                 <div className="text-center py-12">
-                  <p className="text-gray-600">Manage your business accounts here.</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-8">all your ID card information</h1>
                 </div>
               )}
 
