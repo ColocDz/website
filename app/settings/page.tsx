@@ -369,6 +369,11 @@ export default function SettingsPage() {
                 </div>
               )}
 
+                <div className="text-center py-12">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-8">all your ID card information</h1>
+                  
+                </div>
+
               {/* Save Button */}
               <div className="mt-8 flex gap-4">
                 <button
