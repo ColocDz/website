@@ -3,14 +3,13 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Menu, X, Bell, Lock, LogOut, User, Upload } from 'lucide-react';
+import { Menu, X, Bell, Lock, Briefcase, LogOut, User, Upload, IdCard } from 'lucide-react';
 import { MobileSidebar } from '@/components/mobile-sidebar';
 import { RiArrowGoBackFill } from 'react-icons/ri';
 import { MdOutlinePostAdd } from 'react-icons/md';
 import { IoIosLogOut } from 'react-icons/io';
 import { FaHome, FaUser, FaCog } from 'react-icons/fa';
 import { AiFillMessage } from 'react-icons/ai';
-import { IdCard } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -36,8 +35,11 @@ export default function SettingsPage() {
     { id: 'personal', label: 'Personal Info', icon: User },
     { id: 'emails', label: 'Emails & Password', icon: Lock },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'idCard', label: 'ID National Card', icon: IdCard },
+    { id: 'idcard', label: 'ID National Card', icon: IdCard },
   ];
+
+  const [emails, setEmails] = useState<string[]>(['hello@example.com']);
+  const [showNewEmailInput, setShowNewEmailInput] = useState(false);
 
   const handleSave = () => {
     setIsSaving(true);
@@ -139,7 +141,7 @@ export default function SettingsPage() {
                   {activeTab === 'personal' && 'Personal information'}
                   {activeTab === 'emails' && 'Emails & Password'}
                   {activeTab === 'notifications' && 'Notifications'}
-                  {activeTab === 'businesses' && 'Businesses'}
+                  {activeTab === 'idcard' && 'National ID Card'}
                 </h1>
                 {isSaving && <div className="text-emerald-500 text-sm font-medium">Saving changes</div>}
               </div>
@@ -171,97 +173,41 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">First Name</label>
-                      <input type="text" defaultValue="here we will have the user.name" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <input type="text" defaultValue="Arafat" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">Last Name</label>
-                      <input type="text" defaultValue="here we will have the user.Lastname" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <input type="text" defaultValue="Nayeem" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">Email Address</label>
-                      <input type="email" defaultValue="here we will have the user.email" className="w-full px-4 py-3 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                      <input type="email" defaultValue="hello@fillo.co" className="w-full px-4 py-3 border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">Phone Number</label>
                       <div className="flex gap-2">
                         <select className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-32">
-                          <option>+231</option>
+                          <option>+880</option>
                         </select>
-                        <input type="tel"  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <input type="tel" defaultValue="1681 788 203" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Birthday</label>
-                      <input type="date" className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent" />
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Country</label>
+                      <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option>Bangladesh</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
                       <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                          <option>Select Your Willaya</option>
-                          <option>Adrar</option>
-                          <option>Chlef</option>
-                          <option>Laghouat</option>
-                          <option>Oum El Bouaghi</option>
-                          <option>Batna</option>
-                          <option>Béjaïa</option>
-                          <option>Biskra</option>
-                          <option>Béchar</option>
-                          <option>Blida</option>
-                          <option>Bouira</option>
-                          <option>Tamanrasset</option>
-                          <option>Tébessa</option>
-                          <option>Tlemcen</option>
-                          <option>Tiaret</option>
-                          <option>Tizi Ouzou</option>
-                          <option>Algiers</option>
-                          <option>Djelfa</option>
-                          <option>Jijel</option>
-                          <option>Sétif</option>
-                          <option>Saïda</option>
-                          <option>Skikda</option>
-                          <option>Sidi Bel Abbès</option>
-                          <option>Annaba</option>
-                          <option>Guelma</option>
-                          <option>Constantine</option>
-                          <option>Médéa</option>
-                          <option>Mostaganem</option>
-                          <option>M’Sila</option>
-                          <option>Mascara</option>
-                          <option>Ouargla</option>
-                          <option>Oran</option>
-                          <option>El Bayadh</option>
-                          <option>Illizi</option>
-                          <option>Bordj Bou Arréridj</option>
-                          <option>Boumerdès</option>
-                          <option>El Tarf</option>
-                          <option>Tindouf</option>
-                          <option>Tissemsilt</option>
-                          <option>El Oued</option>
-                          <option>Khenchela</option>
-                          <option>Souk Ahras</option>
-                          <option>Tipaza</option>
-                          <option>Mila</option>
-                          <option>Aïn Defla</option>
-                          <option>Naâma</option>
-                          <option>Aïn Témouchent</option>
-                          <option>Ghardaïa</option>
-                          <option>Relizane</option>
-                          <option>Timimoun</option>
-                          <option>Bordj Badji Mokhtar</option>
-                          <option>Ouled Djellal</option>
-                          <option>Béni Abbès</option>
-                          <option>In Salah</option>
-                          <option>In Guezzam</option>
-                          <option>Touggourt</option>
-                          <option>Djanet</option>
-                          <option>El M’Ghair</option>
-                          <option>El Menia</option>
+                        <option>Sylhet</option>
                       </select>
                     </div>
                   </div>
@@ -328,6 +274,7 @@ export default function SettingsPage() {
 
               {/* Email & Password Tab */}
               {activeTab === 'emails' && (
+
                 <div className="space-y-6">
                   <h2 className="text-3xl font-bold text-gray-600 mb-8">Password</h2>
                   <div>
@@ -346,33 +293,148 @@ export default function SettingsPage() {
                   
                   <div className="Settings-email-part">
                     <h2 className="text-3xl font-bold text-gray-600 mb-8">Email</h2>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Current Email</label>
-                      <input type="email" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Add new Email</label>
-                      <input type="emaila" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                    </div>
+
                     <div>
 
                     </div>
                   </div>
-                </div>
 
+                    <div className="mt-6">
+                      <label className="block text-sm font-semibold text-gray-900 mb-4">Add new Email</label>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowNewEmailInput(!showNewEmailInput)}
+                          className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors whitespace-nowrap"
+                        >
+                          {showNewEmailInput ? 'Cancel' : '+ Add Email'}
+                        </button>
+                        {showNewEmailInput && (
+                          <input
+                            type="email"
+                            placeholder="Enter new email address"
+                            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Confirm Password</label>
+                    <input type="password" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  </div>
+                </div>
               )}
 
-              {/* ID Card Tab */}
-              {activeTab === 'businesses' && (
-                <div className="text-center py-12">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-8">all your ID card information</h1>
+              {/* Businesses Tab */}
+              {activeTab === 'idcard' && (
+                <div className="space-y-8">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-8">National ID Card</h1>
+                    
+                    {/* ID Card Front */}
+                    <div className="bg-gradient-to-br from-teal-100 to-teal-50 rounded-2xl p-8 mb-8 shadow-lg max-w-2xl">
+                      {/* Header with Flag */}
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="text-center flex-1">
+                          <p className="text-gray-700 font-bold text-sm mb-1">جمهورية الجزائرية الديمقراطية الشعبية</p>
+                          <p className="text-gray-600 text-xs">Democratic People's Republic of Algeria</p>
+                          <p className="text-gray-600 text-xs">بطاقة الهوية الوطنية</p>
+                        </div>
+                        <div className="w-12 h-8 rounded flex items-center justify-center bg-white">
+                          <span className="text-2xl">🇩🇿</span>
+                        </div>
+                      </div>
+
+                      {/* Main Content */}
+                      <div className="flex gap-8">
+                        {/* Left side - Photo and small photo */}
+                        <div className="flex flex-col items-center gap-4">
+                          <Image
+                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=IDCardUser"
+                            alt="ID Photo"
+                            width={160}
+                            height={180}
+                            className="rounded-lg w-40 h-44 object-cover border-4 border-white shadow-md"
+                          />
+                        </div>
+
+                        {/* Right side - Information */}
+                        <div className="flex-1 space-y-3">
+                          <div className="bg-white/60 rounded px-3 py-2">
+                            <p className="text-gray-600 text-xs">رقم البطاقة - Card Number</p>
+                            <p className="text-gray-900 font-bold text-lg tracking-wider">01234567890123</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/60 rounded px-3 py-2">
+                              <p className="text-gray-600 text-xs">الاسم الأول - First Name</p>
+                              <p className="text-gray-900 font-semibold text-sm">YASMINE</p>
+                            </div>
+                            <div className="bg-white/60 rounded px-3 py-2">
+                              <p className="text-gray-600 text-xs">اللقب - Last Name</p>
+                              <p className="text-gray-900 font-semibold text-sm">SLIMANI</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/60 rounded px-3 py-2">
+                              <p className="text-gray-600 text-xs">تاريخ الميلاد - Birth Date</p>
+                              <p className="text-gray-900 font-semibold text-sm">30/01/1990</p>
+                            </div>
+                            <div className="bg-white/60 rounded px-3 py-2">
+                              <p className="text-gray-600 text-xs">مكان الميلاد - Birth Place</p>
+                              <p className="text-gray-900 font-semibold text-sm">MAGHNIA</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/60 rounded px-3 py-2">
+                              <p className="text-gray-600 text-xs">الجنس - Gender</p>
+                              <p className="text-gray-900 font-semibold text-sm">F</p>
+                            </div>
+                            <div className="bg-white/60 rounded px-3 py-2">
+                              <p className="text-gray-600 text-xs">الدم - Blood Type</p>
+                              <p className="text-gray-900 font-semibold text-sm">A+</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer info */}
+                      <div className="mt-6 pt-4 border-t border-teal-200 text-center">
+                        <p className="text-gray-700 text-xs">صلاحية البطاقة: 15.05.2029</p>
+                        <p className="text-gray-600 text-xs">Card Valid Until: 15.05.2029</p>
+                      </div>
+                    </div>
+
+                    {/* ID Card Back Info */}
+                    <div className="bg-teal-50 border-2 border-teal-200 rounded-2xl p-6 max-w-2xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">Card Information</h3>
+                        <div className="text-xs text-gray-600">Issued: 15.05.2019</div>
+                      </div>
+                      
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between border-b border-teal-200 pb-2">
+                          <span className="text-gray-700">Parent/Guardian:</span>
+                          <span className="text-gray-900 font-semibold">SLIMANI MOHAMMED</span>
+                        </div>
+                        <div className="flex justify-between border-b border-teal-200 pb-2">
+                          <span className="text-gray-700">Address:</span>
+                          <span className="text-gray-900 font-semibold">Algiers, Algeria</span>
+                        </div>
+                        <div className="flex justify-between border-b border-teal-200 pb-2">
+                          <span className="text-gray-700">Signature Index:</span>
+                          <span className="text-gray-900 font-mono">|||||||||||||||||||</span>
+                        </div>
+                        <div className="mt-4 p-3 bg-white rounded border border-teal-300">
+                          <p className="text-xs text-gray-600 mb-2">Security Number</p>
+                          <p className="text-gray-900 font-bold tracking-wider">01234567 890123 456789</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-
-                <div className="text-center py-12">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-8">all your ID card information</h1>
-                  
-                </div>
 
               {/* Save Button */}
               <div className="mt-8 flex gap-4">
