@@ -159,7 +159,6 @@ export default function ProfilePage() {
                       <option>Select gender</option>
                       <option>Male</option>
                       <option>Female</option>
-                      <option>Other</option>
                     </select>
                   </div>
                   <div>
