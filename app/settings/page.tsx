@@ -238,15 +238,15 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Account notifications</h2>
-                    <p className="text-gray-600 mb-6">We will send you notifications to inform you of any updates and/or changes as events occur for you or your business in ProAcc. Select which notifications you want to receive below:</p>
+                    <p className="text-gray-600 mb-6">We will send you notifications to inform you of any updates and/or messages for your posts in COLOCdz. Select which notifications you want to receive below:</p>
 
                     <div className="space-y-4">
                       {[
-                        { label: 'Accounting', desc: 'When accounting and bookkeeping transactions need your attention.' },
-                        { label: 'Sales', desc: 'When relevant sales-related activity occurs such as when an invoice is overdue.' },
-                        { label: 'Payments', desc: 'When you\'ve been paid or need to be notified to keep your Wave Payments operating.' },
-                        { label: 'Purchases', desc: 'When receipt exports are ready and when receipts you\'ve emailed to Wave need to be posted into accounting.' },
-                        { label: 'Bills', desc: 'When you need to be reminded of upcoming and / or late bills.' },
+                        { label: 'Website Notification', desc: 'You will receive all the notifications about the messages and the new posts from the page.' },
+                        { label: 'Email Notifications', desc: 'You will receive all the notifications about the messages and the new posts from your email.' },
+                        { label: 'Whatssup synchro', desc: 'You will receive all the notifications about the messages and the new posts from your whatssup account and be able to check them from your whatssup.' },
+                        { label: 'Facebook synchro', desc: 'You will receive all the notifications about the messages and the new posts from your facebook account .' },
+                        { label: 'New Posts That matches Your Preferences', desc: 'if you do not activate this , you receive just the notifications about the messages that you receive from the posts you messaged or they messaged you , without the new uppdates and posts that the others post and might be excatly what you searching for.' },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between p-4 border border-gray-300 rounded">
                           <div>
@@ -260,14 +260,6 @@ export default function SettingsPage() {
                       ))}
                     </div>
 
-                    <div className="mt-8">
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Push Notification Time-out</label>
-                      <select className="w-full md:w-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option>10 Minutes</option>
-                        <option>5 Minutes</option>
-                        <option>15 Minutes</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
               )}
