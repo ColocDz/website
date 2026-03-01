@@ -80,7 +80,7 @@ export default function HomePage() {
     },
     {
       question: 'How much does it cost?',
-      answer: 'Posting and searching are completely free. HomeShare makes money through optional premium features, but the basics cost nothing.',
+      answer: 'Posting and searching are completely free. ',
     },
   ];
 
@@ -258,49 +258,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Get started Section */}
-        <section className="py-16 px-6 border border-gray-300 m-6 rounded">
-          <h2 className="text-4xl font-bold text-gray-900 text-center mb-2">Get started finding your match</h2>
-          <p className="text-gray-600 text-center mb-8">Join others who've found their place through HomeShare Platform</p>
-          <div className="max-w-md mx-auto flex gap-2">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded"
-            />
-            <button className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Get started</button>
-          </div>
-          <p className="text-sm text-gray-600 text-center mt-4">
-            By clicking Get started you're confirming that you agree with our Terms and Conditions.
-          </p>
-        </section>
 
         {/* Footer */}
         <footer className="bg-gray-50 border-t border-gray-200 py-16 px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Logo</h3>
-              <p className="text-gray-600 text-sm mb-4">Get updates on new listings and platform improvements.</p>
-              <div className="flex gap-2">
-                <input type="email" placeholder="Your email" className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" />
-                <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">Subscribe</button>
-              </div>
-              <p className="text-xs text-gray-600 mt-2">By subscribing you agree to our Privacy Policy and consent to receive updates.</p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Browse</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Find rooms</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Post listing</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Edit post</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Delete post</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Connect</a></li>
-              </ul>
-            </div>
-
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Messages</h4>
               <ul className="space-y-2 text-sm">
@@ -313,12 +274,12 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Instagram</h4>
+              <h4 className="font-semibold text-gray-900 mb-4">Social Media</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="text-gray-600 hover:text-gray-900">Instagram</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900">LinkedIn</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900">YouTube</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">© 2025 HomeShare Platform. All rights reserved.</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-gray-900">© 2026 ColocDZ Platform. All rights reserved.</a></li>
               </ul>
             </div>
           </div>
