@@ -8,8 +8,9 @@ import { CloseButton } from "react-bootstrap"; // Import CloseButton component
 
 interface MenuItem {
   label: string;
-  path: string;
+  path?: string;
   icon?: React.ReactNode;
+  onClick?: () => void;
 }
 
 interface MobileSidebarProps {
@@ -179,10 +180,38 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
         <MenuList>
           {menuItems.map((item, index) => (
             <MenuItemStyled key={index}>
-              <MenuItemLink href={item.path} onClick={onClose}>
-                <IconWrapper>{item.icon}</IconWrapper>
-                <span>{item.label}</span>
-              </MenuItemLink>
+              {item.onClick ? (
+                <button
+                  onClick={() => {
+                    item.onClick?.();
+                    onClose();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '15px',
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontSize: '1rem',
+                    background: 'none',
+                    border: 'none',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a40'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <IconWrapper>{item.icon}</IconWrapper>
+                  <span>{item.label}</span>
+                </button>
+              ) : (
+                <MenuItemLink href={item.path || '/'} onClick={onClose}>
+                  <IconWrapper>{item.icon}</IconWrapper>
+                  <span>{item.label}</span>
+                </MenuItemLink>
+              )}
             </MenuItemStyled>
           ))}
         </MenuList>
