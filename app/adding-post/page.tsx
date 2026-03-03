@@ -16,9 +16,11 @@ export default function AddingPostPage() {
   const [formData, setFormData] = useState({
     title: '',
     type: 'Apartment',
+    postType: 'offer', // 'offer' for selling/renting, 'request' for looking for
     description: '',
     price: '',
     location: '',
+    wilaya: '',
     bedrooms: '',
     bathrooms: '',
     amenities: '',
@@ -93,6 +95,41 @@ export default function AddingPostPage() {
             <p className="text-gray-600 mb-8">Fill in the details about your space or what you're looking for</p>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Post Type Selection */}
+              <div className="bg-blue-50 p-6 rounded border border-blue-200">
+                <label className="block text-sm font-semibold text-gray-900 mb-4">What are you posting?</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="flex items-center gap-3 p-4 border-2 rounded cursor-pointer transition-all" style={{ borderColor: formData.postType === 'offer' ? '#000' : '#e5e7eb' }}>
+                    <input
+                      type="radio"
+                      name="postType"
+                      value="offer"
+                      checked={formData.postType === 'offer'}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <span className="font-semibold text-gray-900">I'm Offering</span>
+                      <p className="text-xs text-gray-600">I want to rent out or sell a property</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-3 p-4 border-2 rounded cursor-pointer transition-all" style={{ borderColor: formData.postType === 'request' ? '#000' : '#e5e7eb' }}>
+                    <input
+                      type="radio"
+                      name="postType"
+                      value="request"
+                      checked={formData.postType === 'request'}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <div>
+                      <span className="font-semibold text-gray-900">I'm Looking For</span>
+                      <p className="text-xs text-gray-600">I want to find a place to rent or buy</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               {/* Basic Information */}
               <div className="bg-gray-50 p-8 rounded border border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Basic Information</h2>
@@ -125,72 +162,6 @@ export default function AddingPostPage() {
                     />
                   </div>
                 </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
-                      <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option>01 - Adrar</option>
-                        <option>02 - Chlef</option>
-                        <option>03 - Laghouat</option>
-                        <option>04 - Oum El Bouaghi</option>
-                        <option>05 - Batna</option>
-                        <option>06 - Béjaïa</option>
-                        <option>07 - Biskra</option>
-                        <option>08 - Béchar</option>
-                        <option>09 - Blida</option>
-                        <option>10 - Bouira</option>
-                        <option>11 - Tamanrasset</option>
-                        <option>12 - Tébessa</option>
-                        <option>13 - Tlemcen</option>
-                        <option>14 - Tiaret</option>
-                        <option>15 - Tizi Ouzou</option>
-                        <option>16 - Alger</option>
-                        <option>17 - Djelfa</option>
-                        <option>18 - Jijel</option>
-                        <option>19 - Sétif</option>
-                        <option>20 - Saïda</option>
-                        <option>21 - Skikda</option>
-                        <option>22 - Sidi Bel Abbès</option>
-                        <option>23 - Annaba</option>
-                        <option>24 - Guelma</option>
-                        <option>25 - Constantine</option>
-                        <option>26 - Médéa</option>
-                        <option>27 - Mostaganem</option>
-                        <option>28 - M’Sila</option>
-                        <option>29 - Mascara</option>
-                        <option>30 - Ouargla</option>
-                        <option>31 - Oran</option>
-                        <option>32 - El Bayadh</option>
-                        <option>33 - Illizi</option>
-                        <option>34 - Bordj Bou Arréridj</option>
-                        <option>35 - Boumerdès</option>
-                        <option>36 - El Tarf</option>
-                        <option>37 - Tindouf</option>
-                        <option>38 - Tissemsilt</option>
-                        <option>39 - El Oued</option>
-                        <option>40 - Khenchela</option>
-                        <option>41 - Souk Ahras</option>
-                        <option>42 - Tipaza</option>
-                        <option>43 - Mila</option>
-                        <option>44 - Aïn Defla</option>
-                        <option>45 - Naâma</option>
-                        <option>46 - Aïn Témouchent</option>
-                        <option>47 - Ghardaïa</option>
-                        <option>48 - Relizane</option>
-                        <option>49 - El M’Ghair</option>
-                        <option>50 - El Menia</option>
-                        <option>51 - Ouled Djellal</option>
-                        <option>52 - Bordj Baji Mokhtar</option>
-                        <option>53 - Béni Abbès</option>
-                        <option>54 - Timimoun</option>
-                        <option>55 - Touggourt</option>
-                        <option>56 - Djanet</option>
-                        <option>57 - In Salah</option>
-                        <option>58 - In Guezzam</option>
-                      </select>
-                    </div>
-                  </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
@@ -245,16 +216,87 @@ export default function AddingPostPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="City, State or Full Address"
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Wilaya (Province)</label>
+                    <select
+                      name="wilaya"
+                      value={formData.wilaya}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                    >
+                      <option value="">Select Wilaya</option>
+                      <option>01 - Adrar</option>
+                      <option>02 - Chlef</option>
+                      <option>03 - Laghouat</option>
+                      <option>04 - Oum El Bouaghi</option>
+                      <option>05 - Batna</option>
+                      <option>06 - Béjaïa</option>
+                      <option>07 - Biskra</option>
+                      <option>08 - Béchar</option>
+                      <option>09 - Blida</option>
+                      <option>10 - Bouira</option>
+                      <option>11 - Tamanrasset</option>
+                      <option>12 - Tébessa</option>
+                      <option>13 - Tlemcen</option>
+                      <option>14 - Tiaret</option>
+                      <option>15 - Tizi Ouzou</option>
+                      <option>16 - Alger</option>
+                      <option>17 - Djelfa</option>
+                      <option>18 - Jijel</option>
+                      <option>19 - Sétif</option>
+                      <option>20 - Saïda</option>
+                      <option>21 - Skikda</option>
+                      <option>22 - Sidi Bel Abbès</option>
+                      <option>23 - Annaba</option>
+                      <option>24 - Guelma</option>
+                      <option>25 - Constantine</option>
+                      <option>26 - Médéa</option>
+                      <option>27 - Mostaganem</option>
+                      <option>28 - M'Sila</option>
+                      <option>29 - Mascara</option>
+                      <option>30 - Ouargla</option>
+                      <option>31 - Oran</option>
+                      <option>32 - El Bayadh</option>
+                      <option>33 - Illizi</option>
+                      <option>34 - Bordj Bou Arréridj</option>
+                      <option>35 - Boumerdès</option>
+                      <option>36 - El Tarf</option>
+                      <option>37 - Tindouf</option>
+                      <option>38 - Tissemsilt</option>
+                      <option>39 - El Oued</option>
+                      <option>40 - Khenchela</option>
+                      <option>41 - Souk Ahras</option>
+                      <option>42 - Tipaza</option>
+                      <option>43 - Mila</option>
+                      <option>44 - Aïn Defla</option>
+                      <option>45 - Naâma</option>
+                      <option>46 - Aïn Témouchent</option>
+                      <option>47 - Ghardaïa</option>
+                      <option>48 - Relizane</option>
+                      <option>49 - El M'Ghair</option>
+                      <option>50 - El Menia</option>
+                      <option>51 - Ouled Djellal</option>
+                      <option>52 - Bordj Baji Mokhtar</option>
+                      <option>53 - Béni Abbès</option>
+                      <option>54 - Timimoun</option>
+                      <option>55 - Touggourt</option>
+                      <option>56 - Djanet</option>
+                      <option>57 - In Salah</option>
+                      <option>58 - In Guezzam</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Location</label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="Full Address or Street"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
 
