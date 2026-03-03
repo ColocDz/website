@@ -40,6 +40,40 @@ export default function SettingsPage() {
 
   const [emails, setEmails] = useState<string[]>(['hello@example.com']);
   const [showNewEmailInput, setShowNewEmailInput] = useState(false);
+  const [notificationStates, setNotificationStates] = useState<{ [key: number]: boolean }>({
+    0: true,
+    1: true,
+    2: true,
+    3: true,
+    4: true,
+  });
+
+  const handleNotificationToggle = (index: number) => {
+    setNotificationStates(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  const handleBrowserNotification = () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification('Notifications Enabled', {
+          body: 'You will now receive browser notifications from COLOCdz.',
+          icon: '/logo.png'
+        });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification('Notifications Enabled', {
+              body: 'You will now receive browser notifications from COLOCdz.',
+              icon: '/logo.png'
+            });
+          }
+        });
+      }
+    }
+  };
 
   const handleSave = () => {
     setIsSaving(true);
@@ -73,8 +107,8 @@ export default function SettingsPage() {
 
         {/* Settings Layout */}
         <div className="flex min-h-[calc(100vh-80px)]">
-          {/* Sidebar Menu */}
-          <div className="hidden md:flex flex-col w-80 bg-white border-r border-gray-200 p-6">
+          {/* Sidebar Menu - Fixed Position */}
+          <div className="hidden md:flex fixed left-0 top-20 h-[calc(100vh-80px)] w-80 flex-col bg-white border-r border-gray-200 p-6 overflow-y-auto z-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">User profile<br/>management</h2>
             <nav className="space-y-3">
               {settingsTabs.map((tab) => {
@@ -121,9 +155,9 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Content Area */}
+          {/* Content Area - Push right on desktop for fixed sidebar */}
           {activeTab !== null && (
-            <div className="flex-1 p-8 max-w-4xl w-full md:w-auto">
+            <div className="flex-1 p-8 max-w-4xl w-full md:w-auto md:ml-80">
               {/* Mobile Back Button */}
               <div className="md:hidden mb-6 flex items-center gap-2">
                 <button
@@ -190,7 +224,7 @@ export default function SettingsPage() {
                       <label className="block text-sm font-semibold text-gray-900 mb-2">Phone Number</label>
                       <div className="flex gap-2">
                         <select className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-32">
-                          <option>+213</option>
+                          <option>+880</option>
                         </select>
                         <input type="tel" defaultValue="1681 788 203" className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                       </div>
@@ -198,68 +232,16 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Country</label>
+                      <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option>Bangladesh</option>
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">City</label>
                       <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option>01 - Adrar</option>
-                        <option>02 - Chlef</option>
-                        <option>03 - Laghouat</option>
-                        <option>04 - Oum El Bouaghi</option>
-                        <option>05 - Batna</option>
-                        <option>06 - Béjaïa</option>
-                        <option>07 - Biskra</option>
-                        <option>08 - Béchar</option>
-                        <option>09 - Blida</option>
-                        <option>10 - Bouira</option>
-                        <option>11 - Tamanrasset</option>
-                        <option>12 - Tébessa</option>
-                        <option>13 - Tlemcen</option>
-                        <option>14 - Tiaret</option>
-                        <option>15 - Tizi Ouzou</option>
-                        <option>16 - Alger</option>
-                        <option>17 - Djelfa</option>
-                        <option>18 - Jijel</option>
-                        <option>19 - Sétif</option>
-                        <option>20 - Saïda</option>
-                        <option>21 - Skikda</option>
-                        <option>22 - Sidi Bel Abbès</option>
-                        <option>23 - Annaba</option>
-                        <option>24 - Guelma</option>
-                        <option>25 - Constantine</option>
-                        <option>26 - Médéa</option>
-                        <option>27 - Mostaganem</option>
-                        <option>28 - M’Sila</option>
-                        <option>29 - Mascara</option>
-                        <option>30 - Ouargla</option>
-                        <option>31 - Oran</option>
-                        <option>32 - El Bayadh</option>
-                        <option>33 - Illizi</option>
-                        <option>34 - Bordj Bou Arréridj</option>
-                        <option>35 - Boumerdès</option>
-                        <option>36 - El Tarf</option>
-                        <option>37 - Tindouf</option>
-                        <option>38 - Tissemsilt</option>
-                        <option>39 - El Oued</option>
-                        <option>40 - Khenchela</option>
-                        <option>41 - Souk Ahras</option>
-                        <option>42 - Tipaza</option>
-                        <option>43 - Mila</option>
-                        <option>44 - Aïn Defla</option>
-                        <option>45 - Naâma</option>
-                        <option>46 - Aïn Témouchent</option>
-                        <option>47 - Ghardaïa</option>
-                        <option>48 - Relizane</option>
-                        <option>49 - El M’Ghair</option>
-                        <option>50 - El Menia</option>
-                        <option>51 - Ouled Djellal</option>
-                        <option>52 - Bordj Baji Mokhtar</option>
-                        <option>53 - Béni Abbès</option>
-                        <option>54 - Timimoun</option>
-                        <option>55 - Touggourt</option>
-                        <option>56 - Djanet</option>
-                        <option>57 - In Salah</option>
-                        <option>58 - In Guezzam</option>
+                        <option>Sylhet</option>
                       </select>
                     </div>
                   </div>
@@ -290,59 +272,68 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Account notifications</h2>
-                    <p className="text-gray-600 mb-6">We will send you notifications to inform you of any updates and/or messages for your posts in COLOCdz. Select which notifications you want to receive below:</p>
+                    <p className="text-gray-600 mb-6">We will send you notifications to inform you of any updates and/or changes as events occur for you or your business in ProAcc. Select which notifications you want to receive below:</p>
 
                     <div className="space-y-4">
                       {[
                         { label: 'Website Notification', desc: 'You will receive all the notifications about the messages and the new posts from the page.' },
                         { label: 'Email Notifications', desc: 'You will receive all the notifications about the messages and the new posts from your email.' },
-                        { label: 'Whatssup synchro', desc: 'You will receive all the notifications about the messages and the new posts from your whatssup account and be able to check them from your whatssup.' },
-                        { label: 'Facebook synchro', desc: 'You will receive all the notifications about the messages and the new posts from your facebook account .' },
-                        { label: 'New Posts That matches Your Preferences', desc: 'if you do not activate this , you receive just the notifications about the messages that you receive from the posts you messaged or they messaged you , without the new uppdates and posts that the others post and might be excatly what you searching for.' },
+                        { label: 'Whatsapp synchro', desc: 'You will receive all the notifications about the messages and the new posts from your whatsapp account.' },
+                        { label: 'Facebook synchro', desc: 'You will receive all the notifications about the messages and the new posts from your facebook account.' },
+                        { label: 'New Posts Matching Your Preferences', desc: 'Receive notifications about new posts that match your search criteria and preferences.' },
                       ].map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 border border-gray-300 rounded">
-                          <div>
-                            <p className="font-bold text-gray-900">{item.label}</p>
-                            <p className="text-sm text-gray-600">{item.desc}</p>
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-300 rounded gap-4">
+                          <div className="flex-1">
+                            <p className="font-bold text-gray-900 text-sm sm:text-base">{item.label}</p>
+                            <p className="text-xs sm:text-sm text-gray-600">{item.desc}</p>
                           </div>
-                          <div className="relative inline-flex h-8 w-14 items-center rounded-full bg-blue-500">
-                            <button className="inline-flex h-6 w-6 transform rounded-full bg-white transition duration-200"></button>
-                          </div>
+                          <button
+                            onClick={() => handleNotificationToggle(idx)}
+                            className={`w-14 h-8 rounded-full transition-all duration-300 flex items-center ${
+                              notificationStates[idx] ? 'bg-blue-500' : 'bg-gray-300'
+                            } flex-shrink-0`}
+                          >
+                            <div
+                              className={`w-6 h-6 rounded-full bg-white transition-transform duration-300 ${
+                                notificationStates[idx] ? 'translate-x-7' : 'translate-x-1'
+                              }`}
+                            ></div>
+                          </button>
                         </div>
                       ))}
                     </div>
 
+                    {/* Browser Notification Permission */}
+                    <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h3 className="font-bold text-gray-900 mb-2">Browser Notifications</h3>
+                      <p className="text-sm text-gray-600 mb-4">Enable browser notifications to receive instant alerts about new messages and posts.</p>
+                      <button
+                        onClick={handleBrowserNotification}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        Enable Browser Notifications
+                      </button>
+                    </div>
+
+                    <div className="mt-8">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Push Notification Time-out</label>
+                      <select className="w-full md:w-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option>10 Minutes</option>
+                        <option>5 Minutes</option>
+                        <option>15 Minutes</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Email & Password Tab */}
               {activeTab === 'emails' && (
-
                 <div className="space-y-6">
-                  <h2 className="text-3xl font-bold text-gray-600 mb-8">Password</h2>
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Current Password</label>
                     <input type="password" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">New Password</label>
-                    <input type="password" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Confirm Password</label>
-                    <input type="a" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                  </div>
-
-                  
-                  <div className="Settings-email-part">
-                    <h2 className="text-3xl font-bold text-gray-600 mb-8">Email</h2>
-
-                    <div>
-
-                    </div>
-                  </div>
-
                     <div className="mt-6">
                       <label className="block text-sm font-semibold text-gray-900 mb-4">Add new Email</label>
                       <div className="flex gap-3">
