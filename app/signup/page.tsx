@@ -4,21 +4,45 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password1, setPassword1] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [name , setName]= useState('');
-  const [lastName, setLastName]= useState('');
-  const [phoneNumber , setPhoneNumber] = useState('');
   const [password2, setPassword2] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [agreeToPolicy, setAgreeToPolicy] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(true);
 
+  const handlePasswordChange = (value: string) => {
+    setPassword1(value);
+    if (password2) {
+      setPasswordMatch(value === password2);
+    }
+  };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleConfirmPasswordChange = (value: string) => {
+    setPassword2(value);
+    setPasswordMatch(password1 === value);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!agreeToPolicy) {
+      alert('Please agree to the terms and conditions');
+      return;
+    }
+    
+    if (!passwordMatch) {
+      alert('Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate login
+    // Simulate signup
     setTimeout(() => {
       localStorage.setItem('isLoggedIn', 'true');
       setIsLoading(false);
@@ -46,24 +70,26 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSignIn} className="space-y-3">
+          <form onSubmit={handleSignUp} className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400">Name</label>
+              <label className="text-xs text-gray-400">First Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder=""
+                required
+                placeholder="John"
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400">LastName</label>
+              <label className="text-xs text-gray-400">Last Name</label>
               <input
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder=""
+                required
+                placeholder="Doe"
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
@@ -73,18 +99,19 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
                 placeholder="you@example.com"
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
-            {/* Email */}
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400">Phone number</label>
+              <label className="text-xs text-gray-400">Phone Number</label>
               <input
-                type="number"
+                type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+213"
+                required
+                placeholder="+213..."
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
@@ -95,31 +122,56 @@ export default function LoginPage() {
               <input
                 type="password"
                 value={password1}
-                onChange={(e) => getPassword(e.target.value)} // a function to confirm the password with the next one
+                onChange={(e) => handlePasswordChange(e.target.value)}
+                required
                 placeholder="••••••••"
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400">Password</label>
+              <label className="text-xs text-gray-400">Confirm Password</label>
               <input
                 type="password"
                 value={password2}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                required
                 placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className={`w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border shadow-inner focus:outline-none focus:ring-1 transition-all ${
+                  password2 && !passwordMatch ? 'border-red-500 focus:ring-red-500/50' : 'border-white/5 focus:ring-blue-500/50'
+                }`}
               />
+              {password2 && !passwordMatch && <p className="text-xs text-red-500">Passwords do not match</p>}
             </div>
 
+            {/* Policy Agreement Checkbox */}
+            <div className="space-y-1.5 pt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeToPolicy}
+                  onChange={(e) => setAgreeToPolicy(e.target.checked)}
+                  className="w-4 h-4 rounded accent-blue-500"
+                />
+                <span className="text-xs text-gray-400">
+                  I agree to the{' '}
+                  <Link href="/terms" className="text-blue-400 hover:text-blue-300">
+                    Terms and Conditions
+                  </Link>
+                  {' '}and{' '}
+                  <Link href="/privacy" className="text-blue-400 hover:text-blue-300">
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+            </div>
 
-
-            {/* Sign In Button */}
+            {/* Sign Up Button */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full mt-2 py-2 rounded-full bg-gradient-to-b from-white to-gray-300 text-gray-900 text-xs font-semibold cursor-pointer hover:shadow-xl hover:shadow-white/20 disabled:opacity-50 transition-all shadow-lg shadow-black/25"
+              disabled={isLoading || !agreeToPolicy || !passwordMatch}
+              className="w-full mt-4 py-2 rounded-full bg-gradient-to-b from-white to-gray-300 text-gray-900 text-xs font-semibold cursor-pointer hover:shadow-xl hover:shadow-white/20 disabled:opacity-50 transition-all shadow-lg shadow-black/25"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </form>
 
