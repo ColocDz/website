@@ -68,7 +68,7 @@ export default function AddingPostPage() {
               <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <span className="text-2xl font-bold text-gray-900">Logo</span>
+              <span className="text-2xl font-bold text-gray-900">ColocDZ</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -76,10 +76,13 @@ export default function AddingPostPage() {
               <a href="/" className="text-gray-700 hover:text-gray-900">
                 Find housing
               </a>
+              <a href="/" className="text-gray-700 hover:text-gray-900">
+                Find roommate
+              </a>
               <a href="/messages" className="text-gray-700 hover:text-gray-900">
                 Messages
               </a>
-              <a href="#" className="text-gray-700 hover:text-gray-900">
+              <a href="/profile" className="text-gray-700 hover:text-gray-900">
                 My posts
               </a>
             </div>
@@ -91,7 +94,7 @@ export default function AddingPostPage() {
         {/* Add Post Content */}
         <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Create a new listing</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Create a new post</h1>
             <p className="text-gray-600 mb-8">Fill in the details about your space or what you're looking for</p>
 
             <form onSubmit={handleSubmit} className="space-y-8">
