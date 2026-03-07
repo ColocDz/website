@@ -17,7 +17,8 @@ export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [email, setEmail] = useState('');
-  const [search , setSearch ] = useState('');
+  const [search, setSearch] = useState('');
+  const [showSearchBar, setShowSearchBar] = useState(false);
 
   useEffect(() => {
     const handleLogout = async () => {
@@ -87,24 +88,33 @@ export default function HomePage() {
 
   const posts = [
     {
+      id: 1,
       type: 'Apartment',
       title: 'Spacious room in downtown with natural light',
       description: 'Modern apartment near transit with utilities included in rent',
-      timeAgo: 'Posted yesterday',
+      timeAgo: 'Posted 2 hours ago',
+      user: 'Ahmed Kari',
+      tags: ['Modern', 'Downtown', 'Furnished'],
       image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop',
     },
     {
+      id: 2,
       type: 'House',
       title: 'Quiet neighborhood seeking responsible roommate',
       description: 'Established household needs someone for the spare bedroom',
-      timeAgo: 'Posted two days ago',
+      timeAgo: 'Posted 1 day ago',
+      user: 'Fatima Azizi',
+      tags: ['Quiet', 'Shared', 'Utilities Included'],
       image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop',
     },
     {
+      id: 3,
       type: 'Studio',
       title: 'Cozy studio available for immediate occupancy',
       description: 'Furnished unit with kitchen and bathroom in walkable area',
-      timeAgo: 'Posted three days ago',
+      timeAgo: 'Posted 2 days ago',
+      user: 'Karim Ben',
+      tags: ['Modern', 'Balcony', 'Near Park'],
       image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
     },
   ];
@@ -161,8 +171,32 @@ export default function HomePage() {
           <p className="text-gray-600 mb-8">Post what you need or search for the right fit today</p>
           <div className="flex gap-4 justify-center">
             <button className="bg-black text-white px-8 py-2 rounded hover:bg-gray-800"><a href="/adding-post">Post</a></button>
-            <button className="border border-gray-300 text-gray-900 px-8 py-2 rounded hover:bg-gray-50">Search</button>
+            <button 
+              onClick={() => setShowSearchBar(!showSearchBar)}
+              className="border border-gray-300 text-gray-900 px-8 py-2 rounded hover:bg-gray-50"
+            >
+              Search
+            </button>
           </div>
+
+          {/* Search Bar */}
+          {showSearchBar && (
+            <div className="mt-6 max-w-2xl mx-auto">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search for apartments, rooms, houses..."
+                className="w-full px-6 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+              <button
+                onClick={() => router.push('/posts')}
+                className="mt-4 w-full bg-black text-white px-8 py-2 rounded hover:bg-gray-800"
+              >
+                Search & View All Posts
+              </button>
+            </div>
+          )}
           <div className="mt-12 bg-gray-200 h-96 rounded flex items-center justify-center">
             <Image
               src="https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=800&h=400&fit=crop"
@@ -184,23 +218,46 @@ export default function HomePage() {
             <button className="border border-gray-300 text-gray-900 px-6 py-2 rounded hover:bg-gray-100">View all</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post, idx) => (
-              <div key={idx} className="border border-gray-300 rounded">
-                <Image
-                  src={post.image || "/placeholder.svg"}
-                  alt={post.title}
-                  width={400}
-                  height={300}
-                  className="w-full h-48 object-cover"
-                />
+            {posts.map((post) => (
+              <div key={post.id} className="border border-gray-300 rounded overflow-hidden group hover:shadow-lg transition-shadow">
+                <div className="relative h-48 bg-gray-200 overflow-hidden">
+                  <Image
+                    src={post.image || "/placeholder.svg"}
+                    alt={post.title}
+                    width={400}
+                    height={300}
+                    loading="eager"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
+                    <div>
+                      <p className="text-white text-xs font-semibold">{post.type}</p>
+                      <p className="text-white text-xs mt-1">{post.timeAgo}</p>
+                    </div>
+                    <div className="text-white">
+                      <p className="text-sm font-semibold">{post.user}</p>
+                    </div>
+                  </div>
+                </div>
                 <div className="p-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    {post.type} • {post.timeAgo}
-                  </p>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{post.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4">{post.description}</p>
-                  <a href="#" className="text-gray-900 font-semibold flex items-center gap-1">
-                    Read more <span>›</span>
+                  <p className="text-gray-600 text-sm mb-3">{post.description}</p>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {post.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <a href="/posts" className="text-gray-900 font-semibold flex items-center gap-1 hover:text-gray-600">
+                    View details <span>›</span>
                   </a>
                 </div>
               </div>
@@ -323,16 +380,19 @@ export default function HomePage() {
                 <li><a href="#" className="text-gray-600 hover:text-gray-900">Instagram</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900">LinkedIn</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900">YouTube</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">© 2025 HomeShare Platform. All rights reserved.</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-gray-900">© 2025 ColocDZ. All rights reserved.</a></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-gray-300 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
-            <a href="#" className="hover:text-gray-900">Terms of service</a>
-            <a href="#" className="hover:text-gray-900">Cookie settings</a>
-            <a href="#" className="hover:text-gray-900">Terms of Service</a>
-            <a href="#" className="hover:text-gray-900">Cookies Settings</a>
+            <div>
+              <a href="#" className="hover:text-gray-900 mr-4">Terms of service</a>
+              <a href="#" className="hover:text-gray-900">Privacy Policy</a>
+            </div>
+            <div className="mt-4 md:mt-0">
+              <p className="text-xs text-gray-500">Developed by <span className="font-semibold">MorenaDev</span></p>
+            </div>
           </div>
         </footer>
       </div>
