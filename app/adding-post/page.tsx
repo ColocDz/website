@@ -24,6 +24,7 @@ export default function AddingPostPage() {
     bedrooms: '',
     bathrooms: '',
     amenities: '',
+    tags: '',
   });
 
   const handleLogoutClick = () => {
@@ -305,7 +306,7 @@ export default function AddingPostPage() {
 
               {/* Amenities & Images */}
               <div className="bg-gray-50 p-8 rounded border border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Amenities & Images</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Amenities & Tags</h2>
                 
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Amenities</label>
@@ -317,6 +318,19 @@ export default function AddingPostPage() {
                     placeholder="e.g., WiFi, Parking, Kitchen, Laundry, etc."
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
                   />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Tags</label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleChange}
+                    placeholder="e.g., Modern, Downtown, Furnished (comma separated)"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Add tags separated by commas to help users filter your listing</p>
                 </div>
 
                 <div className="border-2 border-dashed border-gray-300 rounded p-8 text-center hover:border-gray-400 transition-colors cursor-pointer">
