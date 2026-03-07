@@ -109,7 +109,7 @@ export default function MessagesPage() {
               <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <span className="text-2xl font-bold text-gray-900">Logo</span>
+              <span className="text-2xl font-bold text-gray-900">ColocDZ</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -118,12 +118,16 @@ export default function MessagesPage() {
                 Find housing
               </a>
               <a href="/adding-post" className="text-gray-700 hover:text-gray-900">
-                Post listing
+                Find roommate
               </a>
-              <a href="#" className="text-gray-700 hover:text-gray-900">
+              <a href="/profile" className="text-gray-700 hover:text-gray-900">
                 My posts
               </a>
+              <a href="/adding-post" className="text-gray-700 hover:text-gray-900">
+                Add post
+              </a>
             </div>
+
 
             <button className="hidden md:block bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Sign in</button>
           </div>
