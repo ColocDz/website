@@ -17,6 +17,7 @@ export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [email, setEmail] = useState('');
+  const [search , setSearch ] = useState('');
 
   useEffect(() => {
     const handleLogout = async () => {
@@ -127,7 +128,7 @@ export default function HomePage() {
               <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <span className="text-2xl font-bold text-gray-900">Logo</span>
+              <span className="text-2xl font-bold text-gray-900">ColocDZ</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -138,15 +139,19 @@ export default function HomePage() {
               <a href="#" className="text-gray-700 hover:text-gray-900">
                 Find roommate
               </a>
-              <a href="#" className="text-gray-700 hover:text-gray-900">
+              <a href="/messages" className="text-gray-700 hover:text-gray-900">
                 Messages
               </a>
-              <a href="#" className="text-gray-700 hover:text-gray-900">
+              <a href="/profile" className="text-gray-700 hover:text-gray-900">
                 My posts
               </a>
+              <a href="/adding-post" className="text-gray-700 hover:text-gray-900">
+                Add post
+              </a>
+
             </div>
 
-            <button className="hidden md:block bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Sign in</button>
+            <button className="hidden md:block bg-black text-white px-6 py-2 rounded hover:bg-gray-800"><a href="/login">login</a></button>
           </div>
         </nav>
 
@@ -155,7 +160,7 @@ export default function HomePage() {
           <h1 className="text-5xl font-bold text-gray-900 mb-4">Ready to find your place</h1>
           <p className="text-gray-600 mb-8">Post what you need or search for the right fit today</p>
           <div className="flex gap-4 justify-center">
-            <button className="bg-black text-white px-8 py-2 rounded hover:bg-gray-800">Post</button>
+            <button className="bg-black text-white px-8 py-2 rounded hover:bg-gray-800"><a href="/adding-post">Post</a></button>
             <button className="border border-gray-300 text-gray-900 px-8 py-2 rounded hover:bg-gray-50">Search</button>
           </div>
           <div className="mt-12 bg-gray-200 h-96 rounded flex items-center justify-center">
@@ -261,19 +266,19 @@ export default function HomePage() {
         {/* Get started Section */}
         <section className="py-16 px-6 border border-gray-300 m-6 rounded">
           <h2 className="text-4xl font-bold text-gray-900 text-center mb-2">Get started finding your match</h2>
-          <p className="text-gray-600 text-center mb-8">Join others who've found their place through HomeShare Platform</p>
+          <p className="text-gray-600 text-center mb-8">Join others who've found their place through ColocDZ Platform</p>
           <div className="max-w-md mx-auto flex gap-2">
             <input
               type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="search ..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="flex-1 px-4 py-2 border border-gray-300 rounded"
             />
             <button className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Get started</button>
           </div>
           <p className="text-sm text-gray-600 text-center mt-4">
-            By clicking Get started you're confirming that you agree with our Terms and Conditions.
+            You can post , message and even search for matches. just with one easy fast click 
           </p>
         </section>
 
@@ -281,7 +286,7 @@ export default function HomePage() {
         <footer className="bg-gray-50 border-t border-gray-200 py-16 px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Logo</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">ColocDZ</h3>
               <p className="text-gray-600 text-sm mb-4">Get updates on new listings and platform improvements.</p>
               <div className="flex gap-2">
                 <input type="email" placeholder="Your email" className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" />
