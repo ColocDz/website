@@ -73,7 +73,7 @@ export default function ProfilePage() {
               <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <span className="text-2xl font-bold text-gray-900">Logo</span>
+              <span className="text-2xl font-bold text-gray-900">ColocDZ</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -81,11 +81,14 @@ export default function ProfilePage() {
               <a href="/" className="text-gray-700 hover:text-gray-900">
                 Find housing
               </a>
+              <a href="/" className="text-gray-700 hover:text-gray-900">
+                Find roommate
+              </a>
               <a href="/messages" className="text-gray-700 hover:text-gray-900">
                 Messages
               </a>
-              <a href="#" className="text-gray-700 hover:text-gray-900">
-                My posts
+              <a href="/adding-post" className="text-gray-700 hover:text-gray-900">
+                Add post
               </a>
             </div>
 
