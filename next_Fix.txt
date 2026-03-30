@@ -18,7 +18,6 @@ Every correction with exact code — copy, paste, understand
 10	Server Components — move data fetching off client
 
 
- 
 Fix 1 — next.config.mjs Image Domains
   ⏱ 2 minutes · Do this first — without it, production build crashes on every external image
 
