@@ -219,6 +219,13 @@ const handleSignUp = async (e: React.FormEvent) => {
   await signIn('credentials', { email, password: password1, callbackUrl: '/' });
 };
 
+
+
+
+
+
+
+
 Step 7 — How to check if a user is logged in (anywhere in the app)
 Usage pattern
 // In a SERVER component (no 'use client'):
