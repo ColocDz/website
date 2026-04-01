@@ -146,12 +146,12 @@ const handleSignIn = async (e) => {
 
 
 
-
-
-
- 
 // ─────────────────────────────────────────────────────────
  
+
+
+
+
 // app/login/page.tsx — AFTER (correct):
 'use client';
 import { signIn } from 'next-auth/react';
@@ -178,11 +178,23 @@ const handleSignIn = async (e: React.FormEvent) => {
 // Google login (replaces the fake handleSocialLogin):
 const handleGoogleLogin = () => signIn('google', { callbackUrl: '/' });
 
+
+
+
+
+
+
+
+
 Step 6 — Update signup/page.tsx
 app/signup/page.tsx
 // app/signup/page.tsx — AFTER
 'use client';
 import { signIn } from 'next-auth/react';
+
+
+
+
  
 const handleSignUp = async (e: React.FormEvent) => {
   e.preventDefault();
