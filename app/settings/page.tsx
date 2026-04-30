@@ -3,33 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Menu, X, Bell, Lock, Briefcase, LogOut, User, Upload, IdCard } from 'lucide-react';
-import { MobileSidebar } from '@/components/mobile-sidebar';
+import { Bell, Lock, User, Upload, IdCard } from 'lucide-react';
 import { RiArrowGoBackFill } from 'react-icons/ri';
-import { MdOutlinePostAdd } from 'react-icons/md';
-import { IoIosLogOut } from 'react-icons/io';
-import { FaHome, FaUser, FaCog } from 'react-icons/fa';
-import { AiFillMessage } from 'react-icons/ai';
+import { Navbar } from '@/components/layout/navbar';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  const handleLogoutClick = () => {
-    localStorage.removeItem('isLoggedIn');
-    router.push('/');
-  };
-
-  const menuItems = [
-    { label: 'Home', path: '/', icon: <FaHome /> },
-    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
-    { label: 'Profile', path: '/profile', icon: <FaUser /> },
-    { label: 'Messages', path: '/messages', icon: <AiFillMessage /> },
-    { label: 'Settings', path: '/settings', icon: <FaCog /> },
-    { label: 'Log Out', path: '#', icon: <IoIosLogOut />, onClick: handleLogoutClick },
-  ];
 
   const settingsTabs = [
     { id: 'personal', label: 'Personal Info', icon: User },
@@ -82,28 +63,10 @@ export default function SettingsPage() {
 
   return (
     <div className="bg-white">
-      {/* Mobile Sidebar */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <MobileSidebar menuItems={menuItems} onClose={() => setMobileMenuOpen(false)} />
-        </div>
-      )}
+      <Navbar />
 
       {/* Main Content */}
       <div>
-        {/* Navbar */}
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-20">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <span className="text-2xl font-bold text-gray-900">Logo</span>
-            </div>
-
-            <button className="hidden md:block bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Sign in</button>
-          </div>
-        </nav>
 
         {/* Settings Layout */}
         <div className="flex min-h-[calc(100vh-80px)]">

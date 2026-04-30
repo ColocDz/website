@@ -2,28 +2,48 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login
-    setTimeout(() => {
-      localStorage.setItem('isLoggedIn', 'true');
+    setError('');
+
+    try {
+      const result = await signIn.email({
+        email,
+        password,
+      });
+
+      if (result.error) {
+        setError(result.error.message || 'Invalid email or password');
+        setIsLoading(false);
+        return;
+      }
+
+      router.push(callbackUrl);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
       setIsLoading(false);
-      router.push('/');
-    }, 500);
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    localStorage.setItem('isLoggedIn', 'true');
-    router.push('/');
+  const handleGoogleLogin = async () => {
+    await signIn.social({
+      provider: 'google',
+      callbackURL: callbackUrl,
+    });
   };
 
   return (
@@ -40,6 +60,13 @@ export default function LoginPage() {
             <h1 className="text-lg font-semibold text-white tracking-wide">Welcome back</h1>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
+              {error}
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSignIn} className="space-y-3">
             {/* Email */}
@@ -50,6 +77,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                required
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
@@ -62,6 +90,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                required
                 className="w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white placeholder-gray-500 text-xs border border-white/5 shadow-inner focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
               />
             </div>
@@ -80,7 +109,7 @@ export default function LoginPage() {
           <div className="flex gap-2 mt-3">
             {/* Google */}
             <button
-              onClick={() => handleSocialLogin('google')}
+              onClick={handleGoogleLogin}
               className="flex-1 px-2 py-2 rounded-2xl bg-[rgba(63,63,70,0.85)] text-gray-300 text-xs font-medium cursor-pointer flex items-center justify-center gap-2 hover:bg-[rgba(63,63,70,1)] transition-all border border-white/5"
             >
               <img
@@ -91,10 +120,11 @@ export default function LoginPage() {
               <span className="hidden sm:inline">Google</span>
             </button>
 
-            {/* Facebook */}
+            {/* Facebook - disabled until HTTPS */}
             <button
-              onClick={() => handleSocialLogin('facebook')}
-              className="flex-1 px-2 py-2 rounded-2xl bg-transparent text-gray-400 text-xs font-medium cursor-pointer flex items-center justify-center gap-2 border border-white/10 hover:border-white/20 hover:text-gray-300 transition-all"
+              disabled
+              title="Available after deployment with HTTPS"
+              className="flex-1 px-2 py-2 rounded-2xl bg-transparent text-gray-400 text-xs font-medium cursor-not-allowed flex items-center justify-center gap-2 border border-white/10 opacity-50"
             >
               <img
                 src="https://www.svgrepo.com/show/475647/facebook-color.svg"
@@ -108,7 +138,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
                 Sign up
               </Link>

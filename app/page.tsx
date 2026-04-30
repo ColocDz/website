@@ -1,49 +1,17 @@
 'use client';
 
-import { SidebarMenu } from "@/components/ui/sidebar"
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Menu, X, Star } from 'lucide-react';
-import { MobileSidebar } from '@/components/mobile-sidebar';
-import { MdOutlinePostAdd } from 'react-icons/md';
-import { IoIosLogOut } from 'react-icons/io';
-import { FaHome, FaUser, FaCog } from 'react-icons/fa';
-import { AiFillMessage } from 'react-icons/ai';
+import { Star } from 'lucide-react';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/layout/footer';
 
 export default function HomePage() {
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
-  const [email, setEmail] = useState('');
   const [search, setSearch] = useState('');
   const [showSearchBar, setShowSearchBar] = useState(false);
-
-  useEffect(() => {
-    const handleLogout = async () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('logout') === 'true') {
-        localStorage.removeItem('isLoggedIn');
-        router.replace('/');
-      }
-    };
-    handleLogout();
-  }, [router]);
-
-  const handleLogoutClick = () => {
-    localStorage.removeItem('isLoggedIn');
-    router.push('/');
-  };
-
-  const menuItems = [
-    { label: 'Home', path: '/', icon: <FaHome /> },
-    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
-    { label: 'Profile', path: '/profile', icon: <FaUser /> },
-    { label: 'Messages', path: '/messages', icon: <AiFillMessage /> },
-    { label: 'Settings', path: '/settings', icon: <FaCog /> },
-    { label: 'Log Out', path: '#', icon: <IoIosLogOut />, onClick: handleLogoutClick },
-  ];
 
   const testimonials = [
     {
@@ -121,50 +89,10 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
-      {/* Mobile Sidebar */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <MobileSidebar menuItems={menuItems} onClose={() => setMobileMenuOpen(false)} />
-        </div>
-      )}
+      <Navbar />
 
       {/* Main Content */}
       <div>
-        {/* Navbar */}
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-20">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Mobile Menu Button */}
-              <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <span className="text-2xl font-bold text-gray-900">ColocDZ</span>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#" className="text-gray-700 hover:text-gray-900">
-                Find housing
-              </a>
-              <a href="#" className="text-gray-700 hover:text-gray-900">
-                Find roommate
-              </a>
-              <a href="/messages" className="text-gray-700 hover:text-gray-900">
-                Messages
-              </a>
-              <a href="/profile" className="text-gray-700 hover:text-gray-900">
-                My posts
-              </a>
-              <a href="/adding-post" className="text-gray-700 hover:text-gray-900">
-                Add post
-              </a>
-
-            </div>
-
-            <button className="hidden md:block bg-black text-white px-6 py-2 rounded hover:bg-gray-800"><a href="/login">login</a></button>
-          </div>
-        </nav>
-
         {/* Hero Section - Ready to find your place */}
         <section className="py-16 px-6 text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">Ready to find your place</h1>
@@ -193,7 +121,7 @@ export default function HomePage() {
                 onClick={() => router.push('/posts')}
                 className="mt-4 w-full bg-black text-white px-8 py-2 rounded hover:bg-gray-800"
               >
-                Search & View All Posts
+                Search &amp; View All Posts
               </button>
             </div>
           )}
@@ -215,7 +143,12 @@ export default function HomePage() {
               <h2 className="text-4xl font-bold text-gray-900 mb-2">Find your next home</h2>
               <p className="text-gray-600">Browse available rooms and shared spaces from people looking for roommates</p>
             </div>
-            <button className="border border-gray-300 text-gray-900 px-6 py-2 rounded hover:bg-gray-100">View all</button>
+            <button
+              onClick={() => router.push('/posts')}
+              className="border border-gray-300 text-gray-900 px-6 py-2 rounded hover:bg-gray-100"
+            >
+              View all
+            </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
@@ -277,7 +210,7 @@ export default function HomePage() {
                     <Star key={i} size={16} className="fill-gray-900 text-gray-900" />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-4">"{testimonial.quote}"</p>
+                <p className="text-gray-700 mb-4">&quot;{testimonial.quote}&quot;</p>
                 <div className="flex items-center gap-3">
                   <Image
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${testimonial.name}`}
@@ -323,7 +256,7 @@ export default function HomePage() {
         {/* Get started Section */}
         <section className="py-16 px-6 border border-gray-300 m-6 rounded">
           <h2 className="text-4xl font-bold text-gray-900 text-center mb-2">Get started finding your match</h2>
-          <p className="text-gray-600 text-center mb-8">Join others who've found their place through ColocDZ Platform</p>
+          <p className="text-gray-600 text-center mb-8">Join others who&apos;ve found their place through ColocDZ Platform</p>
           <div className="max-w-md mx-auto flex gap-2">
             <input
               type="email"
@@ -339,62 +272,7 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-gray-50 border-t border-gray-200 py-16 px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">ColocDZ</h3>
-              <p className="text-gray-600 text-sm mb-4">Get updates on new listings and platform improvements.</p>
-              <div className="flex gap-2">
-                <input type="email" placeholder="Your email" className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm" />
-                <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">Subscribe</button>
-              </div>
-              <p className="text-xs text-gray-600 mt-2">By subscribing you agree to our Privacy Policy and consent to receive updates.</p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Browse</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Find rooms</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Post listing</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Edit post</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Delete post</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Connect</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Messages</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Contact us</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Help center</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Safety tips</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Follow us</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Facebook</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Instagram</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">Instagram</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">LinkedIn</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">YouTube</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900">© 2025 ColocDZ. All rights reserved.</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-300 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
-            <div>
-              <a href="#" className="hover:text-gray-900 mr-4">Terms of service</a>
-              <a href="#" className="hover:text-gray-900">Privacy Policy</a>
-            </div>
-            <div className="mt-4 md:mt-0">
-              <p className="text-xs text-gray-500">Developed by <span className="font-semibold">MorenaDev</span></p>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </div>
   );

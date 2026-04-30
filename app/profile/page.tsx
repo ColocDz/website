@@ -3,34 +3,17 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Menu, X, Edit2, Trash2 } from 'lucide-react';
-import { MobileSidebar } from '@/components/mobile-sidebar';
+import { Edit2, Trash2 } from 'lucide-react';
+import { Navbar } from '@/components/layout/navbar';
 import { DeleteConfirmationModal } from '@/components/delete-confirmation-modal';
-import { MdOutlinePostAdd } from 'react-icons/md';
-import { IoIosLogOut } from 'react-icons/io';
-import { FaHome, FaUser, FaCog } from 'react-icons/fa';
-import { AiFillMessage } from 'react-icons/ai';
+import { useSession } from '@/lib/auth-client';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session } = useSession();
   const [isPrivate, setIsPrivate] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; postId?: number }>({ isOpen: false });
-
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    router.push('/?logout=true');
-  };
-
-  const menuItems = [
-    { label: 'Home', path: '/', icon: <FaHome /> },
-    { label: 'Add Post', path: '/adding-post', icon: <MdOutlinePostAdd /> },
-    { label: 'Profile', path: '/profile', icon: <FaUser /> },
-    { label: 'Messages', path: '/messages', icon: <AiFillMessage /> },
-    { label: 'Settings', path: '/settings', icon: <FaCog /> },
-    { label: 'Log Out', path: '#', icon: <IoIosLogOut />, onClick: handleLogout },
-  ];
 
   const posts = [
     {
@@ -75,6 +58,8 @@ export default function ProfilePage() {
     router.push(`/adding-post?edit=${postId}`);
   };
 
+  const userName = session?.user?.name || 'Account Name';
+
   return (
     <div className="bg-white">
       <DeleteConfirmationModal
@@ -85,47 +70,23 @@ export default function ProfilePage() {
         onCancel={() => setDeleteModal({ isOpen: false })}
       />
 
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <MobileSidebar menuItems={menuItems} onClose={() => setMobileMenuOpen(false)} />
-        </div>
-      )}
+      <Navbar />
 
       <div>
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-20">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button className="md:hidden text-gray-800" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <span className="text-2xl font-bold text-gray-900">ColocDZ</span>
-            </div>
-
-            <div className="hidden md:flex items-center gap-8">
-              <a href="/" className="text-gray-700 hover:text-gray-900">Find housing</a>
-              <a href="/" className="text-gray-700 hover:text-gray-900">Find roommate</a>
-              <a href="/messages" className="text-gray-700 hover:text-gray-900">Messages</a>
-              <a href="/adding-post" className="text-gray-700 hover:text-gray-900">Add post</a>
-            </div>
-
-            <button className="hidden md:block bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Sign in</button>
-          </div>
-        </nav>
-
         <section className="py-12 px-6">
           <div className="max-w-6xl mx-auto">
             <div className="mb-12">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-8">
                 <div className="flex flex-col items-center md:items-start">
                   <Image
-                    src="https://www.w3schools.com/howto/img_avatar2.png"
+                    src={session?.user?.image || "https://www.w3schools.com/howto/img_avatar2.png"}
                     alt="Profile"
                     width={120}
                     height={120}
                     className="rounded-full mb-4"
                   />
-                  <h1 className="text-3xl font-bold text-gray-900 text-center md:text-left">Account Name</h1>
-                  <p className="text-gray-600 text-center md:text-left mt-2">Person bio goes here</p>
+                  <h1 className="text-3xl font-bold text-gray-900 text-center md:text-left">{userName}</h1>
+                  <p className="text-gray-600 text-center md:text-left mt-2">{session?.user?.email || 'Person bio goes here'}</p>
 
                   <div className="mt-6">
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -168,7 +129,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Name</label>
-                    <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent" placeholder="Your name" />
+                    <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent" placeholder="Your name" defaultValue={userName} />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Gender</label>

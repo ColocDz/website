@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signUp, signIn } from '@/lib/auth-client';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function SignupPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [agreeToPolicy, setAgreeToPolicy] = useState(false);
   const [passwordMatch, setPasswordMatch] = useState(true);
+  const [error, setError] = useState('');
 
   const handlePasswordChange = (value: string) => {
     setPassword1(value);
@@ -30,29 +32,46 @@ export default function SignupPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     if (!agreeToPolicy) {
-      alert('Please agree to the terms and conditions');
+      setError('Please agree to the terms and conditions');
       return;
     }
     
     if (!passwordMatch) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
 
     setIsLoading(true);
-    // Simulate signup
-    setTimeout(() => {
-      localStorage.setItem('isLoggedIn', 'true');
-      setIsLoading(false);
+
+    try {
+      const result = await signUp.email({
+        email,
+        password: password1,
+        name: `${name} ${lastName}`.trim(),
+      });
+
+      if (result.error) {
+        setError(result.error.message || 'Failed to create account');
+        setIsLoading(false);
+        return;
+      }
+
+      // Account created and auto-signed in
       router.push('/');
-    }, 500);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      setIsLoading(false);
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    localStorage.setItem('isLoggedIn', 'true');
-    router.push('/');
+  const handleGoogleLogin = async () => {
+    await signIn.social({
+      provider: 'google',
+      callbackURL: '/',
+    });
   };
 
   return (
@@ -61,13 +80,20 @@ export default function SignupPage() {
       <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
       <div className="absolute bottom-20 right-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
 
-      {/* Login Form */}
+      {/* Signup Form */}
       <div className="relative w-full max-w-sm z-10">
         <div className="w-full p-4 rounded-3xl bg-gradient-to-b from-[rgba(24,24,27,0.95)] to-[rgba(24,24,27,0.88)] backdrop-blur-xl border border-white/5 shadow-2xl">
           {/* Title */}
           <div className="text-center mb-6">
             <h1 className="text-lg font-semibold text-white tracking-wide">Hi there !</h1>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
+              {error}
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSignUp} className="space-y-3">
@@ -179,7 +205,7 @@ export default function SignupPage() {
           <div className="flex gap-2 mt-3">
             {/* Google */}
             <button
-              onClick={() => handleSocialLogin('google')}
+              onClick={handleGoogleLogin}
               className="flex-1 px-2 py-2 rounded-2xl bg-[rgba(63,63,70,0.85)] text-gray-300 text-xs font-medium cursor-pointer flex items-center justify-center gap-2 hover:bg-[rgba(63,63,70,1)] transition-all border border-white/5"
             >
               <img
@@ -190,10 +216,11 @@ export default function SignupPage() {
               <span className="hidden sm:inline">Google</span>
             </button>
 
-            {/* Facebook */}
+            {/* Facebook - disabled until HTTPS */}
             <button
-              onClick={() => handleSocialLogin('facebook')}
-              className="flex-1 px-2 py-2 rounded-2xl bg-transparent text-gray-400 text-xs font-medium cursor-pointer flex items-center justify-center gap-2 border border-white/10 hover:border-white/20 hover:text-gray-300 transition-all"
+              disabled
+              title="Available after deployment with HTTPS"
+              className="flex-1 px-2 py-2 rounded-2xl bg-transparent text-gray-400 text-xs font-medium cursor-not-allowed flex items-center justify-center gap-2 border border-white/10 opacity-50"
             >
               <img
                 src="https://www.svgrepo.com/show/475647/facebook-color.svg"
@@ -204,7 +231,15 @@ export default function SignupPage() {
             </button>
           </div>
 
-
+          {/* Footer */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              Already have an account?{' '}
+              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
