@@ -28,17 +28,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // DEV MODE: log to terminal
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('\n');
-      console.log('╔══════════════════════════════════════╗');
-      console.log('║       🔐  DEV MODE OTP CODE          ║');
-      console.log(`║   Phone  : ${phoneNumber.padEnd(26)}║`);
-      console.log(`║   Code   : ${code.padEnd(26)}║`);
-      console.log('╚══════════════════════════════════════╝');
-      console.log('\n');
-      return NextResponse.json({ success: true, dev: true });
-    }
+    // We are forcing SMS sending via Twilio now.
+    // Make sure your Twilio account is configured properly.
 
     // PRODUCTION: send real SMS via Twilio
     const twilio = (await import('twilio')).default;

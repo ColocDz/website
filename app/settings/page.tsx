@@ -27,7 +27,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('personal');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -164,6 +164,27 @@ export default function SettingsPage() {
     }
   };
 
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+
+  // Initialize reCAPTCHA on mount (after loading is done)
+  useEffect(() => {
+    if (isPending) return;
+    
+    import('firebase/auth').then(({ RecaptchaVerifier }) => {
+      import('@/lib/firebase').then(({ auth }) => {
+        if (!window.recaptchaVerifier) {
+          try {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+              'size': 'invisible',
+            });
+          } catch (e) {
+            console.error('Recaptcha error:', e);
+          }
+        }
+      });
+    });
+  }, [isPending]);
+
   const handleSendOTP = async () => {
     if (!profile.phone || profile.phone.length < 8) {
       setErrorMsg('Please enter a valid phone number (at least 8 digits)');
@@ -172,41 +193,48 @@ export default function SettingsPage() {
     setIsSendingOTP(true);
     setErrorMsg('');
     try {
-      const res = await fetch('/api/phone-otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: `+213${profile.phone}` })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      const { signInWithPhoneNumber } = await import('firebase/auth');
+      const { auth } = await import('@/lib/firebase');
       
+      const appVerifier = window.recaptchaVerifier;
+      const phoneNumber = `+213${profile.phone}`;
+      
+      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+      setConfirmationResult(confirmation);
       setOtpSent(true);
-      
-      if (data.dev) {
-        setErrorMsg('DEV MODE: Check your pnpm dev terminal for the OTP code');
-      }
     } catch (error: any) {
-      setErrorMsg(error.message || 'Failed to send OTP');
+      console.error(error);
+      setErrorMsg('Failed to send SMS. Ensure number format is correct or try again.');
+      // Reset recaptcha if error
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.render().then((widgetId: any) => {
+          grecaptcha.reset(widgetId);
+        });
+      }
     } finally {
       setIsSendingOTP(false);
     }
   };
 
   const handleVerifyOTP = async () => {
-    if (!otpCode) {
+    if (!otpCode || !confirmationResult) {
       setErrorMsg('Please enter the OTP code');
       return;
     }
     setIsVerifyingOTP(true);
     setErrorMsg('');
     try {
-      const res = await fetch('/api/phone-otp/verify', {
-        method: 'POST',
+      // Confirm the OTP code with Firebase
+      await confirmationResult.confirm(otpCode);
+      
+      // Update our database via our API
+      const res = await fetch('/api/user', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: otpCode })
+        body: JSON.stringify({ phoneVerified: true, phone: profile.phone })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Invalid OTP code');
+      
+      if (!res.ok) throw new Error('Failed to update phone verification status');
       
       setPhoneVerified(true);
       setOtpSent(false);
@@ -214,7 +242,8 @@ export default function SettingsPage() {
       setErrorMsg('');
       router.refresh();
     } catch (error: any) {
-      setErrorMsg(error.message || 'Invalid OTP code');
+      console.error(error);
+      setErrorMsg('Invalid OTP code. Please try again.');
     } finally {
       setIsVerifyingOTP(false);
     }
@@ -313,8 +342,30 @@ export default function SettingsPage() {
       )}
 
       {/* Settings Layout */}
-      <div className="flex min-h-[calc(100vh-80px)]">
-        {/* Sidebar Menu - Fixed Position */}
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)]">
+        
+        {/* Mobile Tabs */}
+        <div className="md:hidden flex overflow-x-auto border-b border-gray-200 bg-white sticky top-[65px] z-10 scrollbar-hide px-4 py-2 space-x-2">
+          {settingsTabs.map((tab) => {
+            const IconComponent = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-black text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <IconComponent size={16} />
+                <span className="text-sm font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sidebar Menu - Fixed Position (Desktop) */}
         <div className="hidden md:flex fixed left-0 top-20 h-[calc(100vh-80px)] w-80 flex-col bg-white border-r border-gray-200 p-6 overflow-y-auto z-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-8">User profile<br/>management</h2>
           <nav className="space-y-3">
@@ -701,6 +752,8 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

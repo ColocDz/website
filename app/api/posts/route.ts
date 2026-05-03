@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,21 +44,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the current user session from cookies
-    const sessionToken = request.cookies.get('better-auth.session_token')?.value || 
-                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
                          
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Need to get session user
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true }
-    });
-
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -74,7 +63,7 @@ export async function POST(request: NextRequest) {
         description: data.description,
         type: data.type || 'Apartment',
         postType: data.postType || 'offer',
-        price: parseFloat(data.price),
+        price: data.price ? data.price.toString() : null,
         location: data.location,
         wilaya: data.wilaya,
         bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,

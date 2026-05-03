@@ -26,9 +26,10 @@ interface PostDetail {
   };
 }
 
-export default function PostDetailsPage({ params }: { params: { id: string } }) {
+export default function PostDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { data: session } = useSession();
+  const unwrappedParams = React.use(params);
   
   const [post, setPost] = useState<PostDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +63,7 @@ export default function PostDetailsPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     async function fetchPost() {
       try {
-        const res = await fetch(`/api/posts/${params.id}`);
+        const res = await fetch(`/api/posts/${unwrappedParams.id}`);
         if (!res.ok) {
           throw new Error('Post not found');
         }
@@ -76,7 +77,7 @@ export default function PostDetailsPage({ params }: { params: { id: string } }) 
     }
     
     fetchPost();
-  }, [params.id]);
+  }, [unwrappedParams.id]);
 
   const handleMessageAuthor = async () => {
     if (!session || !post) return;

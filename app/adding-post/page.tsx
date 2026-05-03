@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Upload, X } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Image from 'next/image';
 
@@ -13,7 +12,7 @@ const postSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(20, 'Title cannot exceed 20 characters'),
   type: z.enum(['Apartment', 'House', 'Studio', 'Room', 'Shared Space']),
   postType: z.enum(['offer', 'request']),
-  description: z.string().min(2000, 'Description must be at least 2,000 characters').max(5000, 'Description cannot exceed 5,000 characters'),
+  description: z.string().min(100, 'Description must be at least 100 characters').max(5000, 'Description cannot exceed 5,000 characters'),
   price: z.string().min(1, 'Price is required').refine((val) => !isNaN(Number(val)) && Number(val) > 0, 'Price must be a valid positive number'),
   wilaya: z.string().min(1, 'Wilaya is required'),
   location: z.string().min(5, 'Location must be at least 5 characters'),
@@ -24,6 +23,30 @@ const postSchema = z.object({
 });
 
 type PostFormData = z.infer<typeof postSchema>;
+
+// Custom resolver to support Zod v4 natively without crashing
+const customZodResolver = async (data: any) => {
+  const result = await postSchema.safeParseAsync(data);
+  
+  if (result.success) {
+    return { values: result.data, errors: {} };
+  } else {
+    // If validation fails, result.error contains the ZodError object
+    const formErrors: Record<string, any> = {};
+    const issues = result.error.issues || result.error.errors || [];
+    
+    issues.forEach((issue: any) => {
+      if (issue.path && issue.path[0]) {
+        formErrors[issue.path[0]] = {
+          type: issue.code,
+          message: issue.message,
+        };
+      }
+    });
+    
+    return { values: {}, errors: formErrors };
+  }
+};
 
 export default function AddingPostPage() {
   const router = useRouter();
@@ -55,7 +78,7 @@ export default function AddingPostPage() {
     watch,
     formState: { errors },
   } = useForm<PostFormData>({
-    resolver: zodResolver(postSchema),
+    resolver: customZodResolver,
     defaultValues: {
       type: 'Apartment',
       postType: 'offer',
@@ -249,14 +272,14 @@ export default function AddingPostPage() {
               <div>
                 <label className="flex justify-between text-sm font-semibold text-gray-900 mb-2">
                   <span>Description <span className="text-red-500">*</span></span>
-                  <span className={`text-xs ${watchDescription.length < 2000 || watchDescription.length > 5000 ? 'text-orange-500' : 'text-green-600'}`}>
-                    {watchDescription.length}/5000 (Min 2000)
+                  <span className={`text-xs ${watchDescription.length < 100 || watchDescription.length > 5000 ? 'text-orange-500' : 'text-green-600'}`}>
+                    {watchDescription.length}/5000 (Min 100)
                   </span>
                 </label>
                 <textarea 
                   {...register('description')} 
                   maxLength={5000}
-                  placeholder="Describe your space in detail (minimum 2000 characters required)." 
+                  placeholder="Describe your space in detail (minimum 100 characters required)." 
                   rows={8} 
                   className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"
                 />

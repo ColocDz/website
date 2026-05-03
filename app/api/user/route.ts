@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionToken = request.cookies.get('better-auth.session_token')?.value || 
-                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
                          
-    if (!sessionToken) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true }
+    // get the latest user from db
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
     });
 
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(session.user);
+    return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
@@ -28,19 +29,9 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const sessionToken = request.cookies.get('better-auth.session_token')?.value || 
-                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
                          
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true }
-    });
-
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -66,8 +57,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // Only update name if it hasn't been changed before
-    if (data.name && data.name !== user.name) {
-      if (user.nameChanged) {
+    // Need to get user from db to check nameChanged
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (data.name && data.name !== dbUser.name) {
+      if (dbUser.nameChanged) {
         return NextResponse.json({ error: 'You have already changed your name once.' }, { status: 403 });
       } else {
         updateData.name = data.name;
@@ -90,19 +87,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionToken = request.cookies.get('better-auth.session_token')?.value || 
-                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
                          
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true }
-    });
-
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

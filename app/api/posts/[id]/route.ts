@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const unwrappedParams = await params;
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id: unwrappedParams.id },
       include: {
         author: {
           select: {
