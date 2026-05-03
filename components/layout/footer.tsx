@@ -63,7 +63,7 @@ export function Footer() {
         </div>
         <div className="mt-4 md:mt-0 flex items-center gap-4">
           <p className="text-xs text-gray-500">
-            © 2025 ColocDZ. All rights reserved.
+            © 2026 ColocDZ. All rights reserved.
           </p>
           <p className="text-xs text-gray-500">
             Developed by <span className="font-semibold">MorenaDev</span>

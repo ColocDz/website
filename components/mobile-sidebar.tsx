@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from "react";
-import styled from "styled-components";
 import Link from "next/link";
-import { X } from "react-feather"; // Import X component
-import { CloseButton } from "react-bootstrap"; // Import CloseButton component
+import { X } from "lucide-react";
 
 interface MenuItem {
   label: string;
@@ -18,81 +16,11 @@ interface MobileSidebarProps {
   onClose: () => void;
 }
 
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 39;
-`;
-
-const SidebarContainer = styled.div<{ $translateX: number }>`
-  width: 64%;
-  max-width: 256px;
-  height: 100vh;
-  background-color: #1e1e2f;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  padding-top: 1rem;
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 40;
-  transform: translateX(${props => props.$translateX}px);
-  transition: transform 0.3s ease-out;
-  touch-action: none;
-`;
-
-const SidebarHeader = styled.div`
-  padding: 1rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  background-color: #151521;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const MenuList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex: 1;
-`;
-
-const MenuItemLink = styled(Link)`
-  padding: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  color: white;
-  text-decoration: none;
-  font-size: 1rem;
-  &:hover {
-    background-color: #2a2a40;
-  }
-`;
-
-const MenuItemStyled = styled.li`
-  &:hover {
-    background-color: #2a2a40;
-  }
-`;
-
-const IconWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-`;
-
 export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose }) => {
   const [translateX, setTranslateX] = useState(0);
   const startX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const CLOSE_THRESHOLD = 80; // pixels to drag before closing
+  const CLOSE_THRESHOLD = 80;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -102,7 +30,6 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
     const currentX = e.touches[0].clientX;
     const diff = currentX - startX.current;
     
-    // Only allow dragging to the left (negative values)
     if (diff < 0) {
       setTranslateX(diff);
     }
@@ -110,11 +37,9 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
 
   const handleTouchEnd = () => {
     if (translateX < -CLOSE_THRESHOLD) {
-      // Animate out and close
       setTranslateX(-300);
       setTimeout(onClose, 300);
     } else {
-      // Snap back
       setTranslateX(0);
     }
   };
@@ -124,7 +49,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (e.buttons !== 1) return; // Only on left mouse button drag
+    if (e.buttons !== 1) return;
     const currentX = e.clientX;
     const diff = currentX - startX.current;
     
@@ -142,80 +67,70 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
     }
   };
 
-  const handleResize = () => {
-    // Handle resize logic here
-  };
-
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove as any);
     document.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Initial check
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove as any);
       document.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('resize', handleResize);
     };
   }, [translateX]);
 
   return (
     <>
-      <Overlay onClick={onClose} />
-      <SidebarContainer
+      <div 
+        className="fixed inset-0 bg-black/50 z-[39]" 
+        onClick={onClose} 
+      />
+      <div
         ref={containerRef}
-        $translateX={translateX}
+        className="w-[64%] max-w-[256px] h-screen bg-[#1e1e2f] text-white flex flex-col pt-4 fixed left-0 top-0 z-[40]"
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition: translateX === 0 || translateX === -300 ? 'transform 0.3s ease-out' : 'none',
+          touchAction: 'none'
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
       >
-        <SidebarHeader>
+        <div className="p-4 text-xl font-bold bg-[#151521] flex items-center justify-between mb-4">
           <span>Coloc DZ</span>
-          <CloseButton onClick={onClose}>
+          <button onClick={onClose} className="text-white bg-transparent border-none cursor-pointer p-1 hover:opacity-80">
             <X size={24} />
-          </CloseButton>
-        </SidebarHeader>
+          </button>
+        </div>
 
-        <MenuList>
+        <ul className="list-none p-0 m-0 flex-1">
           {menuItems.map((item, index) => (
-            <MenuItemStyled key={index}>
+            <li key={index} className="hover:bg-[#2a2a40] transition-colors">
               {item.onClick ? (
                 <button
                   onClick={() => {
                     item.onClick?.();
                     onClose();
                   }}
-                  style={{
-                    width: '100%',
-                    padding: '1rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '15px',
-                    color: 'white',
-                    textDecoration: 'none',
-                    fontSize: '1rem',
-                    background: 'none',
-                    border: 'none',
-                    textAlign: 'left',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a40'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  className="w-full p-4 cursor-pointer flex items-center gap-4 text-white no-underline text-base bg-transparent border-none text-left"
                 >
-                  <IconWrapper>{item.icon}</IconWrapper>
+                  <div className="flex items-center justify-center text-xl">{item.icon}</div>
                   <span>{item.label}</span>
                 </button>
               ) : (
-                <MenuItemLink href={item.path || '/'} onClick={onClose}>
-                  <IconWrapper>{item.icon}</IconWrapper>
+                <Link 
+                  href={item.path || '/'} 
+                  onClick={onClose}
+                  className="p-4 cursor-pointer flex items-center gap-4 text-white no-underline text-base w-full block"
+                >
+                  <div className="flex items-center justify-center text-xl">{item.icon}</div>
                   <span>{item.label}</span>
-                </MenuItemLink>
+                </Link>
               )}
-            </MenuItemStyled>
+            </li>
           ))}
-        </MenuList>
-      </SidebarContainer>
+        </ul>
+      </div>
     </>
   );
 };
