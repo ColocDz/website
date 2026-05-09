@@ -27,6 +27,12 @@ model User {
   wilaya          String?
   city            String?
   isPrivate       Boolean   @default(false)
+  nameChanged     Boolean   @default(false)
+  isArchived      Boolean   @default(false)
+  identityVerified Boolean  @default(false)
+  phoneVerified   Boolean   @default(false)
+  phoneOtp        String?
+  phoneOtpExpiry  DateTime?
 
   // Relations
   sessions        Session[]
@@ -93,6 +99,8 @@ model Post {
   images      String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  status      String   @default("published") // published or draft
+  isArchived  Boolean  @default(false)
 
   // Author relation
   authorId    String   @db.ObjectId
