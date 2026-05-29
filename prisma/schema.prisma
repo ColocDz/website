@@ -32,6 +32,7 @@ model User {
   identityVerified Boolean  @default(false)
   faceVerified    Boolean   @default(false)
   faceImage       String?
+  password        String?
 
   // Relations
   sessions        Session[]
