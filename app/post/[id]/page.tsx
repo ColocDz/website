@@ -7,6 +7,18 @@ import { MapPin, Heart, ArrowLeft, MessageSquare, Tag } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useSession } from '@/lib/auth-client';
 
+interface Comment {
+  id: string;
+  text: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    lastName: string | null;
+    image: string | null;
+  };
+}
+
 interface PostDetail {
   id: string;
   title: string;
@@ -24,6 +36,7 @@ interface PostDetail {
     lastName: string | null;
     image: string | null;
   };
+  comments?: Comment[];
 }
 
 export default function PostDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +49,13 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
   const [errorMsg, setErrorMsg] = useState('');
   const [isFaceVerified, setIsFaceVerified] = useState<boolean | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+  // Comments and message overlay states
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [initialMessageText, setInitialMessageText] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   useEffect(() => {
     async function checkIdentity() {
@@ -69,6 +89,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         }
         const data = await res.json();
         setPost(data);
+        setInitialMessageText(`Hi ${data.author?.name || 'there'}! I am interested in your property listing: "${data.title}"`);
       } catch (error: any) {
         setErrorMsg(error.message || 'Error fetching post');
       } finally {
@@ -79,13 +100,65 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     fetchPost();
   }, [unwrappedParams.id]);
 
-  const handleMessageAuthor = async () => {
+  const handleMessageAuthor = () => {
     if (!session || !post) return;
-    
-    // Auto-create conversation or redirect to messages tab with selected user
-    // For prototype, we'll just go to messages page
-    // Note: To fully implement, we'd create the conversation via a POST to /api/messages
-    router.push('/messages');
+    setMessageModalOpen(true);
+  };
+
+  const handleSendMessageSubmit = async () => {
+    if (!initialMessageText.trim() || !post) return;
+    setIsSendingMessage(true);
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: post.authorId,
+          content: initialMessageText.trim()
+        })
+      });
+      if (res.ok) {
+        router.push('/messages');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to send message');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while sending message');
+    } finally {
+      setIsSendingMessage(false);
+      setMessageModalOpen(false);
+    }
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || !post) return;
+    setIsSubmittingComment(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: commentText.trim() })
+      });
+      if (res.ok) {
+        const newComment = await res.json();
+        setPost(prev => prev ? {
+          ...prev,
+          comments: [newComment, ...(prev.comments || [])]
+        } : null);
+        setCommentText('');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to post comment');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while posting comment');
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   if (isLoading || isFaceVerified === null) {
@@ -245,6 +318,76 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                       </div>
                     </div>
                   )}
+
+                  <hr className="border-gray-200" />
+
+                  {/* Comments Section */}
+                  <div className="space-y-6">
+                    <h2 className="text-xl font-bold text-gray-900">Comments ({post.comments?.length || 0})</h2>
+                    
+                    {session ? (
+                      <form onSubmit={handleCommentSubmit} className="space-y-3">
+                        <textarea
+                          placeholder="Ask a question or leave a comment about this property..."
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          rows={3}
+                          maxLength={300}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none text-sm"
+                        />
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{300 - commentText.length} characters remaining</span>
+                          <button
+                            type="submit"
+                            disabled={isSubmittingComment || !commentText.trim()}
+                            className="px-5 py-2 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                          >
+                            {isSubmittingComment ? 'Posting...' : 'Post Comment'}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                        <p className="text-sm text-gray-600">
+                          Please <a href="/login" className="underline font-bold text-black">login</a> to ask questions or post comments.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-4 mt-6">
+                      {!post.comments || post.comments.length === 0 ? (
+                        <p className="text-sm text-gray-500 italic">No comments yet. Be the first to ask a question!</p>
+                      ) : (
+                        post.comments.map((comment) => (
+                          <div key={comment.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-start gap-4">
+                            <Image
+                              src={comment.author?.image || 'https://www.w3schools.com/howto/img_avatar2.png'}
+                              alt={comment.author?.name || 'User'}
+                              width={40}
+                              height={40}
+                              className="rounded-full bg-gray-100 object-cover flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-gray-900 text-sm">
+                                  {comment.author?.name} {comment.author?.lastName}
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  {new Date(comment.createdAt).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-gray-700 text-sm whitespace-pre-line">{comment.text}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Sidebar Sticky Panel */}
@@ -292,6 +435,45 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message Modal Overlay */}
+      {messageModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setMessageModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 font-bold text-lg p-1"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Send Message to Host</h2>
+            <p className="text-sm text-gray-500 mb-4">Start a conversation with {post?.author?.name}.</p>
+            
+            <textarea
+              value={initialMessageText}
+              onChange={(e) => setInitialMessageText(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none text-sm mb-4"
+            />
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setMessageModalOpen(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendMessageSubmit}
+                disabled={isSendingMessage || !initialMessageText.trim()}
+                className="flex-1 px-4 py-2.5 bg-black text-white rounded-lg text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {isSendingMessage ? 'Sending...' : 'Send Message'}
+              </button>
             </div>
           </div>
         </div>

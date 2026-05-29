@@ -56,7 +56,20 @@ export async function PUT(request: NextRequest) {
       updateData.faceVerified = data.faceVerified;
     }
 
-    if (data.faceImage !== undefined) {
+    if (data.faceImage !== undefined && data.faceImage) {
+      // Check if this face image is already registered under another user's profile
+      const duplicateUser = await prisma.user.findFirst({
+        where: {
+          faceImage: data.faceImage,
+          id: { not: user.id }
+        }
+      });
+
+      if (duplicateUser) {
+        return NextResponse.json({ 
+          error: 'This face image is already registered to another user account. Duplicate profiles are not permitted.' 
+        }, { status: 400 });
+      }
       updateData.faceImage = data.faceImage;
     }
 

@@ -29,7 +29,7 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDesktop, setIsDesktop] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [isFaceVerified, setIsFaceVerified] = useState(false);
 
   useEffect(() => {
     setIsDesktop(window.innerWidth >= 768);
@@ -45,7 +45,7 @@ export default function MessagesPage() {
         const userRes = await fetch('/api/user');
         if (userRes.ok) {
           const userData = await userRes.json();
-          setIsPhoneVerified(!!userData.phoneVerified);
+          setIsFaceVerified(!!userData.faceVerified);
         }
         
         const res = await fetch('/api/messages');
@@ -130,18 +130,18 @@ export default function MessagesPage() {
     <div className="bg-white min-h-screen flex flex-col">
       <Navbar />
 
-      {!isPhoneVerified ? (
+      {!isFaceVerified ? (
         <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
           <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm max-w-md w-full">
-            <h2 className="text-2xl font-bold text-red-800 mb-2">Phone Verification Required</h2>
+            <h2 className="text-2xl font-bold text-red-800 mb-2">Face Verification Required</h2>
             <p className="text-red-700 mb-6">
-              You need to verify your account phone number in the personal informations before you can message other users.
+              You need to verify your identity via face detection in settings before you can message other users.
             </p>
             <button
               onClick={() => window.location.href = '/settings'}
               className="w-full px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors"
             >
-              Go to Personal Info
+              Go to Face Verification
             </button>
           </div>
         </div>

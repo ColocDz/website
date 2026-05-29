@@ -54,7 +54,7 @@ export default function AddingPostPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [isFaceVerified, setIsFaceVerified] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,10 +63,10 @@ export default function AddingPostPage() {
         const res = await fetch('/api/user');
         if (res.ok) {
           const userData = await res.json();
-          setIsPhoneVerified(!!userData.phoneVerified);
+          setIsFaceVerified(!!userData.faceVerified);
         }
       } catch (e) {
-        console.error('Failed to check phone status');
+        console.error('Failed to check face status');
       }
     }
     checkIdentity();
@@ -198,17 +198,17 @@ export default function AddingPostPage() {
             </div>
           )}
 
-          {!isPhoneVerified ? (
+          {!isFaceVerified ? (
             <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm">
-              <h2 className="text-xl font-bold text-red-800 mb-2">Phone Verification Required</h2>
+              <h2 className="text-xl font-bold text-red-800 mb-2">Face Verification Required</h2>
               <p className="text-red-700 mb-6">
-                You need to verify your account phone number in the personal informations before you can create posts.
+                You need to verify your identity via real-time face detection in settings before you can create posts.
               </p>
               <button
                 onClick={() => router.push('/settings')}
                 className="px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors"
               >
-                Go to Personal Info
+                Go to Settings
               </button>
             </div>
           ) : (
