@@ -52,8 +52,12 @@ export async function PUT(request: NextRequest) {
       updateData.identityVerified = data.identityVerified;
     }
     
-    if (data.phoneVerified !== undefined) {
-      updateData.phoneVerified = data.phoneVerified;
+    if (data.faceVerified !== undefined) {
+      updateData.faceVerified = data.faceVerified;
+    }
+
+    if (data.faceImage !== undefined) {
+      updateData.faceImage = data.faceImage;
     }
 
     // Only update name if it hasn't been changed before

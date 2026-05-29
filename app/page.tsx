@@ -1,17 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Star } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 
+interface Post {
+  id: string;
+  title: string;
+  type: string;
+  description: string;
+  tags: string[];
+  images: string[];
+  createdAt: string;
+  author?: { name: string; image: string | null };
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [showSearchBar, setShowSearchBar] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        const res = await fetch('/api/posts');
+        if (res.ok) {
+          const data = await res.json();
+          setPosts(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setIsLoadingPosts(false);
+      }
+    }
+    fetchPosts();
+  }, []);
 
   const testimonials = [
     {
@@ -54,38 +84,16 @@ export default function HomePage() {
     },
   ];
 
-  const posts = [
-    {
-      id: 1,
-      type: 'Apartment',
-      title: 'Spacious room in downtown with natural light',
-      description: 'Modern apartment near transit with utilities included in rent',
-      timeAgo: 'Posted 2 hours ago',
-      user: 'Ahmed Kari',
-      tags: ['Modern', 'Downtown', 'Furnished'],
-      image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop',
-    },
-    {
-      id: 2,
-      type: 'House',
-      title: 'Quiet neighborhood seeking responsible roommate',
-      description: 'Established household needs someone for the spare bedroom',
-      timeAgo: 'Posted 1 day ago',
-      user: 'Fatima Azizi',
-      tags: ['Quiet', 'Shared', 'Utilities Included'],
-      image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop',
-    },
-    {
-      id: 3,
-      type: 'Studio',
-      title: 'Cozy studio available for immediate occupancy',
-      description: 'Furnished unit with kitchen and bathroom in walkable area',
-      timeAgo: 'Posted 2 days ago',
-      user: 'Karim Ben',
-      tags: ['Modern', 'Balcony', 'Near Park'],
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop',
-    },
-  ];
+  // Helper to format relative time
+  function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `Posted ${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `Posted ${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `Posted ${days}d ago`;
+  }
 
   return (
     <div className="bg-white">
@@ -150,12 +158,21 @@ export default function HomePage() {
               View all
             </button>
           </div>
+          {isLoadingPosts ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-500">Loading posts...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-500">No posts yet. Be the first to post!</p>
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
-              <div key={post.id} className="border border-gray-300 rounded overflow-hidden group hover:shadow-lg transition-shadow">
+              <div key={post.id} className="border border-gray-300 rounded overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
                 <div className="relative h-48 bg-gray-200 overflow-hidden">
                   <Image
-                    src={post.image || "/placeholder.svg"}
+                    src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
                     alt={post.title}
                     width={400}
                     height={300}
@@ -166,16 +183,16 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
                     <div>
                       <p className="text-white text-xs font-semibold">{post.type}</p>
-                      <p className="text-white text-xs mt-1">{post.timeAgo}</p>
+                      <p className="text-white text-xs mt-1">{timeAgo(post.createdAt)}</p>
                     </div>
                     <div className="text-white">
-                      <p className="text-sm font-semibold">{post.user}</p>
+                      <p className="text-sm font-semibold">{post.author?.name || 'Anonymous'}</p>
                     </div>
                   </div>
                 </div>
                 <div className="p-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{post.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{post.description}</p>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{post.description}</p>
                   
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -189,9 +206,9 @@ export default function HomePage() {
                     ))}
                   </div>
                   
-                  <a href="/posts" className="text-gray-900 font-semibold flex items-center gap-1 hover:text-gray-600">
+                  <span className="text-gray-900 font-semibold flex items-center gap-1 hover:text-gray-600">
                     View details <span>›</span>
-                  </a>
+                  </span>
                 </div>
               </div>
             ))}

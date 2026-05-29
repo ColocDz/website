@@ -30,9 +30,8 @@ model User {
   nameChanged     Boolean   @default(false)
   isArchived      Boolean   @default(false)
   identityVerified Boolean  @default(false)
-  phoneVerified   Boolean   @default(false)
-  phoneOtp        String?
-  phoneOtpExpiry  DateTime?
+  faceVerified    Boolean   @default(false)
+  faceImage       String?
 
   // Relations
   sessions        Session[]
