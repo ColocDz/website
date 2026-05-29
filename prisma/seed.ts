@@ -8,6 +8,7 @@ async function main() {
 
   // ─── Clean existing data ───
   console.log('🧹 Cleaning existing data...');
+  await prisma.comment.deleteMany();
   await prisma.message.deleteMany();
   await prisma.conversation.deleteMany();
   await prisma.post.deleteMany();
@@ -35,6 +36,7 @@ async function main() {
       faceImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AhmedFace',
       identityVerified: true,
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed',
+      password: 'Test1234!',
     },
   });
 
@@ -67,6 +69,7 @@ async function main() {
       faceImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FatimaFace',
       identityVerified: true,
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima',
+      password: 'Test1234!',
     },
   });
 
