@@ -31,7 +31,8 @@ async function main() {
       bio: 'Engineering student looking for a quiet roommate in downtown Algiers.',
       wilaya: '16 - Alger',
       city: 'Bab El Oued',
-      phoneVerified: true,
+      faceVerified: true,
+      faceImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AhmedFace',
       identityVerified: true,
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed',
     },
@@ -62,7 +63,8 @@ async function main() {
       bio: 'Medical student looking for a clean, well-organized colocation near the hospital.',
       wilaya: '31 - Oran',
       city: 'Centre Ville',
-      phoneVerified: true,
+      faceVerified: true,
+      faceImage: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FatimaFace',
       identityVerified: true,
       image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima',
     },
@@ -140,7 +142,7 @@ async function main() {
   console.log('  Posts:');
   console.log(`    1. "${post1.title.substring(0, 45)}..." by Ahmed`);
   console.log(`    2. "${post2.title.substring(0, 45)}..." by Fatima`);
-  console.log('  Both accounts are phone & identity verified.');
+  console.log('  Both accounts are face & identity verified.');
   console.log('══════════════════════════════════════════\n');
 }
 

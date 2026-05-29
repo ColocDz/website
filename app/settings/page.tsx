@@ -7,6 +7,7 @@ import { Bell, Lock, User, Upload, IdCard, AlertCircle } from 'lucide-react';
 import { RiArrowGoBackFill } from 'react-icons/ri';
 import { Navbar } from '@/components/layout/navbar';
 import { useSession, signOut } from '@/lib/auth-client';
+import FaceVerification from '@/components/face-verification';
 
 const wilayas = [
   '01 - Adrar','02 - Chlef','03 - Laghouat','04 - Oum El Bouaghi','05 - Batna',
@@ -46,18 +47,15 @@ export default function SettingsPage() {
     birthday: '',
     nameChanged: false,
     identityVerified: false,
-    phoneVerified: false
+    faceVerified: false,
+    faceImage: ''
   });
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteValidation, setDeleteValidation] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [isSendingOTP, setIsSendingOTP] = useState(false);
-  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [faceModalOpen, setFaceModalOpen] = useState(false);
 
   const [idCardImage, setIdCardImage] = useState('');
 
@@ -79,9 +77,9 @@ export default function SettingsPage() {
             birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : '',
             nameChanged: data.nameChanged || false,
             identityVerified: data.identityVerified || false,
-            phoneVerified: data.phoneVerified || false,
+            faceVerified: data.faceVerified || false,
+            faceImage: data.faceImage || '',
           });
-          if (data.phoneVerified) setPhoneVerified(true);
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -164,88 +162,27 @@ export default function SettingsPage() {
     }
   };
 
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
-
-  // Initialize reCAPTCHA on mount (after loading is done)
-  useEffect(() => {
-    if (isPending) return;
-    
-    import('firebase/auth').then(({ RecaptchaVerifier }) => {
-      import('@/lib/firebase').then(({ auth }) => {
-        if (!window.recaptchaVerifier) {
-          try {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-              'size': 'invisible',
-            });
-          } catch (e) {
-            console.error('Recaptcha error:', e);
-          }
-        }
-      });
-    });
-  }, [isPending]);
-
-  const handleSendOTP = async () => {
-    if (!profile.phone || profile.phone.length < 8) {
-      setErrorMsg('Please enter a valid phone number (at least 8 digits)');
-      return;
-    }
-    setIsSendingOTP(true);
+  const handleFaceVerified = async (faceImage: string) => {
+    setIsSaving(true);
     setErrorMsg('');
     try {
-      const { signInWithPhoneNumber } = await import('firebase/auth');
-      const { auth } = await import('@/lib/firebase');
-      
-      const appVerifier = window.recaptchaVerifier;
-      const phoneNumber = `+213${profile.phone}`;
-      
-      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-      setConfirmationResult(confirmation);
-      setOtpSent(true);
-    } catch (error: any) {
-      console.error(error);
-      setErrorMsg('Failed to send SMS. Ensure number format is correct or try again.');
-      // Reset recaptcha if error
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.render().then((widgetId: any) => {
-          grecaptcha.reset(widgetId);
-        });
-      }
-    } finally {
-      setIsSendingOTP(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otpCode || !confirmationResult) {
-      setErrorMsg('Please enter the OTP code');
-      return;
-    }
-    setIsVerifyingOTP(true);
-    setErrorMsg('');
-    try {
-      // Confirm the OTP code with Firebase
-      await confirmationResult.confirm(otpCode);
-      
-      // Update our database via our API
       const res = await fetch('/api/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneVerified: true, phone: profile.phone })
+        body: JSON.stringify({ faceVerified: true, faceImage })
       });
       
-      if (!res.ok) throw new Error('Failed to update phone verification status');
+      if (!res.ok) throw new Error('Failed to update face verification status');
       
-      setPhoneVerified(true);
-      setOtpSent(false);
-      setProfile(prev => ({ ...prev, phoneVerified: true }));
+      setProfile(prev => ({ ...prev, faceVerified: true, faceImage }));
+      setFaceModalOpen(false);
       setErrorMsg('');
       router.refresh();
     } catch (error: any) {
       console.error(error);
-      setErrorMsg('Invalid OTP code. Please try again.');
+      setErrorMsg(error.message || 'Failed to verify face. Please try again.');
     } finally {
-      setIsVerifyingOTP(false);
+      setIsSaving(false);
     }
   };
 
@@ -490,56 +427,49 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Phone Number</label>
-                    <div className="flex gap-2 mb-2">
+                    <div className="flex gap-2">
                       <div className="px-4 py-3 border border-transparent bg-gray-100 text-gray-600 rounded-lg w-20 flex items-center justify-center font-medium">
                         +213
                       </div>
                       <input 
                         type="tel" 
                         value={profile.phone}
-                        onChange={(e) => {
-                           setProfile({...profile, phone: e.target.value});
-                           setPhoneVerified(false);
-                        }}
-                        disabled={phoneVerified || otpSent}
+                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
                         placeholder="555 123 456"
-                        className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent ${phoneVerified || otpSent ? 'bg-gray-100 text-gray-500 border-transparent cursor-not-allowed' : 'border-gray-300'}`} 
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent" 
                       />
-                      {!phoneVerified && !otpSent && (
-                        <button 
-                          onClick={handleSendOTP}
-                          disabled={isSendingOTP || !profile.phone}
-                          className="px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap"
-                        >
-                          {isSendingOTP ? 'Sending...' : 'Verify'}
-                        </button>
-                      )}
-                      {phoneVerified && (
-                        <div className="px-4 py-3 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg flex items-center justify-center font-medium">
-                          Verified ✓
+                    </div>
+                  </div>
+                </div>
+
+                {/* Face Verification Section */}
+                <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Face Verification</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Verify your identity via real-time camera face detection to unlock full listing details, host contact, and room matching features.
+                  </p>
+                  {profile.faceVerified ? (
+                    <div className="flex items-center gap-3">
+                      <div className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-sm">
+                        Face Verified ✓
+                      </div>
+                      {profile.faceImage && (
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden border border-emerald-300">
+                          <Image src={profile.faceImage} alt="Face verification snapshot" fill className="object-cover" />
                         </div>
                       )}
                     </div>
-                    
-                    {otpSent && !phoneVerified && (
-                      <div className="flex gap-2 mt-2">
-                        <input
-                          type="text"
-                          placeholder="Enter OTP Code"
-                          value={otpCode}
-                          onChange={(e) => setOtpCode(e.target.value)}
-                          className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                        <button 
-                          onClick={handleVerifyOTP}
-                          disabled={isVerifyingOTP || !otpCode}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {isVerifyingOTP ? 'Verifying...' : 'Confirm'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setFaceModalOpen(true);
+                      }}
+                      className="px-6 py-2.5 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors animate-pulse"
+                    >
+                      Start Face Verification
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -753,7 +683,23 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div id="recaptcha-container"></div>
+      {faceModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setFaceModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 font-bold text-xl p-2"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold mb-4">Complete Face Verification</h2>
+            <FaceVerification 
+              isAlreadyVerified={profile.faceVerified} 
+              onVerified={handleFaceVerified} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
