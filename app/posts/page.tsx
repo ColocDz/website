@@ -14,7 +14,7 @@ interface Post {
   price: number;
   tags: string[];
   createdAt: string;
-  user?: { name: string; image: string | null };
+  author?: { name: string; image: string | null };
   description: string;
   images: string[];
 }

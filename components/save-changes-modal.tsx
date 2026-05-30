@@ -12,15 +12,14 @@ interface SaveChangesNodalProps{
     isLoading?: boolean;
 }
 
-export const SaveChangesNodal: React.FC<SaveChangesNodalProps> = {(
+export const SaveChangesNodal: React.FC<SaveChangesNodalProps> = ({
     isOpen,
     title,
     message,
     onConfirm,
     onCancel,
     isLoading = false,
-    
-)} => {
+}) => {
     if (!isOpen) return null;
 
     return(

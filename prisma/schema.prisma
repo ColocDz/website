@@ -33,6 +33,9 @@ model User {
   faceVerified    Boolean   @default(false)
   faceImage       String?
   password        String?
+  phoneOtp        String?
+  phoneOtpExpiry  DateTime?
+  phoneVerified   Boolean   @default(false)
 
   // Relations
   sessions        Session[]
@@ -117,6 +120,9 @@ model Conversation {
   // Participants (many-to-many via User.conversationIds)
   participants   User[]    @relation(fields: [participantIds], references: [id])
   participantIds String[]  @db.ObjectId
+
+  // Users who have archived this conversation (per-user archival)
+  archivedBy     String[]  @db.ObjectId
 
   // Messages
   messages       Message[]

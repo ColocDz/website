@@ -111,6 +111,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           receiverId: post.authorId,

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Fetch conversations where the user is a participant
     const conversations = await prisma.conversation.findMany({
       where: {
-        participantIds: { has: userId }
+        participantIds: { has: userId },
       },
       include: {
         messages: {
@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
           id: conv.id,
           otherUser,
           lastMessage: conv.messages[0] || null,
-          updatedAt: conv.updatedAt
+          updatedAt: conv.updatedAt,
+          archived: conv.archivedBy?.includes(userId) ?? false,
         };
       })
     );
