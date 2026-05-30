@@ -15,10 +15,38 @@ interface Message {
 
 interface Conversation {
   id: string;
-  otherUser: { id: string; name: string; image: string | null } | null;
+  otherUser: { id: string; name: string; lastName: string | null; image: string | null } | null;
   lastMessage: Message | null;
   updatedAt: string;
 }
+
+const formatTime = (dateStr: string) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  }
+  
+  return date.toLocaleDateString();
+};
+
+const formatTimeSeparator = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  if (date.toDateString() === now.toDateString()) return 'Today';
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return date.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+};
 
 export default function MessagesPage() {
   const { data: session } = useSession();
@@ -186,13 +214,17 @@ export default function MessagesPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-semibold text-gray-900 text-sm">{conv.otherUser?.name || 'Unknown User'}</p>
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {conv.otherUser ? `${conv.otherUser.name} ${conv.otherUser.lastName || ''}`.trim() : 'Unknown User'}
+                        </p>
                         <span className="text-xs text-gray-500 flex-shrink-0">
-                          {conv.updatedAt ? new Date(conv.updatedAt).toLocaleDateString() : ''}
+                          {conv.updatedAt ? formatTime(conv.updatedAt) : ''}
                         </span>
                       </div>
-                      <p className="text-sm truncate text-gray-600">
-                        {conv.lastMessage?.content || 'Started a conversation'}
+                      <p className="text-xs truncate text-gray-500 mt-0.5">
+                        {conv.lastMessage
+                          ? (conv.lastMessage.senderId === session?.user?.id ? 'You: ' : '') + conv.lastMessage.content
+                          : 'Started a conversation'}
                       </p>
                     </div>
                   </button>
@@ -206,7 +238,7 @@ export default function MessagesPage() {
         {selectedChat !== null ? (
           <div className="flex-1 flex flex-col">
             {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+            <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
                 <button className="md:hidden text-gray-600 hover:text-gray-900" onClick={() => setSelectedChat(null)}>← Back</button>
                 <Image
@@ -217,24 +249,45 @@ export default function MessagesPage() {
                   className="rounded-full"
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">{activeConversation?.otherUser?.name || 'Unknown User'}</p>
+                  <p className="font-semibold text-gray-900">
+                    {activeConversation?.otherUser 
+                      ? `${activeConversation.otherUser.name} ${activeConversation.otherUser.lastName || ''}`.trim() 
+                      : 'Unknown User'}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 flex flex-col">
-              {messages.map((msg) => {
+              {messages.map((msg, index) => {
                 const isMe = msg.senderId === session?.user?.id;
+                
+                // Determine if we should show a date separator
+                const msgDateStr = new Date(msg.createdAt).toDateString();
+                const prevMsgDateStr = index > 0 ? new Date(messages[index - 1].createdAt).toDateString() : null;
+                const showSeparator = msgDateStr !== prevMsgDateStr;
+                
                 return (
-                  <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs px-4 py-2 rounded-lg ${isMe ? 'bg-black text-white' : 'bg-white border border-gray-300 text-gray-900'}`}>
-                      <p>{msg.content}</p>
-                      <p className={`text-xs mt-1 ${isMe ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </p>
+                  <React.Fragment key={msg.id}>
+                    {showSeparator && (
+                      <div className="flex justify-center my-2">
+                        <span className="px-2.5 py-0.5 bg-gray-200/60 rounded-full text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                          {formatTimeSeparator(msg.createdAt)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${
+                        isMe ? 'bg-black text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-900 rounded-tl-none'
+                      }`}>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        <p className={`text-[9px] mt-1 text-right font-medium ${isMe ? 'text-gray-300/80' : 'text-gray-400'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 );
               })}
             </div>

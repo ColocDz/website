@@ -5,9 +5,12 @@ import { headers } from 'next/headers';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: Promise<{ conversationId: string }> }
 ) {
   try {
+    const unwrappedParams = await params;
+    const { conversationId } = unwrappedParams;
+    
     const session = await auth.api.getSession({ headers: await headers() });
                          
     if (!session || !session.user) {
@@ -16,7 +19,7 @@ export async function GET(
 
     // Verify the user is part of the conversation
     const conversation = await prisma.conversation.findUnique({
-      where: { id: params.conversationId }
+      where: { id: conversationId }
     });
 
     if (!conversation || !conversation.participantIds.includes(session.user.id)) {
@@ -25,7 +28,7 @@ export async function GET(
 
     // Fetch messages for the conversation
     const messages = await prisma.message.findMany({
-      where: { conversationId: params.conversationId },
+      where: { conversationId },
       orderBy: { createdAt: 'asc' }
     });
 

@@ -59,9 +59,12 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const unwrappedParams = await params;
+    const { id } = unwrappedParams;
+    
     const session = await auth.api.getSession({ headers: await headers() });
                          
     if (!session || !session.user) {
@@ -69,19 +72,19 @@ export async function DELETE(
     }
 
     const post = await prisma.post.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    if (post.userId !== session.user.id) {
+    if (post.authorId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await prisma.post.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Post deleted successfully' });
