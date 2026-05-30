@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function GET(
   request: NextRequest,
@@ -14,8 +16,16 @@ export async function GET(
           select: {
             id: true,
             name: true,
+            lastName: true,
             image: true,
-            lastName: true
+            phone: true,
+            gender: true,
+            birthday: true,
+            bio: true,
+            wilaya: true,
+            city: true,
+            identityVerified: true,
+            faceVerified: true
           }
         },
         comments: {
@@ -24,8 +34,8 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                image: true,
-                lastName: true
+                lastName: true,
+                image: true
               }
             }
           },
@@ -40,10 +50,6 @@ export async function GET(
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    if (post.isArchived) {
-      return NextResponse.json({ error: 'Post is archived' }, { status: 404 });
-    }
-
     return NextResponse.json(post);
   } catch (error) {
     console.error('Error fetching post:', error);
@@ -56,18 +62,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const sessionToken = request.cookies.get('better-auth.session_token')?.value || 
-                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
                          
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true }
-    });
-
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -1,23 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { conversationId: string } }
 ) {
   try {
-    const sessionToken = request.cookies.get('better-auth.session_token')?.value || 
-                         request.cookies.get('__Secure-better-auth.session_token')?.value;
+    const session = await auth.api.getSession({ headers: await headers() });
                          
-    if (!sessionToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true }
-    });
-
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
