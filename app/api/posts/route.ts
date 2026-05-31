@@ -10,9 +10,15 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type');
     const query = searchParams.get('query');
 
+    const session = await auth.api.getSession({ headers: await headers() });
+
     const whereClause: any = { isArchived: false };
     if (userId) {
-      whereClause.authorId = userId; // Allow fetching user's own posts/drafts
+      whereClause.authorId = userId;
+      // If requester is not the target user, only show published posts
+      if (!session || session.user.id !== userId) {
+        whereClause.status = 'published';
+      }
     } else {
       whereClause.status = 'published'; // Only show published in public feed
     }
@@ -29,7 +35,7 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       include: {
         author: {
-          select: { name: true, image: true }
+          select: { id: true, name: true, lastName: true, email: true, image: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -68,8 +74,8 @@ export async function POST(request: NextRequest) {
         wilaya: data.wilaya,
         bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
         bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
-        amenities: data.amenities ? data.amenities.split(',').map((s: string) => s.trim()) : [],
-        tags: data.tags ? data.tags.split(',').map((s: string) => s.trim()) : [],
+        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()) : data.amenities) : [],
+        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()) : data.tags) : [],
         images: data.images || [],
         status: data.status || 'published',
         authorId: session.user.id

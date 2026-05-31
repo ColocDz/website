@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Star } from 'lucide-react';
+import { Star, Heart } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 
@@ -15,7 +15,7 @@ interface Post {
   tags: string[];
   images: string[];
   createdAt: string;
-  author?: { name: string; image: string | null };
+  author?: { id: string; name: string; image: string | null };
 }
 
 export default function HomePage() {
@@ -25,6 +25,7 @@ export default function HomePage() {
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -40,8 +41,41 @@ export default function HomePage() {
         setIsLoadingPosts(false);
       }
     }
+    async function fetchSavedPosts() {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const user = await res.json();
+          setSavedPostIds(user.savedPostIds || []);
+        }
+      } catch (e) {
+        console.error('Not logged in or failed to fetch user saved posts');
+      }
+    }
     fetchPosts();
+    fetchSavedPosts();
   }, []);
+
+  const toggleSavePost = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/posts/${postId}/save`, { method: 'POST' });
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.saved) {
+          setSavedPostIds(prev => [...prev, postId]);
+        } else {
+          setSavedPostIds(prev => prev.filter(id => id !== postId));
+        }
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+    }
+  };
 
   const testimonials = [
     {
@@ -169,7 +203,7 @@ export default function HomePage() {
           ) : null}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
-              <div key={post.id} className="border border-gray-300 rounded overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+              <div key={post.id} className="border border-gray-300 rounded overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer relative" onClick={() => router.push(`/post/${post.id}`)}>
                 <div className="relative h-48 bg-gray-200 overflow-hidden">
                   <Image
                     src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
@@ -179,14 +213,35 @@ export default function HomePage() {
                     loading="eager"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
+                  {/* Save Button */}
+                  <button 
+                    className="absolute top-3 right-3 bg-white rounded-full p-1.5 hover:bg-gray-100 shadow-sm transition-all active:scale-90 z-20" 
+                    onClick={(e) => toggleSavePost(post.id, e)}
+                  >
+                    <Heart 
+                      size={16} 
+                      fill={savedPostIds.includes(post.id) ? "red" : "none"} 
+                      className={savedPostIds.includes(post.id) ? "text-red-500" : "text-gray-600"} 
+                    />
+                  </button>
                   {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 z-10">
                     <div>
                       <p className="text-white text-xs font-semibold">{post.type}</p>
                       <p className="text-white text-xs mt-1">{timeAgo(post.createdAt)}</p>
                     </div>
                     <div className="text-white">
-                      <p className="text-sm font-semibold">{post.author?.name || 'Anonymous'}</p>
+                      <p 
+                        className="text-sm font-semibold hover:underline cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (post.author?.id) {
+                            router.push(`/profile?userId=${post.author.id}`);
+                          }
+                        }}
+                      >
+                        {post.author?.name || 'Anonymous'}
+                      </p>
                     </div>
                   </div>
                 </div>

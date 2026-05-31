@@ -13,7 +13,7 @@ const postSchema = z.object({
   type: z.enum(['Apartment', 'House', 'Studio', 'Room', 'Shared Space']),
   postType: z.enum(['offer', 'request']),
   description: z.string().min(100, 'Description must be at least 100 characters').max(5000, 'Description cannot exceed 5,000 characters'),
-  price: z.string().min(1, 'Price is required').refine((val) => !isNaN(Number(val)) && Number(val) > 0, 'Price must be a valid positive number'),
+  price: z.string().min(1, 'Price is required').refine((val) => !isNaN(Number(val)) && Number(val) >= 1000, 'Price must be at least 1,000 DA'),
   wilaya: z.string().min(1, 'Wilaya is required'),
   location: z.string().min(5, 'Location must be at least 5 characters'),
   bedrooms: z.string().min(1, 'Bedrooms are required'),
@@ -57,7 +57,9 @@ function AddingPostFormContent() {
   const [errorMsg, setErrorMsg] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isFaceVerified, setIsFaceVerified] = useState(false);
+  const [isFaceVerified, setIsFaceVerified] = useState<boolean | null>(null);
+  const [isIdVerified, setIsIdVerified] = useState<boolean>(false);
+  const [postCount, setPostCount] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -126,9 +128,11 @@ function AddingPostFormContent() {
         if (res.ok) {
           const userData = await res.json();
           setIsFaceVerified(!!userData.faceVerified);
+          setIsIdVerified(!!userData.identityVerified);
+          setPostCount(userData.postCount || 0);
         }
       } catch (e) {
-        console.error('Failed to check face status');
+        console.error('Failed to check verification status');
       }
     }
     checkIdentity();
@@ -241,7 +245,9 @@ function AddingPostFormContent() {
         </div>
       )}
 
-      {!isFaceVerified ? (
+      {isFaceVerified === null ? (
+        <div className="text-center py-12 text-gray-500">Checking verification status...</div>
+      ) : !isFaceVerified ? (
         <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm">
           <h2 className="text-xl font-bold text-red-800 mb-2">Face Verification Required</h2>
           <p className="text-red-700 mb-6">
@@ -252,6 +258,19 @@ function AddingPostFormContent() {
             className="px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors"
           >
             Go to Settings
+          </button>
+        </div>
+      ) : (!editId && postCount >= 3 && !isIdVerified) ? (
+        <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm">
+          <h2 className="text-xl font-bold text-red-800 mb-2">Identity Verification Required</h2>
+          <p className="text-red-700 mb-6">
+            You have already published {postCount} posts. To publish more than 3 posts, you must verify your identity by uploading your National ID Card in settings.
+          </p>
+          <button
+            onClick={() => router.push('/settings')}
+            className="px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors"
+          >
+            Go to Settings to Upload ID
           </button>
         </div>
       ) : (
@@ -346,7 +365,7 @@ function AddingPostFormContent() {
                 {errors.bathrooms && <p className="text-red-500 text-xs mt-1">{errors.bathrooms.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Monthly Price ($) <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Monthly Price (DA) <span className="text-red-500">*</span></label>
                 <input type="number" {...register('price')} placeholder="0" className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-black focus:border-transparent"/>
                 {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
               </div>

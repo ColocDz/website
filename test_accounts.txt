@@ -1,0 +1,4 @@
+Account	Email	Password
+Ahmed Kari	ahmed@test.com	Test1234!
+Fatima Azizi	fatima@test.com	Test1234!
+

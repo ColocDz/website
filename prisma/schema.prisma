@@ -36,6 +36,7 @@ model User {
   phoneOtp        String?
   phoneOtpExpiry  DateTime?
   phoneVerified   Boolean   @default(false)
+  savedPostIds    String[]
 
   // Relations
   sessions        Session[]

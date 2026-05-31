@@ -18,6 +18,7 @@ export async function GET(
             name: true,
             lastName: true,
             image: true,
+            email: true,
             phone: true,
             gender: true,
             birthday: true,
@@ -35,7 +36,8 @@ export async function GET(
                 id: true,
                 name: true,
                 lastName: true,
-                image: true
+                image: true,
+                email: true
               }
             }
           },

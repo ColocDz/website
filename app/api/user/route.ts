@@ -6,12 +6,54 @@ import { headers } from 'next/headers';
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
-                         
+    const { searchParams } = new URL(request.url);
+    const targetUserId = searchParams.get('userId');
+
+    if (targetUserId) {
+      const user = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: {
+          id: true,
+          name: true,
+          lastName: true,
+          image: true,
+          email: true,
+          gender: true,
+          bio: true,
+          wilaya: true,
+          city: true,
+          isPrivate: true,
+          faceVerified: true,
+          identityVerified: true,
+          phone: true,
+        }
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      const postCount = await prisma.post.count({
+        where: { authorId: targetUserId, isArchived: false, status: 'published' }
+      });
+
+      const isSelf = session?.user?.id === targetUserId;
+      if (user.isPrivate && !isSelf) {
+        return NextResponse.json({
+          ...user,
+          email: null,
+          phone: null,
+          postCount
+        });
+      }
+
+      return NextResponse.json({ ...user, postCount });
+    }
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // get the latest user from db
     const user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
@@ -20,7 +62,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    const postCount = await prisma.post.count({
+      where: { authorId: session.user.id, isArchived: false }
+    });
+
+    return NextResponse.json({ ...user, postCount });
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });

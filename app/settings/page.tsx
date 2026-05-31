@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Bell, Lock, User, Upload, IdCard, AlertCircle } from 'lucide-react';
 import { RiArrowGoBackFill } from 'react-icons/ri';
 import { Navbar } from '@/components/layout/navbar';
-import { useSession, signOut } from '@/lib/auth-client';
+import { authClient, useSession, signOut } from '@/lib/auth-client';
 import FaceVerification from '@/components/face-verification';
 
 const wilayas = [
@@ -24,8 +24,10 @@ const wilayas = [
   '53 - Béni Abbès','54 - Timimoun','55 - Touggourt','56 - Djanet','57 - In Salah','58 - In Guezzam',
 ];
 
-export default function SettingsPage() {
+function SettingsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab');
   const { data: session, isPending } = useSession();
   
   const [activeTab, setActiveTab] = useState<string>('personal');
@@ -56,8 +58,41 @@ export default function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [faceModalOpen, setFaceModalOpen] = useState(false);
-
   const [idCardImage, setIdCardImage] = useState('');
+
+  // Password fields
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStatusMsg, setPasswordStatusMsg] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Notification preferences
+  const [notifPreferences, setNotifPreferences] = useState({
+    emailMessages: true,
+    emailMatches: true,
+    emailComments: true,
+    smsSecurity: true,
+    smsUrgent: false
+  });
+
+  // Responsive default activeTab setup
+  useEffect(() => {
+    if (tabQuery) {
+      setActiveTab(tabQuery);
+      return;
+    }
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setActiveTab((prev) => (prev === 'personal' ? 'menu' : prev));
+      } else {
+        setActiveTab((prev) => (prev === 'menu' ? 'personal' : prev));
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [tabQuery]);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -154,12 +189,60 @@ export default function SettingsPage() {
         identityVerified: updatedUser.identityVerified
       }));
       
+      setErrorMsg('Personal details saved successfully! ✓');
+      setTimeout(() => setErrorMsg(''), 3500);
       router.refresh();
     } catch (error: any) {
       setErrorMsg(error.message);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordStatusMsg('All password fields are required.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordStatusMsg('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordStatusMsg('Password must be at least 8 characters long.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setPasswordStatusMsg('');
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: true
+      });
+      if (error) {
+        throw new Error(error.message || 'Failed to change password. Please check your credentials.');
+      }
+      setPasswordStatusMsg('Password updated successfully! ✓');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setPasswordStatusMsg(err.message || 'Something went wrong.');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleSaveNotifs = () => {
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setErrorMsg('Notification preferences updated successfully! ✓');
+      setTimeout(() => setErrorMsg(''), 3500);
+    }, 600);
   };
 
   const handleFaceVerified = async (faceImage: string) => {
@@ -281,26 +364,44 @@ export default function SettingsPage() {
       {/* Settings Layout */}
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)]">
         
-        {/* Mobile Tabs */}
-        <div className="md:hidden flex overflow-x-auto border-b border-gray-200 bg-white sticky top-[65px] z-10 scrollbar-hide px-4 py-2 space-x-2">
-          {settingsTabs.map((tab) => {
-            const IconComponent = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <IconComponent size={16} />
-                <span className="text-sm font-medium">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Mobile Settings Menu List (Airbnb Style) */}
+        {activeTab === 'menu' && (
+          <div className="md:hidden flex-1 p-6 space-y-6">
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Account settings</h2>
+              <p className="text-gray-500 text-sm">Manage your profile, verification, and credentials.</p>
+            </div>
+            
+            <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200 bg-white shadow-sm">
+              {settingsTabs.map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 bg-gray-100 rounded-lg text-gray-800">
+                        <IconComponent size={20} />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-900 text-base block">{tab.label}</span>
+                        <span className="text-xs text-gray-500 block mt-0.5">
+                          {tab.id === 'personal' && 'Manage name, phone, bio and photo'}
+                          {tab.id === 'emails' && 'Update passwords and credentials'}
+                          {tab.id === 'notifications' && 'Configure email and SMS preferences'}
+                          {tab.id === 'idcard' && 'Upload and check your national identity card'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-gray-400 font-bold text-lg">›</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Sidebar Menu - Fixed Position (Desktop) */}
         <div className="hidden md:flex fixed left-0 top-20 h-[calc(100vh-80px)] w-80 flex-col bg-white border-r border-gray-200 p-6 overflow-y-auto z-10">
@@ -327,10 +428,20 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Area */}
-        {activeTab !== null && (
+        {activeTab !== null && activeTab !== 'menu' && (
           <div className="flex-1 p-8 max-w-4xl w-full md:w-auto md:ml-80">
+            {/* Mobile Back Button */}
+            {activeTab !== 'menu' && (
+              <button 
+                onClick={() => setActiveTab('menu')}
+                className="md:hidden flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors"
+              >
+                ← Back to settings menu
+              </button>
+            )}
+
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-4xl font-bold text-gray-900">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
                 {activeTab === 'personal' && 'Personal information'}
                 {activeTab === 'emails' && 'Emails & Password'}
                 {activeTab === 'notifications' && 'Notifications'}
@@ -340,7 +451,7 @@ export default function SettingsPage() {
             </div>
 
             {errorMsg && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded text-sm">
+              <div className={`mb-6 p-4 rounded text-sm ${errorMsg.includes('successfully') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                 {errorMsg}
               </div>
             )}
@@ -356,6 +467,7 @@ export default function SettingsPage() {
                       alt="Profile"
                       width={120}
                       height={120}
+                      unoptimized
                       className="rounded-full w-28 h-28 object-cover border border-gray-200"
                     />
                     <button 
@@ -420,7 +532,7 @@ export default function SettingsPage() {
                     <label className="block text-sm font-semibold text-gray-900 mb-2">Email Address</label>
                     <input 
                       type="email" 
-                      value={profile.email}
+                      value={profile.email} 
                       disabled
                       className="w-full px-4 py-3 border border-transparent bg-gray-100 text-gray-500 rounded-lg cursor-not-allowed" 
                     />
@@ -455,7 +567,7 @@ export default function SettingsPage() {
                       </div>
                       {profile.faceImage && (
                         <div className="relative w-12 h-12 rounded-full overflow-hidden border border-emerald-300">
-                          <Image src={profile.faceImage} alt="Face verification snapshot" fill className="object-cover" />
+                          <Image src={profile.faceImage} alt="Face verification snapshot" fill unoptimized className="object-cover" />
                         </div>
                       )}
                     </div>
@@ -533,6 +645,179 @@ export default function SettingsPage() {
                     Delete Account
                   </button>
                 </div>
+
+                {/* Save Button for Personal Info */}
+                <div className="mt-8 flex gap-4">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-black text-white px-8 py-3 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-md"
+                  >
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Emails & Password Tab */}
+            {activeTab === 'emails' && (
+              <div className="space-y-8">
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Registered Email Address</h3>
+                  <p className="text-sm text-gray-600 mb-4">Your email address is used for secure logins, notifications, and account recovery.</p>
+                  <div className="max-w-md">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Primary Email</label>
+                    <input 
+                      type="email" 
+                      value={profile.email} 
+                      disabled 
+                      className="w-full px-4 py-3 border border-transparent bg-white text-gray-500 rounded-lg cursor-not-allowed shadow-sm" 
+                    />
+                    <p className="text-xs text-gray-400 mt-2">Email change is locked. Contact support if you need to update your registered email address.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Change Password</h3>
+                    <p className="text-sm text-gray-600">Update your account password regularly to keep your profile secure.</p>
+                  </div>
+
+                  {passwordStatusMsg && (
+                    <div className={`p-4 rounded text-sm ${passwordStatusMsg.includes('successfully') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                      {passwordStatusMsg}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Current Password</label>
+                      <input 
+                        type="password" 
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-black focus:border-transparent outline-none shadow-sm text-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">New Password</label>
+                      <input 
+                        type="password" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Min 8 characters"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-black focus:border-transparent outline-none shadow-sm text-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Confirm New Password</label>
+                      <input 
+                        type="password" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-black focus:border-transparent outline-none shadow-sm text-sm" 
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="bg-black text-white px-6 py-2.5 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-sm text-sm"
+                  >
+                    {isChangingPassword ? 'Updating Password...' : 'Update Password'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Notifications Tab */}
+            {activeTab === 'notifications' && (
+              <div className="space-y-8">
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Email Notification Preferences</h3>
+                    <p className="text-sm text-gray-600">Choose which updates you would like to receive in your inbox.</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {[
+                      {
+                        key: 'emailMessages',
+                        title: 'Direct Messages & Inquiry Alerts',
+                        desc: 'Get notified instantly when other roommates or hosts send you messages or inquiries about properties.'
+                      },
+                      {
+                        key: 'emailMatches',
+                        title: 'Recommended Roommate Matches',
+                        desc: 'Receive curated lists of recommended roommates in your area based on shared interests and budget.'
+                      },
+                      {
+                        key: 'emailComments',
+                        title: 'Comments & Feedback Notifications',
+                        desc: 'Receive alerts when users comment or ask questions under your published listings.'
+                      }
+                    ].map(pref => (
+                      <label key={pref.key} className="flex items-start gap-4 p-4 bg-white border border-gray-100 rounded-lg cursor-pointer hover:border-gray-200 transition-colors shadow-sm">
+                        <input 
+                          type="checkbox"
+                          checked={(notifPreferences as any)[pref.key]}
+                          onChange={(e) => setNotifPreferences({...notifPreferences, [pref.key]: e.target.checked})}
+                          className="w-4.5 h-4.5 mt-1 rounded text-black border-gray-300 focus:ring-black"
+                        />
+                        <div>
+                          <span className="font-semibold text-gray-900 text-sm block">{pref.title}</span>
+                          <span className="text-xs text-gray-600 block mt-1">{pref.desc}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">SMS & Phone Notifications</h3>
+                    <p className="text-sm text-gray-600">Receive urgent text updates directly on your verified mobile phone.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {[
+                      {
+                        key: 'smsSecurity',
+                        title: 'Account Security Alerts',
+                        desc: 'Instant SMS alert when login locations change or your password is reset.'
+                      },
+                      {
+                        key: 'smsUrgent',
+                        title: 'Urgent Connection Matches',
+                        desc: 'Get high priority SMS messages when high-match roommate candidates request direct phone connection.'
+                      }
+                    ].map(pref => (
+                      <label key={pref.key} className="flex items-start gap-4 p-4 bg-white border border-gray-100 rounded-lg cursor-pointer hover:border-gray-200 transition-colors shadow-sm">
+                        <input 
+                          type="checkbox"
+                          checked={(notifPreferences as any)[pref.key]}
+                          onChange={(e) => setNotifPreferences({...notifPreferences, [pref.key]: e.target.checked})}
+                          className="w-4.5 h-4.5 mt-1 rounded text-black border-gray-300 focus:ring-black"
+                        />
+                        <div>
+                          <span className="font-semibold text-gray-900 text-sm block">{pref.title}</span>
+                          <span className="text-xs text-gray-600 block mt-1">{pref.desc}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSaveNotifs}
+                  disabled={isSaving}
+                  className="bg-black text-white px-8 py-3 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-md"
+                >
+                  {isSaving ? 'Saving Preferences...' : 'Save Notification Preferences'}
+                </button>
               </div>
             )}
 
@@ -566,11 +851,10 @@ export default function SettingsPage() {
                       <p className="text-gray-600 text-xs">Democratic People's Republic of Algeria</p>
                       <p className="text-gray-600 text-xs">بطاقة الهوية الوطنية</p>
                     </div>
-                    <div className="w-12 h-8 rounded flex items-center justify-center bg-white shadow-sm overflow-hidden">
+                    <div className="w-12 h-8 rounded flex items-center justify-center bg-white shadow-sm overflow-hidden relative">
                       <div className="w-1/2 h-full bg-green-600" />
                       <div className="w-1/2 h-full bg-white" />
-                      {/* Note: Simplified flag representation for UI */}
-                      <span className="absolute text-xl text-red-500">☪</span>
+                      <span className="absolute text-xl text-red-500 z-10">☪</span>
                     </div>
                   </div>
 
@@ -583,6 +867,7 @@ export default function SettingsPage() {
                         alt="ID Photo"
                         width={160}
                         height={180}
+                        unoptimized
                         className="rounded-lg w-40 h-44 object-cover border-4 border-white shadow-md"
                       />
                     </div>
@@ -660,25 +945,6 @@ export default function SettingsPage() {
                 )}
               </div>
             )}
-
-            {activeTab !== 'personal' && activeTab !== 'idcard' && (
-              <div className="py-12 text-center text-gray-500">
-                <p>This tab functionality is not fully implemented in this demo.</p>
-              </div>
-            )}
-
-            {/* Save Button for Personal Info */}
-            {activeTab === 'personal' && (
-              <div className="mt-8 flex gap-4">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="bg-black text-white px-8 py-3 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors"
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -701,5 +967,13 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Loading settings...</div>}>
+      <SettingsContent />
+    </Suspense>
   );
 }

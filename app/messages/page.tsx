@@ -122,6 +122,7 @@ function SwipeableConvItem({
           alt={fullName}
           width={48}
           height={48}
+          unoptimized
           className="rounded-full flex-shrink-0"
         />
         <div className="flex-1 min-w-0">
@@ -507,6 +508,7 @@ export default function MessagesPage() {
                   alt={activeConversation?.otherUser?.name || "User"}
                   width={40}
                   height={40}
+                  unoptimized
                   className="rounded-full"
                 />
                 <div>

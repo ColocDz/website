@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MapPin, Heart, ArrowLeft, MessageSquare, Tag } from 'lucide-react';
+import { MapPin, Heart, ArrowLeft, MessageSquare, Tag, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useSession } from '@/lib/auth-client';
 
@@ -24,20 +24,38 @@ interface PostDetail {
   title: string;
   type: string;
   wilaya: string | null;
-  price: number;
+  price: string;
   tags: string[];
   createdAt: string;
   description: string;
   images: string[];
   authorId: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  location?: string;
+  amenities?: string[];
   author: {
     id: string;
     name: string;
     lastName: string | null;
     image: string | null;
+    email?: string | null;
+    identityVerified?: boolean;
+    faceVerified?: boolean;
   };
   comments?: Comment[];
 }
+
+const getUserAvatar = (user?: { image?: string | null; email?: string | null; name?: string | null } | null) => {
+  if (user?.image) return user.image;
+  if (user?.email) {
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.email)}`;
+  }
+  if (user?.name) {
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`;
+  }
+  return 'https://www.w3schools.com/howto/img_avatar2.png';
+};
 
 export default function PostDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -48,7 +66,9 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [isFaceVerified, setIsFaceVerified] = useState<boolean | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Comments and message overlay states
   const [commentText, setCommentText] = useState('');
@@ -64,6 +84,8 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         if (userRes.ok) {
           const userData = await userRes.json();
           setIsFaceVerified(!!userData.faceVerified);
+          const savedIds = userData.savedPostIds || [];
+          setIsSaved(savedIds.includes(unwrappedParams.id));
         } else {
           setIsFaceVerified(false);
         }
@@ -78,7 +100,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     } else if (session === null) {
       setIsFaceVerified(false); // guest user
     }
-  }, [session]);
+  }, [session, unwrappedParams.id]);
 
   useEffect(() => {
     async function fetchPost() {
@@ -99,6 +121,26 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     
     fetchPost();
   }, [unwrappedParams.id]);
+
+  const toggleSavePost = async () => {
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/posts/${unwrappedParams.id}/save`, { method: 'POST' });
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        setIsSaved(data.saved);
+      }
+    } catch (error) {
+      console.error('Error toggling save post:', error);
+    }
+  };
 
   const handleMessageAuthor = () => {
     if (!session || !post) return;
@@ -218,11 +260,17 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
               >
                 <ArrowLeft size={20} /> Back to Search
               </button>
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium">
-                  <Heart size={18} /> Save
+                <button 
+                  onClick={toggleSavePost}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium active:scale-95 shadow-sm"
+                >
+                  <Heart 
+                    size={18} 
+                    fill={isSaved ? "red" : "none"} 
+                    className={isSaved ? "text-red-500" : "text-gray-600"} 
+                  />
+                  {isSaved ? 'Saved' : 'Save'}
                 </button>
-              </div>
             </div>
           </div>
 
@@ -230,45 +278,69 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               {/* Image Gallery */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
-                <div className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden cursor-pointer group">
+                <div 
+                  onClick={() => setIsLightboxOpen(true)}
+                  className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden cursor-pointer group"
+                >
                   <Image 
                     src={post.images?.[activeImageIdx] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop'} 
                     alt="Main Image"
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded text-sm font-semibold tracking-wide">
+                  <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded text-sm font-semibold tracking-wide z-10">
                     {post.type}
+                  </div>
+                  <div className="absolute bottom-4 right-4 bg-black/75 backdrop-blur-sm text-white px-3 py-1 rounded text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                    Click to zoom
                   </div>
                 </div>
                 <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2">
-                  {[1, 2, 3, 4].map((idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => post.images?.[idx] && setActiveImageIdx(idx)}
-                      className={`relative h-full rounded-xl overflow-hidden ${post.images?.[idx] ? 'cursor-pointer hover:opacity-90' : 'bg-gray-100'}`}
-                    >
-                      {post.images?.[idx] ? (
-                        <Image 
-                          src={post.images[idx]} 
-                          alt={`Image ${idx}`}
-                          fill
-                          className="object-cover transition-opacity"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-400">
-                          No Image
+                  {(() => {
+                    const otherImages = (post.images || []).map((img, originalIdx) => ({ img, originalIdx }))
+                      .filter(item => item.originalIdx !== activeImageIdx);
+
+                    return [0, 1, 2, 3].map((slotIdx) => {
+                      const item = otherImages[slotIdx];
+                      return (
+                        <div 
+                          key={slotIdx} 
+                          onClick={() => {
+                            if (item) {
+                              setActiveImageIdx(item.originalIdx);
+                            }
+                          }}
+                          className={`relative h-full rounded-xl overflow-hidden ${item ? 'cursor-pointer hover:opacity-90' : 'bg-gray-100'}`}
+                        >
+                          {item ? (
+                            <Image 
+                              src={item.img} 
+                              alt={`Gallery image ${slotIdx + 1}`}
+                              fill
+                              className="object-cover transition-opacity"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50/50 text-sm font-medium">
+                              No Image
+                            </div>
+                          )}
+                          
+                          {/* Overlay for remaining images if total > 5 and this is the 4th thumbnail slot */}
+                          {slotIdx === 3 && otherImages.length > 4 && (
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsLightboxOpen(true);
+                              }}
+                              className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl cursor-pointer hover:bg-black/60 transition-colors"
+                            >
+                              +{otherImages.length - 3}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      
-                      {/* Overlay for remaining images if > 5 */}
-                      {idx === 4 && post.images?.length > 5 && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl">
-                          +{post.images.length - 5}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -362,15 +434,28 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                         post.comments.map((comment) => (
                           <div key={comment.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-start gap-4">
                             <Image
-                              src={comment.author?.image || 'https://www.w3schools.com/howto/img_avatar2.png'}
+                              src={getUserAvatar(comment.author)}
                               alt={comment.author?.name || 'User'}
                               width={40}
                               height={40}
-                              className="rounded-full bg-gray-100 object-cover flex-shrink-0"
+                              unoptimized
+                              className="rounded-full bg-gray-100 object-cover flex-shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
+                              onClick={() => {
+                                if (comment.author?.id) {
+                                  router.push(`/profile?userId=${comment.author.id}`);
+                                }
+                              }}
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
-                                <span className="font-semibold text-gray-900 text-sm">
+                                <span 
+                                  className="font-semibold text-gray-900 text-sm hover:underline cursor-pointer"
+                                  onClick={() => {
+                                    if (comment.author?.id) {
+                                      router.push(`/profile?userId=${comment.author.id}`);
+                                    }
+                                  }}
+                                >
                                   {comment.author?.name} {comment.author?.lastName}
                                 </span>
                                 <span className="text-[10px] text-gray-400">
@@ -395,7 +480,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 <div className="lg:col-span-1">
                   <div className="sticky top-24 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                     <div className="mb-6">
-                      <span className="text-3xl font-bold text-gray-900">{post.price}</span>
+                      <span className="text-3xl font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()}</span>
                       <span className="text-gray-500 font-medium"> DA / month</span>
                     </div>
 
@@ -403,21 +488,36 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
 
                     <div className="mb-6">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Posted By</h3>
-                      <div className="flex items-center gap-4">
+                      <div 
+                        className="flex items-center gap-4 cursor-pointer group"
+                        onClick={() => {
+                          if (post.author?.id) {
+                            router.push(`/profile?userId=${post.author.id}`);
+                          }
+                        }}
+                      >
                         <Image
-                          src={post.author?.image || 'https://www.w3schools.com/howto/img_avatar2.png'}
+                          src={getUserAvatar(post.author)}
                           alt={post.author?.name || 'Author'}
                           width={56}
                           height={56}
-                          className="rounded-full bg-gray-100 object-cover"
+                          unoptimized
+                          className="rounded-full bg-gray-100 object-cover group-hover:opacity-85 transition-opacity"
                         />
                         <div>
-                          <p className="font-bold text-gray-900 text-lg">
+                          <p className="font-bold text-gray-900 text-lg group-hover:underline">
                             {post.author?.name} {post.author?.lastName}
                           </p>
-                          <p className="text-sm text-emerald-600 font-medium flex items-center gap-1">
-                            ✓ Identity Verified
-                          </p>
+                          <div className="flex flex-col gap-0.5 mt-0.5">
+                            {post.author?.identityVerified ? (
+                              <span className="text-xs text-indigo-600 font-medium">✓ Identity Verified</span>
+                            ) : (
+                              <span className="text-xs text-gray-400 font-normal">Identity Unverified</span>
+                            )}
+                            {post.author?.faceVerified && (
+                              <span className="text-xs text-emerald-600 font-medium">✓ Face Verified</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -476,6 +576,74 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 {isSendingMessage ? 'Sending...' : 'Send Message'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {isLightboxOpen && post && post.images && post.images.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 transition-all duration-300">
+          {/* Close & Header */}
+          <div className="flex justify-between items-center text-white p-2">
+            <span className="text-sm font-medium">
+              Image {activeImageIdx + 1} of {post.images.length}
+            </span>
+            <button 
+              onClick={() => setIsLightboxOpen(false)}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white font-bold text-lg"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Main Large Image in Lightbox */}
+          <div className="flex-1 flex items-center justify-center relative max-h-[85vh] w-full">
+            {post.images.length > 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIdx((prev) => (prev === 0 ? post.images.length - 1 : prev - 1));
+                }}
+                className="absolute left-4 z-10 p-3 bg-white/15 hover:bg-white/25 rounded-full text-white transition-colors"
+              >
+                <ChevronLeft size={28} />
+              </button>
+            )}
+
+            <div className="relative w-full h-full max-w-4xl aspect-[4/3] rounded-lg overflow-hidden flex items-center justify-center">
+              <img 
+                src={post.images[activeImageIdx]} 
+                alt={`Image ${activeImageIdx + 1}`}
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {post.images.length > 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIdx((prev) => (prev === post.images.length - 1 ? 0 : prev + 1));
+                }}
+                className="absolute right-4 z-10 p-3 bg-white/15 hover:bg-white/25 rounded-full text-white transition-colors"
+              >
+                <ChevronRight size={28} />
+              </button>
+            )}
+          </div>
+
+          {/* Thumbnail Slider in Lightbox */}
+          <div className="py-4 flex justify-center gap-2 overflow-x-auto max-w-full">
+            {post.images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveImageIdx(idx)}
+                className={`relative w-16 h-12 rounded overflow-hidden flex-shrink-0 transition-all ${
+                  activeImageIdx === idx ? 'ring-2 ring-white scale-105' : 'opacity-50 hover:opacity-80'
+                }`}
+              >
+                <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
           </div>
         </div>
       )}

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const enrichedConversations = await Promise.all(
       conversations.map(async (conv) => {
         const otherUserId = conv.participantIds.find(id => id !== userId);
-        const otherUser = otherUserId ? await prisma.user.findUnique({ where: { id: otherUserId }, select: { id: true, name: true, lastName: true, image: true } }) : null;
+        const otherUser = otherUserId ? await prisma.user.findUnique({ where: { id: otherUserId }, select: { id: true, name: true, lastName: true, email: true, image: true } }) : null;
         
         return {
           id: conv.id,

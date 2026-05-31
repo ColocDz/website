@@ -11,10 +11,10 @@ interface Post {
   title: string;
   type: string;
   wilaya: string | null;
-  price: number;
+  price: string;
   tags: string[];
   createdAt: string;
-  author?: { name: string; image: string | null };
+  author?: { id: string; name: string; image: string | null };
   description: string;
   images: string[];
 }
@@ -26,6 +26,7 @@ export default function PostsPage() {
   const [selectedWilaya, setSelectedWilaya] = useState('');
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -41,8 +42,41 @@ export default function PostsPage() {
         setIsLoading(false);
       }
     }
+    async function fetchSavedPosts() {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const user = await res.json();
+          setSavedPostIds(user.savedPostIds || []);
+        }
+      } catch (e) {
+        console.error('Not logged in or failed to fetch user saved posts');
+      }
+    }
     fetchPosts();
+    fetchSavedPosts();
   }, []);
+
+  const toggleSavePost = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/posts/${postId}/save`, { method: 'POST' });
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.saved) {
+          setSavedPostIds(prev => [...prev, postId]);
+        } else {
+          setSavedPostIds(prev => prev.filter(id => id !== postId));
+        }
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+    }
+  };
 
   const filteredPosts = useMemo(() => allPosts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,7 +155,16 @@ export default function PostsPage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-3 left-3 bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
-                    <button className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100" onClick={(e) => { e.stopPropagation(); console.log('Saved'); }}><Heart size={18}/></button>
+                    <button 
+                      className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" 
+                      onClick={(e) => toggleSavePost(post.id, e)}
+                    >
+                      <Heart 
+                        size={18} 
+                        fill={savedPostIds.includes(post.id) ? "red" : "none"} 
+                        className={savedPostIds.includes(post.id) ? "text-red-500" : "text-gray-600"} 
+                      />
+                    </button>
                   </div>
                   <div className="p-4">
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
@@ -138,8 +181,18 @@ export default function PostsPage() {
                       ))}
                     </div>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="font-bold text-gray-900">{post.price} DA<span className="text-sm font-normal text-gray-500">/month</span></span>
-                      <span className="text-xs text-gray-500">by {post.author?.name || 'Anonymous'}</span>
+                      <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">/month</span></span>
+                      <span 
+                        className="text-xs text-gray-500 hover:underline hover:text-black cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (post.author?.id) {
+                            router.push(`/profile?userId=${post.author.id}`);
+                          }
+                        }}
+                      >
+                        by {post.author?.name || 'Anonymous'}
+                      </span>
                     </div>
                   </div>
                 </div>
