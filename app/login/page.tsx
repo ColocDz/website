@@ -37,10 +37,14 @@ export default function LoginPage() {
       });
 
       if (result.error) {
-        // better-auth returns 'Invalid email or password' on bad credentials
         const msg = result.error.message || '';
+        const code = result.error.code || '';
+        console.warn('[Login] Auth error:', { message: msg, code });
+        
         if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials') || msg.toLowerCase().includes('password')) {
           setError('Incorrect email or password. Please try again.');
+        } else if (code === 'MISSING_OR_NULL_ORIGIN' || msg.includes('Origin')) {
+          setError('Connection error. Please refresh the page and try again.');
         } else {
           setError(msg || 'Sign in failed. Please try again.');
         }
@@ -48,8 +52,13 @@ export default function LoginPage() {
       }
 
       router.push('/');
-    } catch (err) {
-      setError('Something went wrong. Please check your connection and try again.');
+    } catch (err: any) {
+      console.error('[Login] Exception:', err);
+      if (err?.message?.includes('fetch') || err?.message?.includes('network') || err?.message?.includes('Failed')) {
+        setError('Cannot reach the server. Please check your connection and try again.');
+      } else {
+        setError('Something went wrong. Please check your connection and try again.');
+      }
     }
   };
 
