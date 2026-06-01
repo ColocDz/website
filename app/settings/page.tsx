@@ -245,17 +245,25 @@ function SettingsContent() {
     }, 600);
   };
 
-  const handleFaceVerified = async (faceImage: string) => {
+  const handleFaceVerified = async (faceImage: string, descriptor?: number[]) => {
     setIsSaving(true);
     setErrorMsg('');
     try {
+      const payload: any = { faceVerified: true, faceImage };
+      if (descriptor && descriptor.length === 128) {
+        payload.faceDescriptor = descriptor;
+      }
+
       const res = await fetch('/api/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faceVerified: true, faceImage })
+        body: JSON.stringify(payload)
       });
       
-      if (!res.ok) throw new Error('Failed to update face verification status');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update face verification status');
+      }
       
       setProfile(prev => ({ ...prev, faceVerified: true, faceImage }));
       setFaceModalOpen(false);
@@ -962,6 +970,7 @@ function SettingsContent() {
             <FaceVerification 
               isAlreadyVerified={profile.faceVerified} 
               onVerified={handleFaceVerified} 
+              initialPhone={profile.phone}
             />
           </div>
         </div>

@@ -524,10 +524,18 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
 
                     <button 
                       onClick={handleMessageAuthor}
-                      className="w-full bg-black text-white px-6 py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                      className="w-full bg-black text-white px-6 py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-3"
                     >
                       <MessageSquare size={20} />
                       Message Host
+                    </button>
+
+                    <button 
+                      onClick={toggleSavePost}
+                      className="w-full border border-gray-300 text-gray-700 px-6 py-4 rounded-xl font-bold hover:bg-gray-50 hover:text-black transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Heart size={20} fill={isSaved ? "red" : "none"} className={isSaved ? "text-red-500" : "text-gray-500"} />
+                      {isSaved ? 'Saved' : 'Save Listing'}
                     </button>
                     
                     <p className="text-xs text-gray-400 text-center mt-4">

@@ -57,10 +57,41 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (!user.faceVerified) {
+      return NextResponse.json({ error: 'Face verification is required to publish posts' }, { status: 400 });
+    }
+
+    const isPublishing = data.status === 'published' || !data.status;
+    if (isPublishing) {
+      const postCount = await prisma.post.count({
+        where: { authorId: session.user.id, isArchived: false, status: 'published' }
+      });
+      if (postCount >= 3 && !user.identityVerified) {
+        return NextResponse.json({ error: 'You have already published 3 or more posts. Identity verification via National ID card is required to publish more.' }, { status: 400 });
+      }
+    }
     
     // Validate required fields (in a real app, use Zod)
     if (!data.title || !data.description || !data.price || !data.location) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (data.title.length > 30) {
+      return NextResponse.json({ error: 'Title cannot exceed 30 characters' }, { status: 400 });
+    }
+
+    const priceNum = Number(data.price);
+    if (isNaN(priceNum) || priceNum < 1000) {
+      return NextResponse.json({ error: 'Price must be at least 1,000 DA' }, { status: 400 });
     }
 
     const post = await prisma.post.create({

@@ -103,20 +103,41 @@ export async function PUT(request: NextRequest) {
     }
 
     if (data.faceImage !== undefined && data.faceImage) {
-      // Check if this face image is already registered under another user's profile
-      const duplicateUser = await prisma.user.findFirst({
+      updateData.faceImage = data.faceImage;
+    }
+
+    // Store face descriptor and check for duplicates
+    if (data.faceDescriptor && Array.isArray(data.faceDescriptor) && data.faceDescriptor.length === 128) {
+      // Euclidean distance check against all stored descriptors
+      const usersWithDescriptors = await prisma.user.findMany({
         where: {
-          faceImage: data.faceImage,
-          id: { not: user.id }
-        }
+          faceDescriptor: { isEmpty: false },
+          id: { not: user.id },
+          isArchived: false,
+        },
+        select: { id: true, name: true, lastName: true, faceDescriptor: true },
       });
 
-      if (duplicateUser) {
-        return NextResponse.json({ 
-          error: 'This face image is already registered to another user account. Duplicate profiles are not permitted.' 
-        }, { status: 400 });
+      function euclideanDistance(a: number[], b: number[]): number {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) {
+          const diff = a[i] - b[i];
+          sum += diff * diff;
+        }
+        return Math.sqrt(sum);
       }
-      updateData.faceImage = data.faceImage;
+
+      for (const existing of usersWithDescriptors) {
+        if (existing.faceDescriptor.length !== 128) continue;
+        const dist = euclideanDistance(data.faceDescriptor, existing.faceDescriptor);
+        if (dist < 0.5) {
+          return NextResponse.json({
+            error: `This face matches an existing account (${existing.name} ${existing.lastName || ''}). Duplicate profiles are not permitted.`
+          }, { status: 400 });
+        }
+      }
+
+      updateData.faceDescriptor = data.faceDescriptor;
     }
 
     // Only update name if it hasn't been changed before
