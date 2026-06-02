@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Search, MapPin, Heart } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
+import { useI18n } from '@/lib/i18n';
 
 interface Post {
   id: string;
@@ -14,16 +15,18 @@ interface Post {
   price: string;
   tags: string[];
   createdAt: string;
-  author?: { id: string; name: string; image: string | null };
+  author?: { id: string; name: string; image: string | null; gender?: string | null };
   description: string;
   images: string[];
 }
 
 export default function PostsPage() {
   const router = useRouter();
+  const { t, dir } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedWilaya, setSelectedWilaya] = useState('');
+  const [selectedGender, setSelectedGender] = useState('');
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
@@ -84,40 +87,41 @@ export default function PostsPage() {
                          post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesType = !selectedType || post.type === selectedType;
     const matchesWilaya = !selectedWilaya || post.wilaya === selectedWilaya;
-    return matchesSearch && matchesType && matchesWilaya;
-  }), [searchQuery, selectedType, selectedWilaya, allPosts]);
+    const matchesGender = !selectedGender || post.author?.gender === selectedGender;
+    return matchesSearch && matchesType && matchesWilaya && matchesGender;
+  }), [searchQuery, selectedType, selectedWilaya, selectedGender, allPosts]);
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen" dir={dir}>
       <Navbar />
       <div>
         {/* Search and Filter */}
         <div className="bg-gray-50 border-b border-gray-200 p-6">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">Browse All Listings</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('posts.title')}</h1>
             <div className="space-y-4">
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center bg-white border border-gray-300 rounded-lg px-4">
                   <Search size={20} className="text-gray-400" />
-                  <input type="text" placeholder="Search posts, tags, or descriptions..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 px-3 py-3 focus:outline-none text-sm"/>
+                  <input type="text" placeholder={t('posts.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 px-3 py-3 focus:outline-none text-sm"/>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Type</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">{t('posts.type')}</label>
                   <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
-                    <option value="">All Types</option>
-                    <option value="Apartment">Apartment</option>
-                    <option value="House">House</option>
-                    <option value="Studio">Studio</option>
-                    <option value="Room">Room</option>
-                    <option value="Shared Space">Shared Space</option>
+                    <option value="">{t('posts.allTypes')}</option>
+                    <option value="Apartment">{t('type.Apartment')}</option>
+                    <option value="House">{t('type.House')}</option>
+                    <option value="Studio">{t('type.Studio')}</option>
+                    <option value="Room">{t('type.Room')}</option>
+                    <option value="Shared Space">{t('type.SharedSpace')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Wilaya</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">{t('posts.wilaya')}</label>
                   <select value={selectedWilaya} onChange={(e) => setSelectedWilaya(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
-                    <option value="">All Wilayas</option>
+                    <option value="">{t('posts.allWilayas')}</option>
                     {[
                       '01 - Adrar','02 - Chlef','03 - Laghouat','04 - Oum El Bouaghi','05 - Batna',
                       '06 - Béjaïa','07 - Biskra','08 - Béchar','09 - Blida','10 - Bouira',
@@ -134,6 +138,14 @@ export default function PostsPage() {
                     ].map(w => <option key={w} value={w}>{w}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">{t('posts.gender')}</label>
+                  <select value={selectedGender} onChange={(e) => setSelectedGender(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                    <option value="">{t('posts.allGenders')}</option>
+                    <option value="Male">{t('posts.menOnly')}</option>
+                    <option value="Female">{t('posts.womenOnly')}</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -142,7 +154,7 @@ export default function PostsPage() {
         {/* Posts Grid */}
         <div className="max-w-7xl mx-auto p-6">
           {isLoading ? (
-            <div className="text-center py-12"><p className="text-lg text-gray-600">Loading posts...</p></div>
+            <div className="text-center py-12"><p className="text-lg text-gray-600">{t('posts.loading')}</p></div>
           ) : filteredPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPosts.map((post) => (
@@ -181,7 +193,7 @@ export default function PostsPage() {
                       ))}
                     </div>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">/month</span></span>
+                      <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">{t('posts.perMonth')}</span></span>
                       <span 
                         className="text-xs text-gray-500 hover:underline hover:text-black cursor-pointer"
                         onClick={(e) => {
@@ -191,7 +203,7 @@ export default function PostsPage() {
                           }
                         }}
                       >
-                        by {post.author?.name || 'Anonymous'}
+                        {t('posts.by')} {post.author?.name || 'Anonymous'}
                       </span>
                     </div>
                   </div>
@@ -199,7 +211,7 @@ export default function PostsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12"><p className="text-lg text-gray-600">No posts found matching your criteria</p></div>
+            <div className="text-center py-12"><p className="text-lg text-gray-600">{t('posts.noResults')}</p></div>
           )}
         </div>
       </div>

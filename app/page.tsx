@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Star, Heart } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
+import { useI18n } from '@/lib/i18n';
 
 interface Post {
   id: string;
@@ -20,6 +21,7 @@ interface Post {
 
 export default function HomePage() {
   const router = useRouter();
+  const { t, dir } = useI18n();
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [showSearchBar, setShowSearchBar] = useState(false);
@@ -96,26 +98,11 @@ export default function HomePage() {
   ];
 
   const faqs = [
-    {
-      question: 'How do I post a listing?',
-      answer: 'Create an account and click the post button on the home page. Fill in your details about the space, add photos, set your price, and publish. You can edit or delete anytime.',
-    },
-    {
-      question: 'Can I message people privately?',
-      answer: 'Yes. Once you find a listing that interests you, use the messaging feature to contact the poster directly. All conversations stay private between you and the other person.',
-    },
-    {
-      question: 'What if I change my mind?',
-      answer: 'You can delete your post at any time from your account. If you\'ve already connected with someone, let them know through the messaging system before removing your listing.',
-    },
-    {
-      question: 'Is my information safe here?',
-      answer: 'We take privacy seriously. Your personal details are only shared when you choose to message someone. Never share payment information through our platform.',
-    },
-    {
-      question: 'How much does it cost?',
-      answer: 'Posting and searching are completely free. HomeShare makes money through optional premium features, but the basics cost nothing.',
-    },
+    { question: t('faq.q1'), answer: t('faq.a1') },
+    { question: t('faq.q2'), answer: t('faq.a2') },
+    { question: t('faq.q3'), answer: t('faq.a3') },
+    { question: t('faq.q4'), answer: t('faq.a4') },
+    { question: t('faq.q5'), answer: t('faq.a5') },
   ];
 
   // Helper to format relative time
@@ -130,22 +117,22 @@ export default function HomePage() {
   }
 
   return (
-    <div className="bg-white">
+    <div className="bg-white" dir={dir}>
       <Navbar />
 
       {/* Main Content */}
       <div>
         {/* Hero Section - Ready to find your place */}
         <section className="py-16 px-6 text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">Ready to find your place</h1>
-          <p className="text-gray-600 mb-8">Post what you need or search for the right fit today</p>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">{t('home.heroTitle')}</h1>
+          <p className="text-gray-600 mb-8">{t('home.heroSubtitle')}</p>
           <div className="flex gap-4 justify-center">
-            <button className="bg-black text-white px-8 py-2 rounded hover:bg-gray-800"><a href="/adding-post">Post</a></button>
+            <button className="bg-black text-white px-8 py-2 rounded hover:bg-gray-800"><a href="/adding-post">{t('home.post')}</a></button>
             <button 
               onClick={() => setShowSearchBar(!showSearchBar)}
               className="border border-gray-300 text-gray-900 px-8 py-2 rounded hover:bg-gray-50"
             >
-              Search
+              {t('home.search')}
             </button>
           </div>
 
@@ -156,14 +143,14 @@ export default function HomePage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search for apartments, rooms, houses..."
+                placeholder={t('home.searchPlaceholder')}
                 className="w-full px-6 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
               />
               <button
                 onClick={() => router.push('/posts')}
                 className="mt-4 w-full bg-black text-white px-8 py-2 rounded hover:bg-gray-800"
               >
-                Search &amp; View All Posts
+                {t('home.searchViewAll')}
               </button>
             </div>
           )}
@@ -182,23 +169,23 @@ export default function HomePage() {
         <section className="py-16 px-6 bg-gray-50">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-2">Find your next home</h2>
-              <p className="text-gray-600">Browse available rooms and shared spaces from people looking for roommates</p>
+              <h2 className="text-4xl font-bold text-gray-900 mb-2">{t('home.findNextHome')}</h2>
+              <p className="text-gray-600">{t('home.findNextHomeDesc')}</p>
             </div>
             <button
               onClick={() => router.push('/posts')}
               className="border border-gray-300 text-gray-900 px-6 py-2 rounded hover:bg-gray-100"
             >
-              View all
+              {t('home.viewAll')}
             </button>
           </div>
           {isLoadingPosts ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500">Loading posts...</p>
+              <p className="text-gray-500">{t('home.loadingPosts')}</p>
             </div>
           ) : posts.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500">No posts yet. Be the first to post!</p>
+              <p className="text-gray-500">{t('home.noPosts')}</p>
             </div>
           ) : null}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -262,7 +249,7 @@ export default function HomePage() {
                   </div>
                   
                   <span className="text-gray-900 font-semibold flex items-center gap-1 hover:text-gray-600">
-                    View details <span>›</span>
+                    {t('home.viewDetails')} <span>›</span>
                   </span>
                 </div>
               </div>
@@ -272,8 +259,8 @@ export default function HomePage() {
 
         {/* Real Stories Section */}
         <section className="py-16 px-6">
-          <h2 className="text-4xl font-bold text-gray-900 text-center mb-2">Real stories</h2>
-          <p className="text-gray-600 text-center mb-12">People finding their place</p>
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-2">{t('home.realStories')}</h2>
+          <p className="text-gray-600 text-center mb-12">{t('home.peopleFinding')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((testimonial, idx) => (
               <div key={idx} className="border border-gray-300 p-6">
@@ -303,8 +290,8 @@ export default function HomePage() {
 
         {/* FAQ Section */}
         <section className="py-16 px-6 bg-gray-50">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">Questions</h2>
-          <p className="text-gray-600 mb-8">Everything you need to know about finding your next home</p>
+          <h2 className="text-4xl font-bold text-gray-900 mb-2">{t('home.faqTitle')}</h2>
+          <p className="text-gray-600 mb-8">{t('home.faqSubtitle')}</p>
           <div className="max-w-2xl mx-auto space-y-4">
             {faqs.map((faq, idx) => (
               <div key={idx} className="border border-gray-300">

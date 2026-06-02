@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Bell, Lock, User, Upload, IdCard, AlertCircle } from 'lucide-react';
-import { RiArrowGoBackFill } from 'react-icons/ri';
 import { Navbar } from '@/components/layout/navbar';
 import { authClient, useSession, signOut } from '@/lib/auth-client';
 import FaceVerification from '@/components/face-verification';
+import { useI18n } from '@/lib/i18n';
 
 const wilayas = [
   '01 - Adrar','02 - Chlef','03 - Laghouat','04 - Oum El Bouaghi','05 - Batna',
@@ -29,6 +29,7 @@ function SettingsContent() {
   const searchParams = useSearchParams();
   const tabQuery = searchParams.get('tab');
   const { data: session, isPending } = useSession();
+  const { t, dir } = useI18n();
   
   const [activeTab, setActiveTab] = useState<string>('personal');
   const [isSaving, setIsSaving] = useState(false);
@@ -127,10 +128,10 @@ function SettingsContent() {
   }, [session]);
 
   const settingsTabs = [
-    { id: 'personal', label: 'Personal Info', icon: User },
-    { id: 'emails', label: 'Emails & Password', icon: Lock },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'idcard', label: 'ID National Card', icon: IdCard },
+    { id: 'personal', label: t('settings.personalInfo'), icon: User },
+    { id: 'emails', label: t('settings.emailPassword'), icon: Lock },
+    { id: 'notifications', label: t('settings.notifications'), icon: Bell },
+    { id: 'idcard', label: t('settings.idCard'), icon: IdCard },
   ];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -329,23 +330,23 @@ function SettingsContent() {
     }
   };
 
-  if (isPending) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (isPending) return <div className="min-h-screen flex items-center justify-center bg-white text-gray-900">{t('common.loading')}</div>;
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen" dir={dir}>
       <Navbar />
 
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Account</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('settings.deleteConfirmTitle')}</h3>
             <p className="text-gray-600 text-sm mb-4">
-              Please validate your action. If this is a normal account, enter your password. If it was created via social media, enter the code sent to your phone.
+              {t('settings.deleteConfirmDesc')}
             </p>
             <input 
               type="password"
-              placeholder="Password or OTP Code"
+              placeholder={t('settings.deletePlaceholder')}
               value={deleteValidation}
               onChange={(e) => setDeleteValidation(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded mb-4 focus:ring-2 focus:ring-black outline-none"
@@ -355,14 +356,14 @@ function SettingsContent() {
                 onClick={() => setDeleteModalOpen(false)}
                 className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={handleDeleteAccount}
                 disabled={isDeleting}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                {isDeleting ? t('common.loading') : t('common.confirm')}
               </button>
             </div>
           </div>
@@ -376,8 +377,8 @@ function SettingsContent() {
         {activeTab === 'menu' && (
           <div className="md:hidden flex-1 p-6 space-y-6">
             <div className="mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Account settings</h2>
-              <p className="text-gray-500 text-sm">Manage your profile, verification, and credentials.</p>
+              <h2 className="text-2xl font-bold text-gray-900">{t('settings.title')}</h2>
+              <p className="text-gray-500 text-sm">{t('settings.subtitle')}</p>
             </div>
             
             <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200 bg-white shadow-sm">
@@ -396,10 +397,10 @@ function SettingsContent() {
                       <div>
                         <span className="font-semibold text-gray-900 text-base block">{tab.label}</span>
                         <span className="text-xs text-gray-500 block mt-0.5">
-                          {tab.id === 'personal' && 'Manage name, phone, bio and photo'}
-                          {tab.id === 'emails' && 'Update passwords and credentials'}
-                          {tab.id === 'notifications' && 'Configure email and SMS preferences'}
-                          {tab.id === 'idcard' && 'Upload and check your national identity card'}
+                          {tab.id === 'personal' && t('settings.personalInfoDesc')}
+                          {tab.id === 'emails' && t('settings.emailsDesc')}
+                          {tab.id === 'notifications' && t('settings.notificationsDesc')}
+                          {tab.id === 'idcard' && t('settings.idcardDesc')}
                         </span>
                       </div>
                     </div>
@@ -413,7 +414,7 @@ function SettingsContent() {
 
         {/* Sidebar Menu - Fixed Position (Desktop) */}
         <div className="hidden md:flex fixed left-0 top-20 h-[calc(100vh-80px)] w-80 flex-col bg-white border-r border-gray-200 p-6 overflow-y-auto z-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">User profile<br/>management</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 whitespace-pre-line">{t('settings.managementTitle')}</h2>
           <nav className="space-y-3">
             {settingsTabs.map((tab) => {
               const IconComponent = tab.icon;
@@ -444,18 +445,18 @@ function SettingsContent() {
                 onClick={() => setActiveTab('menu')}
                 className="md:hidden flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-6 transition-colors"
               >
-                ← Back to settings menu
+                {t('settings.backToMenu')}
               </button>
             )}
 
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                {activeTab === 'personal' && 'Personal information'}
-                {activeTab === 'emails' && 'Emails & Password'}
-                {activeTab === 'notifications' && 'Notifications'}
-                {activeTab === 'idcard' && 'National ID Card'}
+                {activeTab === 'personal' && t('settings.personalInfoTitle')}
+                {activeTab === 'emails' && t('settings.emailPassword')}
+                {activeTab === 'notifications' && t('settings.notifications')}
+                {activeTab === 'idcard' && t('settings.idCard')}
               </h1>
-              {isSaving && <div className="text-emerald-500 text-sm font-medium animate-pulse">Saving changes...</div>}
+              {isSaving && <div className="text-emerald-500 text-sm font-medium animate-pulse">{t('settings.saving')}</div>}
             </div>
 
             {errorMsg && (
@@ -493,7 +494,7 @@ function SettingsContent() {
                     />
                   </div>
                   <div>
-                    <p className="text-gray-900 font-semibold mb-2">Upload Photo</p>
+                    <p className="text-gray-900 font-semibold mb-2">{t('settings.uploadPhoto')}</p>
                     <p className="text-gray-600 text-sm">JPG, PNG or GIF. Max 5MB.</p>
                   </div>
                 </div>
@@ -501,7 +502,7 @@ function SettingsContent() {
                 {/* Form Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">First Name</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.firstName')}</label>
                     <input 
                       type="text" 
                       value={profile.name}
@@ -511,7 +512,7 @@ function SettingsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Last Name</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.lastName')}</label>
                     <input 
                       type="text" 
                       value={profile.lastName}
@@ -525,19 +526,19 @@ function SettingsContent() {
                 {profile.nameChanged && (
                   <p className="text-xs text-red-500 flex items-start gap-1">
                     <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                    You have already changed your name once. You cannot change it again.
+                    {t('settings.nameChangeOnce')}
                   </p>
                 )}
                 {!profile.nameChanged && (
                   <p className="text-xs text-orange-500 flex items-start gap-1">
                     <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                    Warning: You can only change your name ONCE after creating your account.
+                    {t('settings.nameChangeWarn')}
                   </p>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Email Address</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.emailAddress')}</label>
                     <input 
                       type="email" 
                       value={profile.email} 
@@ -546,9 +547,9 @@ function SettingsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Phone Number</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.phoneNumber')}</label>
                     <div className="flex gap-2">
-                      <div className="px-4 py-3 border border-transparent bg-gray-100 text-gray-600 rounded-lg w-20 flex items-center justify-center font-medium">
+                      <div className="px-4 py-3 border border-transparent bg-gray-100 text-gray-600 rounded-lg w-20 flex items-center justify-center font-medium" dir="ltr">
                         +213
                       </div>
                       <input 
@@ -564,9 +565,9 @@ function SettingsContent() {
 
                 {/* Face Verification Section */}
                 <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Face Verification</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{t('settings.faceVerification')}</h3>
                   <p className="text-sm text-gray-600 mb-4">
-                    Verify your identity via real-time camera face detection to unlock full listing details, host contact, and room matching features.
+                    {t('settings.faceVerificationDesc')}
                   </p>
                   {profile.faceVerified ? (
                     <div className="flex items-center gap-3">
@@ -587,14 +588,14 @@ function SettingsContent() {
                       }}
                       className="px-6 py-2.5 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors animate-pulse"
                     >
-                      Start Face Verification
+                      {t('settings.startFaceVerification')}
                     </button>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Birthday</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.birthday')}</label>
                     <input 
                       type="date" 
                       value={profile.birthday}
@@ -603,35 +604,35 @@ function SettingsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Gender</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.gender')}</label>
                     <select 
                       value={profile.gender}
                       onChange={(e) => setProfile({...profile, gender: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="">{t('settings.selectGender')}</option>
+                      <option value="Male">{t('settings.male')}</option>
+                      <option value="Female">{t('settings.female')}</option>
+                      <option value="Other">{t('settings.other')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Country</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.country')}</label>
                     <div className="w-full px-4 py-3 border border-transparent bg-gray-100 text-gray-600 rounded-lg cursor-not-allowed">
                       Algeria
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">City (Birth Place/Residence)</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.city')}</label>
                     <select 
                       value={profile.wilaya}
                       onChange={(e) => setProfile({...profile, wilaya: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     >
-                      <option value="">Select Wilaya</option>
+                      <option value="">{t('settings.selectWilaya')}</option>
                       {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
                   </div>
@@ -639,18 +640,18 @@ function SettingsContent() {
 
                 {/* Delete Account */}
                 <div className="pt-8 border-t border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Delete Account</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">{t('settings.deleteAccount')}</h3>
                   <div className="bg-red-50 border border-red-100 p-4 rounded-lg mb-4">
                     <p className="text-sm text-red-600 flex items-center gap-2">
                       <AlertCircle size={16} />
-                      Deleting your account will archive your posts and messages. They will no longer be displayed publicly.
+                      {t('settings.deleteNotice')}
                     </p>
                   </div>
                   <button 
                     onClick={() => setDeleteModalOpen(true)}
                     className="px-6 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50 font-medium transition-colors"
                   >
-                    Delete Account
+                    {t('settings.deleteAccount')}
                   </button>
                 </div>
 
@@ -661,7 +662,7 @@ function SettingsContent() {
                     disabled={isSaving}
                     className="bg-black text-white px-8 py-3 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-md"
                   >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? t('settings.saving') : t('settings.saveChanges')}
                   </button>
                 </div>
               </div>
@@ -671,24 +672,24 @@ function SettingsContent() {
             {activeTab === 'emails' && (
               <div className="space-y-8">
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Registered Email Address</h3>
-                  <p className="text-sm text-gray-600 mb-4">Your email address is used for secure logins, notifications, and account recovery.</p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{t('settings.registeredEmail')}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{t('settings.registeredEmailDesc')}</p>
                   <div className="max-w-md">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Primary Email</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.primaryEmail')}</label>
                     <input 
                       type="email" 
                       value={profile.email} 
                       disabled 
                       className="w-full px-4 py-3 border border-transparent bg-white text-gray-500 rounded-lg cursor-not-allowed shadow-sm" 
                     />
-                    <p className="text-xs text-gray-400 mt-2">Email change is locked. Contact support if you need to update your registered email address.</p>
+                    <p className="text-xs text-gray-400 mt-2">{t('settings.emailChangeLocked')}</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleChangePassword} className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">Change Password</h3>
-                    <p className="text-sm text-gray-600">Update your account password regularly to keep your profile secure.</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{t('settings.changePassword')}</h3>
+                    <p className="text-sm text-gray-600">{t('settings.changePasswordDesc')}</p>
                   </div>
 
                   {passwordStatusMsg && (
@@ -699,7 +700,7 @@ function SettingsContent() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Current Password</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.currentPassword')}</label>
                       <input 
                         type="password" 
                         value={currentPassword}
@@ -709,7 +710,7 @@ function SettingsContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">New Password</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.newPassword')}</label>
                       <input 
                         type="password" 
                         value={newPassword}
@@ -719,7 +720,7 @@ function SettingsContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Confirm New Password</label>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">{t('settings.confirmNewPassword')}</label>
                       <input 
                         type="password" 
                         value={confirmPassword}
@@ -735,7 +736,7 @@ function SettingsContent() {
                     disabled={isChangingPassword}
                     className="bg-black text-white px-6 py-2.5 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-sm text-sm"
                   >
-                    {isChangingPassword ? 'Updating Password...' : 'Update Password'}
+                    {isChangingPassword ? t('settings.updatingPassword') : t('settings.updatePassword')}
                   </button>
                 </form>
               </div>
@@ -746,8 +747,8 @@ function SettingsContent() {
               <div className="space-y-8">
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">Email Notification Preferences</h3>
-                    <p className="text-sm text-gray-600">Choose which updates you would like to receive in your inbox.</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{t('settings.emailNotifPreferences')}</h3>
+                    <p className="text-sm text-gray-600">{t('settings.emailNotifDesc')}</p>
                   </div>
                   
                   <div className="space-y-4">
@@ -786,8 +787,8 @@ function SettingsContent() {
 
                 <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">SMS & Phone Notifications</h3>
-                    <p className="text-sm text-gray-600">Receive urgent text updates directly on your verified mobile phone.</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{t('settings.smsNotifPreferences')}</h3>
+                    <p className="text-sm text-gray-600">{t('settings.smsNotifDesc')}</p>
                   </div>
 
                   <div className="space-y-4">
@@ -824,7 +825,7 @@ function SettingsContent() {
                   disabled={isSaving}
                   className="bg-black text-white px-8 py-3 rounded font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-md"
                 >
-                  {isSaving ? 'Saving Preferences...' : 'Save Notification Preferences'}
+                  {isSaving ? t('settings.savingPreferences') : t('settings.saveNotifPreferences')}
                 </button>
               </div>
             )}
@@ -836,16 +837,16 @@ function SettingsContent() {
                   <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-lg flex items-center gap-3">
                     <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">✓</div>
                     <div>
-                      <h3 className="font-bold">Identity Verified</h3>
-                      <p className="text-sm">You are now fully verified to publish, message, and view all posts.</p>
+                      <h3 className="font-bold">{t('settings.identityVerifiedTitle')}</h3>
+                      <p className="text-sm">{t('settings.identityVerifiedDesc')}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-orange-50 border border-orange-200 text-orange-700 p-4 rounded-lg flex items-center gap-3">
                     <AlertCircle size={24} />
                     <div>
-                      <h3 className="font-bold">Verification Required</h3>
-                      <p className="text-sm">Verify your identity by uploading your ID card to enable publishing and messaging features.</p>
+                      <h3 className="font-bold">{t('settings.verificationRequiredTitle')}</h3>
+                      <p className="text-sm">{t('settings.verificationRequiredDesc')}</p>
                     </div>
                   </div>
                 )}
@@ -855,9 +856,9 @@ function SettingsContent() {
                   {/* Header with Flag */}
                   <div className="flex justify-between items-start mb-6">
                     <div className="text-center flex-1">
-                      <p className="text-gray-700 font-bold text-sm mb-1">الجمهورية الجزائرية الديمقراطية الشعبية</p>
-                      <p className="text-gray-600 text-xs">Democratic People's Republic of Algeria</p>
-                      <p className="text-gray-600 text-xs">بطاقة الهوية الوطنية</p>
+                      <p className="text-gray-700 font-bold text-sm mb-1">{t('settings.republicAlgeriaAr')}</p>
+                      <p className="text-gray-600 text-xs">{t('settings.republicAlgeria')}</p>
+                      <p className="text-gray-600 text-xs">{t('settings.nationalIdCardAr')}</p>
                     </div>
                     <div className="w-12 h-8 rounded flex items-center justify-center bg-white shadow-sm overflow-hidden relative">
                       <div className="w-1/2 h-full bg-green-600" />
@@ -928,10 +929,10 @@ function SettingsContent() {
                         onClick={() => idFileInputRef.current?.click()}
                         className="px-6 py-2 bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-50 font-medium"
                       >
-                        Choose File
+                        {t('settings.chooseFile')}
                       </button>
                       <span className="text-sm text-gray-500">
-                        {idCardImage ? 'ID Selected ✓' : 'No file chosen'}
+                        {idCardImage ? t('settings.fileChosen') : t('settings.noFileChosen')}
                       </span>
                       <input 
                         type="file" 
@@ -947,7 +948,7 @@ function SettingsContent() {
                       disabled={isSaving || !idCardImage}
                       className="w-full py-3 bg-black text-white rounded font-bold hover:bg-gray-800 disabled:opacity-50 transition-colors"
                     >
-                      {isSaving ? 'Verifying...' : 'Submit ID for Verification'}
+                      {isSaving ? t('settings.submittingId') : t('settings.submitId')}
                     </button>
                   </div>
                 )}
