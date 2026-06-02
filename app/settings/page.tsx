@@ -388,7 +388,7 @@ function SettingsContent() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors text-start"
                   >
                     <div className="flex items-center gap-4">
                       <div className="p-2.5 bg-gray-100 rounded-lg text-gray-800">
