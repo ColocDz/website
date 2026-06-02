@@ -13,6 +13,9 @@ const signupSchema = z.object({
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phoneNumber: z.string().min(8, 'Phone number must be at least 8 digits'),
+  gender: z.enum(['Male', 'Female'], {
+    message: 'Please select Male or Female',
+  }),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   agreeToPolicy: z.literal(true, {
@@ -50,6 +53,21 @@ export default function SignupPage() {
       if (result.error) {
         setError(result.error.message || 'Failed to create account');
         return;
+      }
+
+      // Save additional profile details (gender, phone, lastName)
+      try {
+        await fetch('/api/user', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lastName: data.lastName,
+            phone: data.phoneNumber,
+            gender: data.gender,
+          }),
+        });
+      } catch (profileErr) {
+        console.error('Failed to save profile details:', profileErr);
       }
 
       router.push('/');
@@ -107,6 +125,21 @@ export default function SignupPage() {
                 }`}
               />
               {errors.lastName && <p className="text-red-400 text-xs flex items-center gap-1">⚠ {errors.lastName.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400">Gender</label>
+              <select
+                {...register('gender')}
+                className={`w-full px-3 py-2 rounded-2xl bg-[rgba(39,39,42,0.9)] text-white text-xs border shadow-inner focus:outline-none focus:ring-1 transition-all ${
+                  errors.gender ? 'border-red-500/60 focus:ring-red-500/50' : 'border-white/5 focus:ring-blue-500/50'
+                }`}
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+              {errors.gender && <p className="text-red-400 text-xs flex items-center gap-1">⚠ {errors.gender.message}</p>}
             </div>
 
             <div className="space-y-1.5">

@@ -141,6 +141,8 @@ const translations: Record<Locale, Record<string, string>> = {
     'settings.faceVerification': 'Face Verification',
     'settings.faceVerificationDesc': 'Verify your identity via real-time camera face detection to unlock full listing details, host contact, and room matching features.',
     'settings.startFaceVerification': 'Start Face Verification',
+    'genderPrompt.title': 'One Quick Step',
+    'genderPrompt.description': 'Please select your gender to complete your profile registration. This helps roommates filter properties accurately.',
     // Common
     'common.loading': 'Loading...',
     'common.save': 'Save',
@@ -295,6 +297,8 @@ const translations: Record<Locale, Record<string, string>> = {
     'settings.faceVerification': 'Vérification Faciale',
     'settings.faceVerificationDesc': 'Vérifiez votre identité par détection faciale en temps réel pour débloquer toutes les fonctionnalités.',
     'settings.startFaceVerification': 'Commencer la vérification',
+    'genderPrompt.title': 'Une dernière étape',
+    'genderPrompt.description': 'Veuillez sélectionner votre genre pour finaliser votre inscription. Cela permet d\'appliquer correctement les filtres de recherche.',
     'common.loading': 'Chargement...',
     'common.save': 'Enregistrer',
     'common.cancel': 'Annuler',
@@ -446,6 +450,8 @@ const translations: Record<Locale, Record<string, string>> = {
     'settings.faceVerification': 'التحقق من الوجه',
     'settings.faceVerificationDesc': 'تحقق من هويتك عبر الكشف الفوري عن الوجه بالكاميرا لإلغاء قفل التفاصيل الكاملة للمنشورات والمراسلة.',
     'settings.startFaceVerification': 'بدأ التحقق من الوجه',
+    'genderPrompt.title': 'خطوة أخيرة سريعة',
+    'genderPrompt.description': 'يرجى تحديد جنسك لإكمال تسجيل ملفك الشخصي. هذا يساعد في تصفية منشورات السكن بدقة.',
     // Common
     'common.loading': 'جاري التحميل...',
     'common.save': 'حفظ',

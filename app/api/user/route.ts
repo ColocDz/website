@@ -84,15 +84,27 @@ export async function PUT(request: NextRequest) {
     const data = await request.json();
     const user = session.user;
 
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     const updateData: any = {
       gender: data.gender,
-      birthday: data.birthday ? new Date(data.birthday) : null,
+      birthday: data.birthday ? new Date(data.birthday) : undefined,
       isPrivate: data.isPrivate,
       phone: data.phone,
       wilaya: data.wilaya,
       city: data.city,
       image: data.image
     };
+
+    // Filter undefined fields to avoid overwriting database fields with nulls
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
 
     if (data.identityVerified !== undefined) {
       updateData.identityVerified = data.identityVerified;
@@ -140,21 +152,30 @@ export async function PUT(request: NextRequest) {
       updateData.faceDescriptor = data.faceDescriptor;
     }
 
-    // Only update name if it hasn't been changed before
-    // Need to get user from db to check nameChanged
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-    if (!dbUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // Name and LastName update rules
+    let nameWillChange = false;
+    let lastNameWillChange = false;
 
     if (data.name && data.name !== dbUser.name) {
+      nameWillChange = true;
+    }
+
+    if (data.lastName && dbUser.lastName && data.lastName !== dbUser.lastName) {
+      lastNameWillChange = true;
+    }
+
+    if (nameWillChange || lastNameWillChange) {
       if (dbUser.nameChanged) {
         return NextResponse.json({ error: 'You have already changed your name once.' }, { status: 403 });
-      } else {
-        updateData.name = data.name;
-        updateData.lastName = data.lastName;
-        updateData.nameChanged = true;
       }
+      updateData.nameChanged = true;
+    }
+
+    if (data.name) {
+      updateData.name = data.name;
+    }
+    if (data.lastName !== undefined) {
+      updateData.lastName = data.lastName;
     }
 
     const updatedUser = await prisma.user.update({

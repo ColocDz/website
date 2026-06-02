@@ -8,6 +8,7 @@ import { MobileSidebar } from '@/components/mobile-sidebar';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useSession, signOut } from '@/lib/auth-client';
 import { useI18n } from '@/lib/i18n';
+import { GenderPromptModal } from '@/components/gender-prompt-modal';
 
 interface NavbarProps {
   brandName?: string;
@@ -45,6 +46,7 @@ export function Navbar({ brandName = 'ColocDZ' }: NavbarProps) {
 
   return (
     <>
+      <GenderPromptModal />
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-40">
           <MobileSidebar

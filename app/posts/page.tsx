@@ -166,7 +166,16 @@ export default function PostsPage() {
                       fill 
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-3 left-3 bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
+                    <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
+                      <div className="bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
+                      {post.author?.gender && (
+                        <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${
+                          post.author.gender === 'Male' ? 'bg-indigo-600' : post.author.gender === 'Female' ? 'bg-pink-600' : 'bg-gray-600'
+                        }`}>
+                          {post.author.gender === 'Male' ? t('posts.menOnly') : post.author.gender === 'Female' ? t('posts.womenOnly') : post.author.gender}
+                        </div>
+                      )}
+                    </div>
                     <button 
                       className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" 
                       onClick={(e) => toggleSavePost(post.id, e)}

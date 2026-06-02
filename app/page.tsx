@@ -16,7 +16,7 @@ interface Post {
   tags: string[];
   images: string[];
   createdAt: string;
-  author?: { id: string; name: string; image: string | null };
+  author?: { id: string; name: string; image: string | null; gender?: string | null };
 }
 
 export default function HomePage() {
@@ -214,8 +214,17 @@ export default function HomePage() {
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 z-10">
                     <div>
-                      <p className="text-white text-xs font-semibold">{post.type}</p>
-                      <p className="text-white text-xs mt-1">{timeAgo(post.createdAt)}</p>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <span className="text-white text-xs font-semibold bg-white/20 px-2 py-0.5 rounded">{post.type}</span>
+                        {post.author?.gender && (
+                          <span className={`text-white text-xs font-semibold px-2 py-0.5 rounded ${
+                            post.author.gender === 'Male' ? 'bg-indigo-600' : post.author.gender === 'Female' ? 'bg-pink-600' : 'bg-gray-600'
+                          }`}>
+                            {post.author.gender === 'Male' ? t('posts.menOnly') : post.author.gender === 'Female' ? t('posts.womenOnly') : post.author.gender}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white text-xs mt-2">{timeAgo(post.createdAt)}</p>
                     </div>
                     <div className="text-white">
                       <p 
