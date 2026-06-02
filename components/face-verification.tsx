@@ -42,12 +42,11 @@ export default function FaceVerification({ onVerified, isAlreadyVerified, initia
     setIsLoadingModel(true);
     setErrorMsg('');
     try {
-      const faceapi = await import('face-api.js');
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-      ]);
+      const { ensureModelsLoaded } = await import('@/lib/face-models');
+      const faceapi = await ensureModelsLoaded();
+      if (!faceapi) {
+        throw new Error('Failed to load faceapi on client side');
+      }
       setFaceApi(faceapi);
       setIsLoadingModel(false);
     } catch (err) {

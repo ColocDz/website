@@ -6,6 +6,9 @@ import { headers } from 'next/headers';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    if (searchParams.get('ping') === 'true') {
+      return NextResponse.json({ pong: true });
+    }
     const userId = searchParams.get('userId');
     const type = searchParams.get('type');
     const query = searchParams.get('query');

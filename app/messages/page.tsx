@@ -282,7 +282,12 @@ export default function MessagesPage() {
         const res = await fetch(`/api/messages/${selectedChat}`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
-          setMessages(data);
+          setMessages(prev => {
+            const temps = prev.filter(m => m.id.startsWith('temp-'));
+            // Filter out any fetched messages that match temp messages to avoid duplicate keys once they are saved
+            const nonDuplicateTemps = temps.filter(t => !data.some((d: any) => d.content === t.content && Math.abs(new Date(d.createdAt).getTime() - new Date(t.createdAt).getTime()) < 10000));
+            return [...data, ...nonDuplicateTemps];
+          });
         }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
@@ -319,6 +324,16 @@ export default function MessagesPage() {
     const content = messageInput;
     setMessageInput(''); // Clear input immediately for better UX
     
+    const tempId = 'temp-' + Date.now();
+    const optimisticMessage: Message = {
+      id: tempId,
+      senderId: session?.user?.id || '',
+      content,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
@@ -332,7 +347,8 @@ export default function MessagesPage() {
       
       if (res.ok) {
         const newMessage = await res.json();
-        setMessages(prev => [...prev, newMessage]);
+        // Replace temp message with actual database message
+        setMessages(prev => prev.map(m => m.id === tempId ? newMessage : m));
         
         // Update conversation list with new last message
         setConversations(prev => prev.map(c => 
@@ -340,9 +356,15 @@ export default function MessagesPage() {
             ? { ...c, lastMessage: newMessage, updatedAt: newMessage.createdAt }
             : c
         ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      } else {
+        // Rollback optimistic message on failure
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        setMessageInput(content); // Restore input for retry
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setMessageInput(content); // Restore input for retry
     }
   };
 
@@ -540,7 +562,7 @@ export default function MessagesPage() {
                         </span>
                       </div>
                     )}
-                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${msg.id.startsWith('temp-') ? 'opacity-60' : ''}`}>
                       <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${
                         isMe ? 'bg-black text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-900 rounded-tl-none'
                       }`}>

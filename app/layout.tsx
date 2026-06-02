@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { I18nProvider } from '@/lib/i18n'
+import { FaceModelPreloader } from '@/components/face-model-preloader'
 
 import './globals.css'
 
@@ -21,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          <FaceModelPreloader />
+          {children}
+        </I18nProvider>
       </body>
     </html>
   )
