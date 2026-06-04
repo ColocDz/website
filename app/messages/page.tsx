@@ -274,17 +274,17 @@ export default function MessagesPage() {
     }
   }, [session]);
 
-  // Fetch messages when a chat is selected
+  // Fetch messages when a chat is selected (with SSE real-time stream & polling fallback)
   useEffect(() => {
-    async function fetchMessages() {
-      if (!selectedChat) return;
+    if (!selectedChat) return;
+
+    async function fetchInitialMessages() {
       try {
         const res = await fetch(`/api/messages/${selectedChat}`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setMessages(prev => {
             const temps = prev.filter(m => m.id.startsWith('temp-'));
-            // Filter out any fetched messages that match temp messages to avoid duplicate keys once they are saved
             const nonDuplicateTemps = temps.filter(t => !data.some((d: any) => d.content === t.content && Math.abs(new Date(d.createdAt).getTime() - new Date(t.createdAt).getTime()) < 10000));
             return [...data, ...nonDuplicateTemps];
           });
@@ -293,12 +293,55 @@ export default function MessagesPage() {
         console.error('Failed to fetch messages:', error);
       }
     }
-    
-    fetchMessages();
-    
-    // Simple polling for new messages every 5 seconds
-    const interval = setInterval(fetchMessages, 5000);
-    return () => clearInterval(interval);
+
+    fetchInitialMessages();
+
+    // Setup Server-Sent Events for real-time messages
+    let eventSource: EventSource | null = null;
+    let fallbackInterval: any = null;
+
+    try {
+      eventSource = new EventSource(`/api/messages/stream/${selectedChat}`);
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const newMessage = JSON.parse(event.data);
+          setMessages(prev => {
+            // Replace matching temp message if exists, or append if new
+            const exists = prev.some(m => m.id === newMessage.id || (m.content === newMessage.content && Math.abs(new Date(m.createdAt).getTime() - new Date(newMessage.createdAt).getTime()) < 10000));
+            if (exists) {
+              return prev.map(m => m.id.startsWith('temp-') && m.content === newMessage.content ? newMessage : m);
+            }
+            return [...prev, newMessage];
+          });
+        } catch (err) {
+          console.error('Failed to parse SSE message:', err);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.warn('SSE stream error, falling back to polling:', err);
+        if (eventSource) {
+          eventSource.close();
+        }
+        // Start polling fallback if not already running
+        if (!fallbackInterval) {
+          fallbackInterval = setInterval(fetchInitialMessages, 5000);
+        }
+      };
+    } catch (err) {
+      console.warn('Could not establish SSE, falling back to polling:', err);
+      fallbackInterval = setInterval(fetchInitialMessages, 5000);
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+      }
+    };
   }, [selectedChat]);
 
   // ─── Search filter (Task 2 fix) ───

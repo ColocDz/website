@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/face/check-duplicate
@@ -18,11 +19,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+    const rateLimitResult = await rateLimit(`face-duplicate:${ip}`, 5, 3600000);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many face verification attempts. Please try again in an hour.' },
+        { status: 429 }
+      );
+    }
+
     const { descriptor } = await request.json();
 
-    if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128) {
+    if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128 ||
+        !descriptor.every(v => typeof v === 'number' && Number.isFinite(v))) {
       return NextResponse.json(
-        { error: 'Invalid descriptor. Must be a 128-element number array.' },
+        { error: 'Invalid descriptor. Must be a 128-element finite number array.' },
         { status: 400 }
       );
     }

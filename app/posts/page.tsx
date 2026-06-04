@@ -7,6 +7,8 @@ import { Search, MapPin, Heart } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useI18n } from '@/lib/i18n';
 
+import { PostGridSkeleton } from '@/components/ui/post-skeleton';
+
 interface Post {
   id: string;
   title: string;
@@ -154,7 +156,7 @@ export default function PostsPage() {
         {/* Posts Grid */}
         <div className="max-w-7xl mx-auto p-6">
           {isLoading ? (
-            <div className="text-center py-12"><p className="text-lg text-gray-600">{t('posts.loading')}</p></div>
+            <PostGridSkeleton />
           ) : filteredPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPosts.map((post) => (

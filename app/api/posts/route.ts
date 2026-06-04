@@ -73,6 +73,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Face verification is required to publish posts' }, { status: 400 });
     }
 
+    if (user.faceVerifiedUntil && user.faceVerifiedUntil < new Date()) {
+      return NextResponse.json({ error: 'Your face verification has expired. Please verify again in Settings.' }, { status: 400 });
+    }
+
     const isPublishing = data.status === 'published' || !data.status;
     if (isPublishing) {
       const postCount = await prisma.post.count({

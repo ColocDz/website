@@ -112,6 +112,13 @@ export async function PUT(request: NextRequest) {
     
     if (data.faceVerified !== undefined) {
       updateData.faceVerified = data.faceVerified;
+      if (data.faceVerified) {
+        updateData.faceVerifiedAt = new Date();
+        updateData.faceVerifiedUntil = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000); // 180 days validity
+      } else {
+        updateData.faceVerifiedAt = null;
+        updateData.faceVerifiedUntil = null;
+      }
     }
 
     if (data.faceImage !== undefined && data.faceImage) {
@@ -119,7 +126,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Store face descriptor and check for duplicates
-    if (data.faceDescriptor && Array.isArray(data.faceDescriptor) && data.faceDescriptor.length === 128) {
+    if (data.faceDescriptor && Array.isArray(data.faceDescriptor) && data.faceDescriptor.length === 128 &&
+        data.faceDescriptor.every((v: any) => typeof v === 'number' && Number.isFinite(v))) {
       // Euclidean distance check against all stored descriptors
       const usersWithDescriptors = await prisma.user.findMany({
         where: {
@@ -148,8 +156,11 @@ export async function PUT(request: NextRequest) {
           }, { status: 400 });
         }
       }
-
       updateData.faceDescriptor = data.faceDescriptor;
+    } else if (data.faceDescriptor) {
+      return NextResponse.json({
+        error: 'Invalid face descriptor elements'
+      }, { status: 400 });
     }
 
     // Name and LastName update rules

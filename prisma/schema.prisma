@@ -31,6 +31,8 @@ model User {
   isArchived      Boolean   @default(false)
   identityVerified Boolean  @default(false)
   faceVerified    Boolean   @default(false)
+  faceVerifiedAt  DateTime?
+  faceVerifiedUntil DateTime?
   faceImage       String?
   faceDescriptor  Float[]
   password        String?
@@ -154,4 +156,10 @@ model Comment {
 
   authorId  String   @db.ObjectId
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model RateLimit {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String
+  timestamp DateTime @default(now())
 }
