@@ -71,7 +71,7 @@ export function Navbar({ brandName = 'ColocDz' }: NavbarProps) {
               <img 
                 src="/ColocDz_Logo.png" 
                 alt="ColocDz Logo" 
-                className="h-8 w-auto md:h-10 object-contain transition-all" 
+                className="h-16 w-auto md:h-20 object-contain transition-all" 
               />
               <span className="text-xl md:text-2xl font-bold tracking-tight">{brandName}</span>
             </Link>

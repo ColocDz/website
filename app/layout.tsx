@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: 'ColocDz',
   description: 'Find roommates, rent apartments, and share living spaces in Algeria',
   generator: 'ColocDz',
+  icons: {
+    icon: '/ColocDz_Logo.png',
+  },
 }
 
 export default function RootLayout({

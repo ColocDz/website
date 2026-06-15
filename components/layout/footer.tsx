@@ -11,7 +11,7 @@ export function Footer() {
             <img 
               src="/ColocDz_Logo.png" 
               alt="ColocDz Logo" 
-              className="h-6 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
             <span className="text-lg font-bold text-gray-900">ColocDz</span>
           </div>
