@@ -11,7 +11,7 @@ const baseSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(30, 'Title cannot exceed 30 characters'),
   searchType: z.enum(['roommate', 'roommate_and_place']),
   type: z.string().optional(),
-  postType: z.enum(['offer', 'request']),
+  postType: z.enum(['offer', 'request']).optional(),
   description: z.string().min(100, 'Description must be at least 100 characters').max(5000, 'Description cannot exceed 5,000 characters'),
   price: z.string().optional(),
   maxBudget: z.string().optional(),

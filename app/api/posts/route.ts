@@ -130,11 +130,11 @@ export async function POST(request: NextRequest) {
         maxBudget: data.maxBudget ? data.maxBudget.toString() : null,
         location: data.location || null,
         wilaya: data.wilaya,
-        bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
-        bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
-        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()) : data.amenities) : [],
-        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()) : data.necessities) : [],
-        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()) : data.tags) : [],
+        bedrooms: (data.bedrooms && !isNaN(parseInt(data.bedrooms))) ? parseInt(data.bedrooms) : null,
+        bathrooms: (data.bathrooms && !isNaN(parseInt(data.bathrooms))) ? parseInt(data.bathrooms) : null,
+        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.amenities) : [],
+        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.necessities) : [],
+        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : data.tags) : [],
         images: data.images || [],
         status: data.status || 'published',
         authorId: session.user.id
@@ -142,8 +142,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(post, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating post:', error);
-    return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Failed to create post' }, { status: 500 });
   }
 }
