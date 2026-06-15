@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Account Settings | ColocDz',
+  title: 'ColocDz',
   description: 'Manage your profile details, verification status, security, and notification settings.',
 };
 

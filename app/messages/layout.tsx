@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Your Inbox | ColocDz Messages',
+  title: 'ColocDz',
   description: 'Chat directly with potential roommates, landlords, and house shares on ColocDz.',
 };
 
