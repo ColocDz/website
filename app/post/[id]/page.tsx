@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { MapPin, Heart, ArrowLeft, MessageSquare, Tag, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useSession } from '@/lib/auth-client';
 
@@ -23,8 +22,11 @@ interface PostDetail {
   id: string;
   title: string;
   type: string;
+  searchType?: string;
   wilaya: string | null;
   price: string;
+  maxBudget?: string | null;
+  necessities?: string[];
   tags: string[];
   createdAt: string;
   description: string;
@@ -111,7 +113,11 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         }
         const data = await res.json();
         setPost(data);
-        setInitialMessageText(`Hi ${data.author?.name || 'there'}! I am interested in your property listing: "${data.title}"`);
+        if ((data.searchType || 'roommate') === 'roommate_and_place') {
+          setInitialMessageText(`Hi ${data.author?.name || 'there'}! I saw your roommate + place search profile: "${data.title}" and would love to chat!`);
+        } else {
+          setInitialMessageText(`Hi ${data.author?.name || 'there'}! I am interested in your property listing: "${data.title}"`);
+        }
       } catch (error: any) {
         setErrorMsg(error.message || 'Error fetching post');
       } finally {
@@ -215,6 +221,8 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     );
   }
 
+  const isProfilePost = post && (post.searchType || 'roommate') === 'roommate_and_place';
+
   return (
     <div className="bg-white min-h-screen flex flex-col">
       <Navbar />
@@ -258,109 +266,139 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 onClick={() => router.push('/posts')}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
               >
-                <ArrowLeft size={20} /> Back to Search
+                <i className="fa-solid fa-arrow-left" /> Back to Search
               </button>
-                <button 
-                  onClick={toggleSavePost}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium active:scale-95 shadow-sm"
-                >
-                  <Heart 
-                    size={18} 
-                    fill={isSaved ? "red" : "none"} 
-                    className={isSaved ? "text-red-500" : "text-gray-600"} 
-                  />
-                  {isSaved ? 'Saved' : 'Save'}
-                </button>
+              <button 
+                onClick={toggleSavePost}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium active:scale-95 shadow-sm"
+              >
+                <i className={`fa-heart ${isSaved ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'}`} />
+                {isSaved ? 'Saved' : 'Save'}
+              </button>
             </div>
           </div>
 
           <div className="max-w-5xl mx-auto px-6 py-8">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              {/* Image Gallery */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
-                <div 
-                  onClick={() => setIsLightboxOpen(true)}
-                  className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden cursor-pointer group"
-                >
-                  <Image 
-                    src={post.images?.[activeImageIdx] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop'} 
-                    alt="Main Image"
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded text-sm font-semibold tracking-wide z-10">
-                    {post.type}
+              
+              {/* Image Gallery (Roommate post) or Profile Banner (Roommate + Place post) */}
+              {!isProfilePost ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
+                  <div 
+                    onClick={() => setIsLightboxOpen(true)}
+                    className="relative h-[400px] md:h-[500px] rounded-xl overflow-hidden cursor-pointer group"
+                  >
+                    <Image 
+                      src={post.images?.[activeImageIdx] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop'} 
+                      alt="Main Image"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm text-white px-3 py-1.5 rounded text-sm font-semibold tracking-wide z-10">
+                      {post.type}
+                    </div>
+                    <div className="absolute bottom-4 right-4 bg-black/75 backdrop-blur-sm text-white px-3 py-1 rounded text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to zoom
+                    </div>
                   </div>
-                  <div className="absolute bottom-4 right-4 bg-black/75 backdrop-blur-sm text-white px-3 py-1 rounded text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                    Click to zoom
-                  </div>
-                </div>
-                <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2">
-                  {(() => {
-                    const otherImages = (post.images || []).map((img, originalIdx) => ({ img, originalIdx }))
-                      .filter(item => item.originalIdx !== activeImageIdx);
+                  <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2">
+                    {(() => {
+                      const otherImages = (post.images || []).map((img, originalIdx) => ({ img, originalIdx }))
+                        .filter(item => item.originalIdx !== activeImageIdx);
 
-                    return [0, 1, 2, 3].map((slotIdx) => {
-                      const item = otherImages[slotIdx];
-                      return (
-                        <div 
-                          key={slotIdx} 
-                          onClick={() => {
-                            if (item) {
-                              setActiveImageIdx(item.originalIdx);
-                            }
-                          }}
-                          className={`relative h-full rounded-xl overflow-hidden ${item ? 'cursor-pointer hover:opacity-90' : 'bg-gray-100'}`}
-                        >
-                          {item ? (
-                            <Image 
-                              src={item.img} 
-                              alt={`Gallery image ${slotIdx + 1}`}
-                              fill
-                              className="object-cover transition-opacity"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50/50 text-sm font-medium">
-                              No Image
-                            </div>
-                          )}
-                          
-                          {/* Overlay for remaining images if total > 5 and this is the 4th thumbnail slot */}
-                          {slotIdx === 3 && otherImages.length > 4 && (
-                            <div 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsLightboxOpen(true);
-                              }}
-                              className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl cursor-pointer hover:bg-black/60 transition-colors"
-                            >
-                              +{otherImages.length - 3}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    });
-                  })()}
+                      return [0, 1, 2, 3].map((slotIdx) => {
+                        const item = otherImages[slotIdx];
+                        return (
+                          <div 
+                            key={slotIdx} 
+                            onClick={() => {
+                              if (item) {
+                                setActiveImageIdx(item.originalIdx);
+                              }
+                            }}
+                            className={`relative h-full rounded-xl overflow-hidden ${item ? 'cursor-pointer hover:opacity-90' : 'bg-gray-100'}`}
+                          >
+                            {item ? (
+                              <Image 
+                                src={item.img} 
+                                alt={`Gallery image ${slotIdx + 1}`}
+                                fill
+                                className="object-cover transition-opacity"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50/50 text-sm font-medium">
+                                No Image
+                              </div>
+                            )}
+                            
+                            {/* Overlay for remaining images if total > 5 and this is the 4th thumbnail slot */}
+                            {slotIdx === 3 && otherImages.length > 4 && (
+                              <div 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsLightboxOpen(true);
+                                }}
+                                className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl cursor-pointer hover:bg-black/60 transition-colors"
+                              >
+                                +{otherImages.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-8 text-white flex flex-col md:flex-row items-center gap-6">
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                    {post.author?.image ? (
+                      <Image 
+                        src={post.author.image} 
+                        alt={post.author.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <i className="fa-solid fa-user text-5xl text-gray-400" />
+                    )}
+                  </div>
+                  <div className="text-center md:text-left space-y-2">
+                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
+                      Roommate + Place Search
+                    </span>
+                    <h1 className="text-3xl font-extrabold">{post.title}</h1>
+                    <p className="text-white/90 font-medium">
+                      Posted by {post.author?.name} {post.author?.lastName}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Main Content Area */}
               <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-12">
                 <div className="lg:col-span-2 space-y-8">
                   {/* Title and Price Info */}
                   <div>
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+                    {!isProfilePost && (
+                      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-4">
                         {post.title}
                       </h1>
-                    </div>
+                    )}
                     
-                    <div className="flex items-center gap-6 text-gray-600 text-sm">
+                    <div className="flex flex-wrap items-center gap-6 text-gray-600 text-sm">
                       <div className="flex items-center gap-2">
-                        <MapPin size={18} className="text-gray-400" />
+                        <i className="fa-solid fa-location-dot text-gray-400" />
                         <span className="font-medium">{post.wilaya || 'N/A'}</span>
                       </div>
+                      {post.location && (
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-map-pin text-gray-400" />
+                          <span className="font-medium">{post.location}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
+                        <i className="fa-solid fa-calendar-days text-gray-400" />
                         <span className="font-medium">Posted: {new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -368,24 +406,83 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
 
                   <hr className="border-gray-200" />
 
+                  {/* Bedrooms/Bathrooms/Amenities info for roommate posts */}
+                  {!isProfilePost && (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col items-center justify-center text-center">
+                          <i className="fa-solid fa-bed text-2xl text-indigo-500 mb-2" />
+                          <span className="text-xs text-gray-500 font-medium">Bedrooms</span>
+                          <span className="text-lg font-bold text-gray-900">{post.bedrooms || '0'}</span>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col items-center justify-center text-center">
+                          <i className="fa-solid fa-bath text-2xl text-indigo-500 mb-2" />
+                          <span className="text-xs text-gray-500 font-medium">Bathrooms</span>
+                          <span className="text-lg font-bold text-gray-900">{post.bathrooms || '0'}</span>
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col items-center justify-center text-center col-span-2 sm:col-span-1">
+                          <i className="fa-solid fa-house-user text-2xl text-indigo-500 mb-2" />
+                          <span className="text-xs text-gray-500 font-medium">Property Type</span>
+                          <span className="text-lg font-bold text-gray-900">{post.type}</span>
+                        </div>
+                      </div>
+                      <hr className="border-gray-200" />
+                    </>
+                  )}
+
                   {/* Description */}
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">About this property</h2>
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">
+                      {isProfilePost ? 'About Me' : 'About this property'}
+                    </h2>
                     <p className="text-gray-600 whitespace-pre-line leading-relaxed">
                       {post.description}
                     </p>
                   </div>
 
+                  {/* Amenities (Roommate) or Necessities (Roommate + Place) */}
+                  {isProfilePost ? (
+                    post.necessities && post.necessities.length > 0 && (
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <i className="fa-solid fa-list-check text-gray-400" /> Roommate & Place Necessities
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
+                          {post.necessities.map((item, idx) => (
+                            <span key={idx} className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-4 py-2 rounded-full text-sm font-medium">
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    post.amenities && post.amenities.length > 0 && (
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <i className="fa-solid fa-list-check text-gray-400" /> Amenities
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
+                          {post.amenities.map((item, idx) => (
+                            <span key={idx} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  )}
+
                   {/* Tags */}
                   {post.tags && post.tags.length > 0 && (
                     <div>
                       <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Tag size={20} className="text-gray-400" /> Tags & Amenities
+                        <i className="fa-solid fa-tags text-gray-400" /> Tags
                       </h2>
                       <div className="flex flex-wrap gap-2">
                         {post.tags.map((tag, idx) => (
-                          <span key={idx} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">
-                            {tag}
+                          <span key={idx} className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium">
+                            #{tag}
                           </span>
                         ))}
                       </div>
@@ -401,7 +498,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                     {session ? (
                       <form onSubmit={handleCommentSubmit} className="space-y-3">
                         <textarea
-                          placeholder="Ask a question or leave a comment about this property..."
+                          placeholder="Ask a question or leave a comment..."
                           value={commentText}
                           onChange={(e) => setCommentText(e.target.value)}
                           rows={3}
@@ -480,8 +577,19 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 <div className="lg:col-span-1">
                   <div className="sticky top-24 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                     <div className="mb-6">
-                      <span className="text-3xl font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()}</span>
-                      <span className="text-gray-500 font-medium"> DA / month</span>
+                      {isProfilePost ? (
+                        <>
+                          <span className="text-xs text-gray-500 font-semibold block uppercase tracking-wider mb-1">Max Budget</span>
+                          <span className="text-3xl font-bold text-gray-900">{post.maxBudget ? parseFloat(post.maxBudget).toLocaleString() : 'N/A'}</span>
+                          <span className="text-gray-500 font-medium"> DA / month</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs text-gray-500 font-semibold block uppercase tracking-wider mb-1">Price</span>
+                          <span className="text-3xl font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()}</span>
+                          <span className="text-gray-500 font-medium"> DA / month</span>
+                        </>
+                      )}
                     </div>
 
                     <hr className="border-gray-200 my-6" />
@@ -526,16 +634,16 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                       onClick={handleMessageAuthor}
                       className="w-full bg-black text-white px-6 py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-3"
                     >
-                      <MessageSquare size={20} />
-                      Message Host
+                      <i className="fa-solid fa-message text-lg" />
+                      Message User
                     </button>
 
                     <button 
                       onClick={toggleSavePost}
                       className="w-full border border-gray-300 text-gray-700 px-6 py-4 rounded-xl font-bold hover:bg-gray-50 hover:text-black transition-colors flex items-center justify-center gap-2"
                     >
-                      <Heart size={20} fill={isSaved ? "red" : "none"} className={isSaved ? "text-red-500" : "text-gray-500"} />
-                      {isSaved ? 'Saved' : 'Save Listing'}
+                      <i className={`fa-heart ${isSaved ? 'fa-solid text-red-500' : 'fa-regular text-gray-500'}`} />
+                      {isSaved ? 'Saved' : 'Save Post'}
                     </button>
                     
                     <p className="text-xs text-gray-400 text-center mt-4">
@@ -559,7 +667,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
             >
               ✕
             </button>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Send Message to Host</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Send Message</h2>
             <p className="text-sm text-gray-500 mb-4">Start a conversation with {post?.author?.name}.</p>
             
             <textarea
@@ -614,7 +722,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 }}
                 className="absolute left-4 z-10 p-3 bg-white/15 hover:bg-white/25 rounded-full text-white transition-colors"
               >
-                <ChevronLeft size={28} />
+                <i className="fa-solid fa-chevron-left text-2xl" />
               </button>
             )}
 
@@ -634,7 +742,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 }}
                 className="absolute right-4 z-10 p-3 bg-white/15 hover:bg-white/25 rounded-full text-white transition-colors"
               >
-                <ChevronRight size={28} />
+                <i className="fa-solid fa-chevron-right text-2xl" />
               </button>
             )}
           </div>

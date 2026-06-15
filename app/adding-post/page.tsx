@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Upload, X } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -239,27 +238,6 @@ function AddingPostFormContent() {
             </div>
           </div>
 
-          {/* Post Type (offer/request) - only for roommate */}
-          {searchType === 'roommate' && (
-            <div className="bg-blue-50 p-6 rounded border border-blue-200">
-              <label className="block text-sm font-semibold text-gray-900 mb-4">What are you posting?</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { v: 'offer', l: "I'm Offering", d: 'I want to rent out or sell a property' },
-                  { v: 'request', l: "I'm Looking For", d: 'I want to find a place to rent or buy' },
-                ].map(opt => (
-                  <label key={opt.v} className="flex items-center gap-3 p-4 border-2 rounded cursor-pointer transition-all bg-white" style={{ borderColor: postType === opt.v ? '#000' : '#e5e7eb' }}>
-                    <input type="radio" value={opt.v} {...register('postType')} className="w-4 h-4" />
-                    <div>
-                      <span className="font-semibold text-gray-900">{opt.l}</span>
-                      <p className="text-xs text-gray-600">{opt.d}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Basic Info */}
           <div className="bg-gray-50 p-8 rounded border border-gray-200">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
@@ -408,7 +386,7 @@ function AddingPostFormContent() {
               onClick={() => fileInputRef.current?.click()}
             >
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => processFiles(e.target.files)} />
-              <Upload size={32} className={`mx-auto mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+              <i className={`fa-solid fa-cloud-arrow-up text-3xl mb-4 mx-auto block ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
               <p className="text-gray-900 font-semibold mb-1">Upload photos</p>
               <p className="text-gray-600 text-sm">Drag and drop images here or click to browse</p>
             </div>
@@ -418,8 +396,8 @@ function AddingPostFormContent() {
                   <div key={idx} className="relative group rounded overflow-hidden border border-gray-200 aspect-square">
                     <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
                     <button type="button" onClick={() => removeImage(idx)}
-                      className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X size={14} />
+                      className="absolute top-1 right-1 bg-black/70 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <i className="fa-solid fa-xmark text-xs" />
                     </button>
                   </div>
                 ))}

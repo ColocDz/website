@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, MapPin, Heart, User, Wallet } from 'lucide-react';
+
 import { Navbar } from '@/components/layout/navbar';
 import { useI18n } from '@/lib/i18n';
 import { PostGridSkeleton } from '@/components/ui/post-skeleton';
@@ -89,9 +89,9 @@ export default function PostsPage() {
               {/* Search Type Toggle */}
               <div className="flex gap-2 flex-wrap">
                 {[
-                  { value: '', label: 'All Posts' },
-                  { value: 'roommate', label: '🏠 Roommate' },
-                  { value: 'roommate_and_place', label: '🔍 Roommate + Place' },
+                  { value: '', label: 'All Posts', icon: '' },
+                  { value: 'roommate', label: 'Roommate', icon: 'fa-solid fa-house' },
+                  { value: 'roommate_and_place', label: 'Roommate + Place', icon: 'fa-solid fa-magnifying-glass-location' },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -102,14 +102,14 @@ export default function PostsPage() {
                         : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
                     }`}
                   >
-                    {opt.label}
+                    {opt.icon && <i className={`${opt.icon} mr-1.5`} />}{opt.label}
                   </button>
                 ))}
               </div>
 
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center bg-white border border-gray-300 rounded-lg px-4">
-                  <Search size={20} className="text-gray-400" />
+                  <i className="fa-solid fa-magnifying-glass text-gray-400" />
                   <input type="text" placeholder={t('posts.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 px-3 py-3 focus:outline-none text-sm" />
                 </div>
               </div>
@@ -180,7 +180,7 @@ export default function PostsPage() {
                               {post.author?.image ? (
                                 <Image src={post.author.image} alt={post.author.name || ''} width={48} height={48} className="object-cover w-full h-full" />
                               ) : (
-                                <User size={24} className="text-indigo-500" />
+                                <i className="fa-solid fa-user text-indigo-500 text-xl" />
                               )}
                             </div>
                             <div>
@@ -189,7 +189,7 @@ export default function PostsPage() {
                             </div>
                           </div>
                           <button className="bg-white rounded-full p-2 hover:bg-gray-100 shadow-sm transition-all active:scale-90 z-10" onClick={(e) => toggleSavePost(post.id, e)}>
-                            <Heart size={16} fill={savedPostIds.includes(post.id) ? 'red' : 'none'} className={savedPostIds.includes(post.id) ? 'text-red-500' : 'text-gray-400'} />
+                            <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-400'}`} />
                           </button>
                         </div>
 
@@ -207,11 +207,11 @@ export default function PostsPage() {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-gray-700">
-                            <MapPin size={14} className="text-indigo-500 flex-shrink-0" />
+                            <i className="fa-solid fa-location-dot text-indigo-500 w-4 text-center" />
                             <span>{post.wilaya || 'Any location'}</span>
                           </div>
                           <div className="flex items-center gap-2 text-gray-700">
-                            <Wallet size={14} className="text-indigo-500 flex-shrink-0" />
+                            <i className="fa-solid fa-wallet text-indigo-500 w-4 text-center" />
                             <span>Max budget: <strong>{post.maxBudget ? `${parseFloat(post.maxBudget).toLocaleString()} DA` : 'Flexible'}</strong></span>
                           </div>
                         </div>
@@ -248,14 +248,14 @@ export default function PostsPage() {
                         )}
                       </div>
                       <button className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" onClick={(e) => toggleSavePost(post.id, e)}>
-                        <Heart size={18} fill={savedPostIds.includes(post.id) ? 'red' : 'none'} className={savedPostIds.includes(post.id) ? 'text-red-500' : 'text-gray-600'} />
+                        <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'}`} />
                       </button>
                     </div>
                     <div className="p-4">
                       <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                         <span className="text-xs font-medium text-gray-600">{new Date(post.createdAt).toLocaleDateString()}</span>
                         <span className="text-xs">•</span>
-                        <MapPin size={14} className="text-gray-400" />
+                        <i className="fa-solid fa-location-dot text-gray-400" />
                         <span className="text-xs">{post.wilaya || 'N/A'}</span>
                       </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
