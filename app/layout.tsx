@@ -9,9 +9,9 @@ const _geist = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ColocDZ - Find Your Perfect Home',
+  title: 'ColocDz - Find Your Perfect Home',
   description: 'Find roommates, rent apartments, and share living spaces in Algeria',
-  generator: 'ColocDZ',
+  generator: 'ColocDz',
 }
 
 export default function RootLayout({

@@ -7,7 +7,14 @@ export function Footer() {
     <footer className="bg-gray-50 border-t border-gray-200 py-16 px-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">ColocDZ</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <img 
+              src="/ColocDz_Logo.png" 
+              alt="ColocDz Logo" 
+              className="h-6 w-auto object-contain"
+            />
+            <span className="text-lg font-bold text-gray-900">ColocDz</span>
+          </div>
           <p className="text-gray-600 text-sm mb-4">
             Get updates on new listings and platform improvements.
           </p>
@@ -63,7 +70,7 @@ export function Footer() {
         </div>
         <div className="mt-4 md:mt-0 flex items-center gap-4">
           <p className="text-xs text-gray-500">
-            © 2026 ColocDZ. All rights reserved.
+            © 2026 ColocDz. All rights reserved.
           </p>
           <p className="text-xs text-gray-500">
             Developed by <span className="font-semibold">MorenaDev</span>

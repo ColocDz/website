@@ -14,7 +14,7 @@ interface NavbarProps {
   brandName?: string;
 }
 
-export function Navbar({ brandName = 'ColocDZ' }: NavbarProps) {
+export function Navbar({ brandName = 'ColocDz' }: NavbarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -67,8 +67,13 @@ export function Navbar({ brandName = 'ColocDZ' }: NavbarProps) {
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <Link href="/" className="text-2xl font-bold text-gray-900 no-underline">
-              {brandName}
+            <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-gray-900 no-underline">
+              <img 
+                src="/ColocDz_Logo.png" 
+                alt="ColocDz Logo" 
+                className="h-8 w-auto md:h-10 object-contain transition-all" 
+              />
+              <span className="text-xl md:text-2xl font-bold tracking-tight">{brandName}</span>
             </Link>
           </div>
 
