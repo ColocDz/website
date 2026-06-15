@@ -24,6 +24,7 @@ export const auth = betterAuth({
     database: {
       generateId: false, // Let MongoDB generate ObjectIds
     },
+    disableOriginCheck: true,
   },
   emailAndPassword: {
     enabled: true,
