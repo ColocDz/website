@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
     const type = searchParams.get('type');
     const query = searchParams.get('query');
+    const searchType = searchParams.get('searchType');
 
     const session = await auth.api.getSession({ headers: await headers() });
 
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (type) whereClause.type = type;
+    if (searchType) whereClause.searchType = searchType;
     if (query) {
       whereClause.OR = [
         { title: { contains: query, mode: 'insensitive' } },
@@ -87,32 +89,51 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Validate required fields (in a real app, use Zod)
-    if (!data.title || !data.description || !data.price || !data.location) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const isRoommateAndPlace = data.searchType === 'roommate_and_place';
+
+    // Validate required fields based on search type
+    if (!data.title || !data.description) {
+      return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
     }
 
     if (data.title.length > 30) {
       return NextResponse.json({ error: 'Title cannot exceed 30 characters' }, { status: 400 });
     }
 
-    const priceNum = Number(data.price);
-    if (isNaN(priceNum) || priceNum < 1000) {
-      return NextResponse.json({ error: 'Price must be at least 1,000 DA' }, { status: 400 });
+    if (isRoommateAndPlace) {
+      // For "roommate + place" posts: maxBudget and wilaya are required
+      if (!data.maxBudget) {
+        return NextResponse.json({ error: 'Max budget is required' }, { status: 400 });
+      }
+      if (!data.wilaya) {
+        return NextResponse.json({ error: 'Preferred wilaya is required' }, { status: 400 });
+      }
+    } else {
+      // For "roommate" posts: price and location are required
+      if (!data.price || !data.location) {
+        return NextResponse.json({ error: 'Price and location are required' }, { status: 400 });
+      }
+      const priceNum = Number(data.price);
+      if (isNaN(priceNum) || priceNum < 1000) {
+        return NextResponse.json({ error: 'Price must be at least 1,000 DA' }, { status: 400 });
+      }
     }
 
     const post = await prisma.post.create({
       data: {
         title: data.title,
         description: data.description,
-        type: data.type || 'Apartment',
+        type: isRoommateAndPlace ? 'Profile' : (data.type || 'Apartment'),
         postType: data.postType || 'offer',
+        searchType: data.searchType || 'roommate',
         price: data.price ? data.price.toString() : null,
-        location: data.location,
+        maxBudget: data.maxBudget ? data.maxBudget.toString() : null,
+        location: data.location || null,
         wilaya: data.wilaya,
         bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
         bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
         amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()) : data.amenities) : [],
+        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()) : data.necessities) : [],
         tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()) : data.tags) : [],
         images: data.images || [],
         status: data.status || 'published',

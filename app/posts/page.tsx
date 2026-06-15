@@ -3,18 +3,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Search, MapPin, Heart } from 'lucide-react';
+import { Search, MapPin, Heart, User, Wallet } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useI18n } from '@/lib/i18n';
-
 import { PostGridSkeleton } from '@/components/ui/post-skeleton';
 
 interface Post {
   id: string;
   title: string;
   type: string;
+  searchType?: string;
   wilaya: string | null;
   price: string;
+  maxBudget?: string | null;
+  necessities?: string[];
   tags: string[];
   createdAt: string;
   author?: { id: string; name: string; image: string | null; gender?: string | null };
@@ -29,6 +31,7 @@ export default function PostsPage() {
   const [selectedType, setSelectedType] = useState('');
   const [selectedWilaya, setSelectedWilaya] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
+  const [selectedSearchType, setSelectedSearchType] = useState('');
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
@@ -37,26 +40,15 @@ export default function PostsPage() {
     async function fetchPosts() {
       try {
         const res = await fetch('/api/posts');
-        if (res.ok) {
-          const data = await res.json();
-          setAllPosts(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      } finally {
-        setIsLoading(false);
-      }
+        if (res.ok) setAllPosts(await res.json());
+      } catch (error) { console.error('Failed to fetch posts:', error); }
+      finally { setIsLoading(false); }
     }
     async function fetchSavedPosts() {
       try {
         const res = await fetch('/api/user');
-        if (res.ok) {
-          const user = await res.json();
-          setSavedPostIds(user.savedPostIds || []);
-        }
-      } catch (e) {
-        console.error('Not logged in or failed to fetch user saved posts');
-      }
+        if (res.ok) { const u = await res.json(); setSavedPostIds(u.savedPostIds || []); }
+      } catch { }
     }
     fetchPosts();
     fetchSavedPosts();
@@ -66,32 +58,24 @@ export default function PostsPage() {
     e.stopPropagation();
     try {
       const res = await fetch(`/api/posts/${postId}/save`, { method: 'POST' });
-      if (res.status === 401) {
-        router.push('/login');
-        return;
-      }
+      if (res.status === 401) { router.push('/login'); return; }
       if (res.ok) {
         const data = await res.json();
-        if (data.saved) {
-          setSavedPostIds(prev => [...prev, postId]);
-        } else {
-          setSavedPostIds(prev => prev.filter(id => id !== postId));
-        }
+        setSavedPostIds(prev => data.saved ? [...prev, postId] : prev.filter(id => id !== postId));
       }
-    } catch (error) {
-      console.error('Error saving post:', error);
-    }
+    } catch { }
   };
 
   const filteredPosts = useMemo(() => allPosts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesType = !selectedType || post.type === selectedType;
     const matchesWilaya = !selectedWilaya || post.wilaya === selectedWilaya;
     const matchesGender = !selectedGender || post.author?.gender === selectedGender;
-    return matchesSearch && matchesType && matchesWilaya && matchesGender;
-  }), [searchQuery, selectedType, selectedWilaya, selectedGender, allPosts]);
+    const matchesSearchType = !selectedSearchType || (post.searchType || 'roommate') === selectedSearchType;
+    return matchesSearch && matchesType && matchesWilaya && matchesGender && matchesSearchType;
+  }), [searchQuery, selectedType, selectedWilaya, selectedGender, selectedSearchType, allPosts]);
 
   return (
     <div className="bg-white min-h-screen" dir={dir}>
@@ -102,24 +86,47 @@ export default function PostsPage() {
           <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('posts.title')}</h1>
             <div className="space-y-4">
+              {/* Search Type Toggle */}
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: '', label: 'All Posts' },
+                  { value: 'roommate', label: '🏠 Roommate' },
+                  { value: 'roommate_and_place', label: '🔍 Roommate + Place' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedSearchType(opt.value)}
+                    className={`px-5 py-2 rounded-full text-sm font-semibold transition-all border ${
+                      selectedSearchType === opt.value
+                        ? 'bg-black text-white border-black'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center bg-white border border-gray-300 rounded-lg px-4">
                   <Search size={20} className="text-gray-400" />
-                  <input type="text" placeholder={t('posts.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 px-3 py-3 focus:outline-none text-sm"/>
+                  <input type="text" placeholder={t('posts.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 px-3 py-3 focus:outline-none text-sm" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">{t('posts.type')}</label>
-                  <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
-                    <option value="">{t('posts.allTypes')}</option>
-                    <option value="Apartment">{t('type.Apartment')}</option>
-                    <option value="House">{t('type.House')}</option>
-                    <option value="Studio">{t('type.Studio')}</option>
-                    <option value="Room">{t('type.Room')}</option>
-                    <option value="Shared Space">{t('type.SharedSpace')}</option>
-                  </select>
-                </div>
+                {selectedSearchType !== 'roommate_and_place' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('posts.type')}</label>
+                    <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                      <option value="">{t('posts.allTypes')}</option>
+                      <option value="Apartment">{t('type.Apartment')}</option>
+                      <option value="House">{t('type.House')}</option>
+                      <option value="Studio">{t('type.Studio')}</option>
+                      <option value="Room">{t('type.Room')}</option>
+                      <option value="Shared Space">{t('type.SharedSpace')}</option>
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">{t('posts.wilaya')}</label>
                   <select value={selectedWilaya} onChange={(e) => setSelectedWilaya(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
@@ -159,67 +166,116 @@ export default function PostsPage() {
             <PostGridSkeleton />
           ) : filteredPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <div key={post.id} className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                  <div className="relative h-48 overflow-hidden bg-gray-200">
-                    <Image 
-                      src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'} 
-                      alt={post.title} 
-                      fill 
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
-                      <div className="bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
-                      {post.author?.gender && (
-                        <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${
-                          post.author.gender === 'Male' ? 'bg-indigo-600' : post.author.gender === 'Female' ? 'bg-pink-600' : 'bg-gray-600'
-                        }`}>
-                          {post.author.gender === 'Male' ? t('posts.menOnly') : post.author.gender === 'Female' ? t('posts.womenOnly') : post.author.gender}
+              {filteredPosts.map((post) => {
+                const isProfilePost = (post.searchType || 'roommate') === 'roommate_and_place';
+
+                if (isProfilePost) {
+                  // Profile-style card for "roommate + place" posts
+                  return (
+                    <div key={post.id} className="group bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+                      <div className="p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-indigo-100 border-2 border-indigo-300 flex items-center justify-center overflow-hidden">
+                              {post.author?.image ? (
+                                <Image src={post.author.image} alt={post.author.name || ''} width={48} height={48} className="object-cover w-full h-full" />
+                              ) : (
+                                <User size={24} className="text-indigo-500" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{post.author?.name || 'Anonymous'}</p>
+                              <p className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <button className="bg-white rounded-full p-2 hover:bg-gray-100 shadow-sm transition-all active:scale-90 z-10" onClick={(e) => toggleSavePost(post.id, e)}>
+                            <Heart size={16} fill={savedPostIds.includes(post.id) ? 'red' : 'none'} className={savedPostIds.includes(post.id) ? 'text-red-500' : 'text-gray-400'} />
+                          </button>
                         </div>
-                      )}
+
+                        <div className="flex gap-1.5 mb-3 flex-wrap">
+                          <span className="bg-indigo-600 text-white px-2.5 py-0.5 rounded text-xs font-semibold">Looking for both</span>
+                          {post.author?.gender && (
+                            <span className={`text-white px-2.5 py-0.5 rounded text-xs font-semibold ${post.author.gender === 'Male' ? 'bg-blue-500' : 'bg-pink-500'}`}>
+                              {post.author.gender === 'Male' ? t('posts.menOnly') : t('posts.womenOnly')}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-3">{post.description}</p>
+
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <MapPin size={14} className="text-indigo-500 flex-shrink-0" />
+                            <span>{post.wilaya || 'Any location'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <Wallet size={14} className="text-indigo-500 flex-shrink-0" />
+                            <span>Max budget: <strong>{post.maxBudget ? `${parseFloat(post.maxBudget).toLocaleString()} DA` : 'Flexible'}</strong></span>
+                          </div>
+                        </div>
+
+                        {post.necessities && post.necessities.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-3">
+                            {post.necessities.slice(0, 4).map((n, i) => (
+                              <span key={i} className="inline-block bg-white text-indigo-700 text-xs px-2 py-0.5 rounded border border-indigo-200">{n}</span>
+                            ))}
+                            {post.necessities.length > 4 && (
+                              <span className="text-xs text-indigo-500">+{post.necessities.length - 4} more</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <button 
-                      className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" 
-                      onClick={(e) => toggleSavePost(post.id, e)}
-                    >
-                      <Heart 
-                        size={18} 
-                        fill={savedPostIds.includes(post.id) ? "red" : "none"} 
-                        className={savedPostIds.includes(post.id) ? "text-red-500" : "text-gray-600"} 
+                  );
+                }
+
+                // Standard property card for "roommate" posts
+                return (
+                  <div key={post.id} className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+                    <div className="relative h-48 overflow-hidden bg-gray-200">
+                      <Image
+                        src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
+                        alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                    </button>
+                      <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
+                        <div className="bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
+                        {post.author?.gender && (
+                          <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${post.author.gender === 'Male' ? 'bg-indigo-600' : post.author.gender === 'Female' ? 'bg-pink-600' : 'bg-gray-600'}`}>
+                            {post.author.gender === 'Male' ? t('posts.menOnly') : post.author.gender === 'Female' ? t('posts.womenOnly') : post.author.gender}
+                          </div>
+                        )}
+                      </div>
+                      <button className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" onClick={(e) => toggleSavePost(post.id, e)}>
+                        <Heart size={18} fill={savedPostIds.includes(post.id) ? 'red' : 'none'} className={savedPostIds.includes(post.id) ? 'text-red-500' : 'text-gray-600'} />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                        <span className="text-xs font-medium text-gray-600">{new Date(post.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs">•</span>
+                        <MapPin size={14} className="text-gray-400" />
+                        <span className="text-xs">{post.wilaya || 'N/A'}</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{post.description}</p>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {post.tags.map((tag, idx) => (
+                          <span key={idx} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">{tag}</span>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between">
+                        <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">{t('posts.perMonth')}</span></span>
+                        <span className="text-xs text-gray-500 hover:underline hover:text-black cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); if (post.author?.id) router.push(`/profile?userId=${post.author.id}`); }}>
+                          {t('posts.by')} {post.author?.name || 'Anonymous'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                      <span className="text-xs font-medium text-gray-600">{new Date(post.createdAt).toLocaleDateString()}</span>
-                      <span className="text-xs">•</span>
-                      <MapPin size={14} className="text-gray-400"/>
-                      <span className="text-xs">{post.wilaya || 'N/A'}</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{post.description}</p>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {post.tags.map((tag, idx) => (
-                        <span key={idx} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">{tag}</span>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">{t('posts.perMonth')}</span></span>
-                      <span 
-                        className="text-xs text-gray-500 hover:underline hover:text-black cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (post.author?.id) {
-                            router.push(`/profile?userId=${post.author.id}`);
-                          }
-                        }}
-                      >
-                        {t('posts.by')} {post.author?.name || 'Anonymous'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12"><p className="text-lg text-gray-600">{t('posts.noResults')}</p></div>

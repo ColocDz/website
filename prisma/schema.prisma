@@ -96,13 +96,16 @@ model Post {
   title       String
   type        String   // Apartment, House, Studio, Room, Shared Space
   postType    String   // offer, request
+  searchType  String   @default("roommate") // "roommate" = has place, "roommate_and_place" = needs both
   description String
   price       String?
+  maxBudget   String?  // For roommate_and_place posts: max affordable rent
   location    String?
   wilaya      String?
   bedrooms    Int?
   bathrooms   Int?
   amenities   String[]
+  necessities String[] // For roommate_and_place posts: what they need (WiFi, Parking, etc.)
   tags        String[]
   images      String[]
   createdAt   DateTime @default(now())
