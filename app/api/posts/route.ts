@@ -13,11 +13,26 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type');
     const query = searchParams.get('query');
     const searchType = searchParams.get('searchType');
+    const saved = searchParams.get('saved') === 'true';
 
     const session = await auth.api.getSession({ headers: await headers() });
 
     const whereClause: any = { isArchived: false };
-    if (userId) {
+    
+    if (saved) {
+      if (!session?.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { savedPostIds: true }
+      });
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      whereClause.id = { in: user.savedPostIds || [] };
+      whereClause.status = 'published';
+    } else if (userId) {
       whereClause.authorId = userId;
       // If requester is not the target user, only show published posts
       if (!session || session.user.id !== userId) {

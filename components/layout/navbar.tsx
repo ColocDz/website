@@ -35,14 +35,21 @@ export function Navbar({ brandName = 'ColocDz' }: NavbarProps) {
     { label: t('nav.addPost'), href: '/adding-post' },
   ];
 
-  const menuItems = [
-    { label: t('sidebar.home'), path: '/' },
-    { label: t('sidebar.addPost'), path: '/adding-post' },
-    { label: t('sidebar.profile'), path: '/profile' },
-    { label: t('sidebar.messages'), path: '/messages' },
-    { label: t('sidebar.settings'), path: '/settings' },
-    { label: t('sidebar.logOut'), path: '#', onClick: handleLogout },
-  ];
+  const menuItems = isLoggedIn
+    ? [
+        { label: t('sidebar.home'), path: '/', icon: <i className="fa-solid fa-house w-6 text-center" /> },
+        { label: t('sidebar.addPost'), path: '/adding-post', icon: <i className="fa-solid fa-plus w-6 text-center" /> },
+        { label: t('sidebar.profile'), path: '/profile', icon: <i className="fa-solid fa-user w-6 text-center" /> },
+        { label: t('sidebar.saved'), path: '/profile?tab=saved', icon: <i className="fa-solid fa-heart w-6 text-center text-red-500" /> },
+        { label: t('sidebar.messages'), path: '/messages', icon: <i className="fa-solid fa-envelope w-6 text-center" /> },
+        { label: t('sidebar.settings'), path: '/settings', icon: <i className="fa-solid fa-gear w-6 text-center" /> },
+        { label: t('sidebar.logOut'), path: '#', onClick: handleLogout, icon: <i className="fa-solid fa-right-from-bracket w-6 text-center" /> },
+      ]
+    : [
+        { label: t('sidebar.home'), path: '/', icon: <i className="fa-solid fa-house w-6 text-center" /> },
+        { label: t('nav.findRoommate'), path: '/posts', icon: <i className="fa-solid fa-magnifying-glass w-6 text-center" /> },
+        { label: t('nav.signIn'), path: '/login', icon: <i className="fa-solid fa-right-to-bracket w-6 text-center" /> },
+      ];
 
   return (
     <>

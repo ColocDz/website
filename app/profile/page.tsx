@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Edit2, Trash2, AlertCircle, Phone, Mail, Lock } from 'lucide-react';
@@ -11,11 +11,28 @@ import { useSession } from '@/lib/auth-client';
 interface Post {
   id: string;
   type: string;
+  postType?: string;
+  searchType?: string;
   title: string;
   description: string;
+  price?: string;
+  maxBudget?: string;
+  location?: string;
+  wilaya?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  amenities?: string[];
+  necessities?: string[];
+  tags?: string[];
+  images?: string[];
   createdAt: string;
-  images: string[];
-  tags: string[];
+  author?: {
+    id: string;
+    name: string;
+    lastName?: string;
+    image?: string;
+    gender?: string;
+  };
 }
 
 interface UserProfile {
@@ -64,6 +81,22 @@ function ProfileContent() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [saveError, setSaveError] = useState('');
 
+  // Tab state & synchronization
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'listings' | 'saved'>('listings');
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false);
+  const [searchTypeFilter, setSearchTypeFilter] = useState<'all' | 'roommate' | 'roommate_and_place'>('all');
+  const [savedPostIds, setSavedPostIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (tabParam === 'saved' && isOwnProfile) {
+      setActiveTab('saved');
+    } else {
+      setActiveTab('listings');
+    }
+  }, [tabParam, isOwnProfile]);
+
   // Fetch user profile data
   useEffect(() => {
     async function fetchProfile() {
@@ -86,6 +119,9 @@ function ProfileContent() {
             identityVerified: data.identityVerified || false,
             faceVerified: data.faceVerified || false,
           });
+          if (isOwnProfile) {
+            setSavedPostIds(data.savedPostIds || []);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -93,7 +129,7 @@ function ProfileContent() {
     }
     
     fetchProfile();
-  }, [session, targetUserId]);
+  }, [session, targetUserId, isOwnProfile]);
 
   // Fetch user posts
   useEffect(() => {
@@ -117,6 +153,62 @@ function ProfileContent() {
       fetchUserPosts();
     }
   }, [session, isPending, targetUserId]);
+
+  // Fetch saved posts
+  useEffect(() => {
+    async function fetchSavedPosts() {
+      if (!session?.user || !isOwnProfile) return;
+      setIsLoadingSaved(true);
+      try {
+        const res = await fetch('/api/posts?saved=true');
+        if (res.ok) {
+          const data = await res.json();
+          setSavedPosts(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch saved posts:', error);
+      } finally {
+        setIsLoadingSaved(false);
+      }
+    }
+
+    if (activeTab === 'saved') {
+      fetchSavedPosts();
+    }
+  }, [activeTab, session, isOwnProfile]);
+
+  // Toggle Save Post
+  const toggleSavePost = async (postId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/posts/${postId}/save`, { method: 'POST' });
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        setSavedPostIds(prev => {
+          const updated = data.saved ? [...prev, postId] : prev.filter(id => id !== postId);
+          // If we unsaved a post while on the 'saved' tab, remove it from the list immediately
+          if (!data.saved && activeTab === 'saved') {
+            setSavedPosts(old => old.filter(p => p.id !== postId));
+          }
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to toggle save post:', err);
+    }
+  };
+
+  const displayedPosts = useMemo(() => {
+    const currentList = activeTab === 'listings' ? posts : savedPosts;
+    return currentList.filter(post => {
+      if (searchTypeFilter === 'all') return true;
+      return (post.searchType || 'roommate') === searchTypeFilter;
+    });
+  }, [activeTab, posts, savedPosts, searchTypeFilter]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -402,66 +494,234 @@ function ProfileContent() {
 
         {/* Posts Section */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            {isOwnProfile ? 'Your Listings' : `${profile.name}'s Listings`}
-          </h2>
-          {isLoadingPosts ? (
-            <p className="text-gray-500">Loading listings...</p>
-          ) : posts.length === 0 ? (
-            <p className="text-gray-500 italic">No listings found.</p>
+          {isOwnProfile ? (
+            <div className="flex border-b border-gray-200 mb-6">
+              <button
+                onClick={() => setActiveTab('listings')}
+                className={`py-4 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+                  activeTab === 'listings'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <i className="fa-solid fa-list" />
+                My Listings ({posts.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('saved')}
+                className={`py-4 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+                  activeTab === 'saved'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <i className="fa-solid fa-heart text-red-500" />
+                Saved Listings ({savedPosts.length})
+              </button>
+            </div>
+          ) : (
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {profile.name}'s Listings
+            </h2>
+          )}
+
+          {/* Tag / SearchType Filters */}
+          <div className="flex flex-wrap gap-2 mb-8 items-center">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 mr-2 flex items-center gap-1.5">
+              <i className="fa-solid fa-filter" />
+              Filter by tag:
+            </span>
+            {[
+              { value: 'all', label: 'All', icon: 'fa-solid fa-border-all' },
+              { value: 'roommate', label: 'Roommate (Has Place)', icon: 'fa-solid fa-house' },
+              { value: 'roommate_and_place', label: 'Roommate + Place (Needs Place)', icon: 'fa-solid fa-magnifying-glass-location' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setSearchTypeFilter(opt.value as any)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all border flex items-center gap-1.5 ${
+                  searchTypeFilter === opt.value
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:text-gray-800'
+                }`}
+              >
+                <i className={opt.icon} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {isLoadingPosts || (activeTab === 'saved' && isLoadingSaved) ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="bg-gray-150 animate-pulse rounded-xl h-64 w-full" />
+              ))}
+            </div>
+          ) : displayedPosts.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 p-8">
+              <i className="fa-solid fa-folder-open text-gray-300 text-4xl mb-3" />
+              <p className="text-gray-500 font-medium">No posts found matching the filter.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.map((post) => (
-                <div key={post.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                  <div className="relative h-48 w-full bg-gray-100">
-                    <Image
-                      src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
-                      alt={post.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-2">
-                        {post.type} • {new Date(post.createdAt).toLocaleDateString()}
-                      </p>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{post.description}</p>
-                    </div>
+              {displayedPosts.map((post) => {
+                const isProfilePost = (post.searchType || 'roommate') === 'roommate_and_place';
+                
+                if (isProfilePost) {
+                  // Profile-style card
+                  return (
+                    <div
+                      key={post.id}
+                      className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer justify-between"
+                      onClick={() => router.push(`/post/${post.id}`)}
+                    >
+                      <div className="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center overflow-hidden">
+                                {post.author?.image ? (
+                                  <Image
+                                    src={post.author.image}
+                                    alt={post.author.name || ''}
+                                    width={40}
+                                    height={40}
+                                    className="object-cover w-full h-full"
+                                    unoptimized
+                                  />
+                                ) : (
+                                  <i className="fa-solid fa-user text-indigo-500 text-base" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900 text-xs">{post.author?.name || 'Anonymous'}</p>
+                                <p className="text-[10px] text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                            <button
+                              className="bg-white rounded-full p-2 hover:bg-gray-150 shadow-sm transition-all active:scale-90 z-10"
+                              onClick={(e) => toggleSavePost(post.id, e)}
+                            >
+                              <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-400'}`} />
+                            </button>
+                          </div>
 
-                    <div className="flex gap-2 border-t border-gray-100 pt-4 mt-2 w-full">
-                      {isOwnProfile ? (
-                        <>
+                          <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-1">{post.title}</h3>
+                          <p className="text-gray-600 text-xs mb-3 line-clamp-2">{post.description}</p>
+
+                          <div className="space-y-1.5 text-xs text-gray-700">
+                            <div className="flex items-center gap-2">
+                              <i className="fa-solid fa-location-dot text-indigo-500 w-4 text-center" />
+                              <span>{post.wilaya || 'Any location'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <i className="fa-solid fa-wallet text-indigo-500 w-4 text-center" />
+                              <span>Max budget: <strong>{post.maxBudget ? `${parseFloat(post.maxBudget).toLocaleString()} DA` : 'Flexible'}</strong></span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {post.necessities && post.necessities.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-3">
+                            {post.necessities.slice(0, 3).map((n, i) => (
+                              <span key={i} className="inline-block bg-white text-indigo-700 text-[10px] px-1.5 py-0.5 rounded border border-indigo-150">{n}</span>
+                            ))}
+                            {post.necessities.length > 3 && (
+                              <span className="text-[10px] text-indigo-500">+{post.necessities.length - 3} more</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {isOwnProfile && activeTab === 'listings' && (
+                        <div className="flex gap-2 border-t border-gray-100 p-4 bg-white">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleEditPost(post.id); }}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-xs font-semibold border border-gray-200"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-xs font-semibold border border-gray-200"
                             title="Edit post"
                           >
-                            <Edit2 size={14} />
+                            <i className="fa-solid fa-pen-to-square" />
                             Edit
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeletePost(post.id); }}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs font-semibold border border-red-100"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs font-semibold border border-red-100"
                             title="Delete post"
                           >
-                            <Trash2 size={14} />
+                            <i className="fa-solid fa-trash" />
                             Delete
                           </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`); }}
-                          className="w-full py-2 bg-black hover:bg-gray-800 text-white rounded-lg transition-colors text-xs font-bold text-center"
-                        >
-                          View Details
-                        </button>
+                        </div>
                       )}
                     </div>
+                  );
+                }
+
+                // Standard roommate post card
+                return (
+                  <div
+                    key={post.id}
+                    className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer justify-between"
+                    onClick={() => router.push(`/post/${post.id}`)}
+                  >
+                    <div>
+                      <div className="relative h-44 w-full bg-gray-100 overflow-hidden">
+                        <Image
+                          src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
+                          alt={post.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          unoptimized
+                        />
+                        <button
+                          className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10"
+                          onClick={(e) => toggleSavePost(post.id, e)}
+                        >
+                          <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'}`} />
+                        </button>
+                        <div className="absolute top-3 left-3 bg-black text-white px-2.5 py-0.5 rounded text-[10px] font-semibold">
+                          {post.type}
+                        </div>
+                      </div>
+
+                      <div className="p-4">
+                        <p className="text-[10px] text-gray-400 mb-1">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </p>
+                        <h3 className="text-base font-bold text-gray-900 mb-1 line-clamp-1">{post.title}</h3>
+                        <p className="text-gray-600 text-xs mb-3 line-clamp-2">{post.description}</p>
+                        
+                        {post.price && (
+                          <p className="text-sm font-extrabold text-gray-900">
+                            {parseFloat(post.price).toLocaleString()} DA <span className="text-[10px] text-gray-400 font-normal">/month</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {isOwnProfile && activeTab === 'listings' && (
+                      <div className="flex gap-2 border-t border-gray-100 p-4 bg-white">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEditPost(post.id); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-xs font-semibold border border-gray-200"
+                          title="Edit post"
+                        >
+                          <i className="fa-solid fa-pen-to-square" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeletePost(post.id); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs font-semibold border border-red-100"
+                          title="Delete post"
+                        >
+                          <i className="fa-solid fa-trash" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

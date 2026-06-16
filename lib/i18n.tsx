@@ -21,6 +21,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'sidebar.messages': 'Messages',
     'sidebar.settings': 'Settings',
     'sidebar.logOut': 'Log Out',
+    'sidebar.saved': 'Saved Posts',
     // Home page
     'home.heroTitle': 'Ready to find your place',
     'home.heroSubtitle': 'Post what you need or search for the right fit today',
@@ -182,6 +183,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'sidebar.messages': 'Messages',
     'sidebar.settings': 'Paramètres',
     'sidebar.logOut': 'Déconnexion',
+    'sidebar.saved': 'Annonces sauvegardées',
     'home.heroTitle': 'Prêt à trouver votre chez-vous',
     'home.heroSubtitle': 'Publiez ce dont vous avez besoin ou cherchez dès aujourd\'hui',
     'home.post': 'Publier',
@@ -335,6 +337,7 @@ const translations: Record<Locale, Record<string, string>> = {
     'sidebar.messages': 'الرسائل',
     'sidebar.settings': 'الإعدادات',
     'sidebar.logOut': 'تسجيل الخروج',
+    'sidebar.saved': 'الإعلانات المحفوظة',
     'home.heroTitle': 'مستعد لإيجاد مكانك',
     'home.heroSubtitle': 'انشر ما تحتاجه أو ابحث عن المناسب اليوم',
     'home.post': 'نشر',
