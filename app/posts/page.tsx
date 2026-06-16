@@ -263,8 +263,10 @@ export default function PostsPage() {
                       <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
                         <div className="bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
                         {post.author?.gender && (
-                          <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${post.author.gender === 'Male' ? 'bg-indigo-600' : post.author.gender === 'Female' ? 'bg-pink-600' : 'bg-gray-600'}`}>
-                            {post.author.gender === 'Male' ? t('posts.menOnly') : post.author.gender === 'Female' ? t('posts.womenOnly') : post.author.gender}
+                          <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${
+                            post.author.gender.toUpperCase() === 'MALE' ? 'bg-blue-600' : post.author.gender.toUpperCase() === 'FEMALE' ? 'bg-pink-600' : 'bg-gray-600'
+                          }`}>
+                            {post.author.gender.toUpperCase() === 'MALE' ? t('posts.menOnly') : post.author.gender.toUpperCase() === 'FEMALE' ? t('posts.womenOnly') : post.author.gender}
                           </div>
                         )}
                       </div>

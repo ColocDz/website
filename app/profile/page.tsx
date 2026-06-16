@@ -711,8 +711,17 @@ function ProfileContent() {
                         >
                           <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'}`} />
                         </button>
-                        <div className="absolute top-3 left-3 bg-black text-white px-2.5 py-0.5 rounded text-[10px] font-semibold">
-                          {post.type}
+                        <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
+                          <div className="bg-black text-white px-2.5 py-0.5 rounded text-[10px] font-semibold">
+                            {post.type}
+                          </div>
+                          {post.author?.gender && (
+                            <div className={`text-white px-2.5 py-0.5 rounded text-[10px] font-semibold ${
+                              post.author.gender.toUpperCase() === 'MALE' ? 'bg-blue-600' : post.author.gender.toUpperCase() === 'FEMALE' ? 'bg-pink-600' : 'bg-gray-600'
+                            }`}>
+                              {post.author.gender.toUpperCase() === 'MALE' ? t('posts.menOnly') : post.author.gender.toUpperCase() === 'FEMALE' ? t('posts.womenOnly') : post.author.gender}
+                            </div>
+                          )}
                         </div>
                       </div>
 
