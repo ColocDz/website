@@ -171,16 +171,37 @@ export default function PostsPage() {
 
                 if (isProfilePost) {
                   // Profile-style card for "roommate + place" posts
+                  const isFemale = post.author?.gender === 'Female';
+                  const theme = isFemale
+                    ? {
+                        cardBg: 'bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200',
+                        avatarBg: 'bg-pink-100 border-2 border-pink-300',
+                        avatarIcon: 'text-pink-500',
+                        tagBadge: 'bg-pink-600',
+                        iconColor: 'text-pink-500',
+                        necessityText: 'text-pink-700',
+                        necessityBorder: 'border-pink-200'
+                      }
+                    : {
+                        cardBg: 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200',
+                        avatarBg: 'bg-indigo-100 border-2 border-indigo-300',
+                        avatarIcon: 'text-indigo-500',
+                        tagBadge: 'bg-blue-600',
+                        iconColor: 'text-indigo-500',
+                        necessityText: 'text-indigo-700',
+                        necessityBorder: 'border-indigo-200'
+                      };
+
                   return (
-                    <div key={post.id} className="group bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+                    <div key={post.id} className={`group ${theme.cardBg} rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer`} onClick={() => router.push(`/post/${post.id}`)}>
                       <div className="p-5">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-indigo-100 border-2 border-indigo-300 flex items-center justify-center overflow-hidden">
+                            <div className={`w-12 h-12 rounded-full ${theme.avatarBg} flex items-center justify-center overflow-hidden`}>
                               {post.author?.image ? (
                                 <Image src={post.author.image} alt={post.author.name || ''} width={48} height={48} className="object-cover w-full h-full" />
                               ) : (
-                                <i className="fa-solid fa-user text-indigo-500 text-xl" />
+                                <i className={`fa-solid fa-user ${theme.avatarIcon} text-xl`} />
                               )}
                             </div>
                             <div>
@@ -194,10 +215,10 @@ export default function PostsPage() {
                         </div>
 
                         <div className="flex gap-1.5 mb-3 flex-wrap">
-                          <span className="bg-indigo-600 text-white px-2.5 py-0.5 rounded text-xs font-semibold">Looking for both</span>
+                          <span className={`${theme.tagBadge} text-white px-2.5 py-0.5 rounded text-xs font-semibold`}>Looking for both</span>
                           {post.author?.gender && (
-                            <span className={`text-white px-2.5 py-0.5 rounded text-xs font-semibold ${post.author.gender === 'Male' ? 'bg-blue-500' : 'bg-pink-500'}`}>
-                              {post.author.gender === 'Male' ? t('posts.menOnly') : t('posts.womenOnly')}
+                            <span className={`text-white px-2.5 py-0.5 rounded text-xs font-semibold ${post.author.gender === 'Female' ? 'bg-pink-500' : 'bg-blue-500'}`}>
+                              {post.author.gender === 'Female' ? t('posts.womenOnly') : t('posts.menOnly')}
                             </span>
                           )}
                         </div>
@@ -207,11 +228,11 @@ export default function PostsPage() {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-gray-700">
-                            <i className="fa-solid fa-location-dot text-indigo-500 w-4 text-center" />
+                            <i className={`fa-solid fa-location-dot ${theme.iconColor} w-4 text-center`} />
                             <span>{post.wilaya || 'Any location'}</span>
                           </div>
                           <div className="flex items-center gap-2 text-gray-700">
-                            <i className="fa-solid fa-wallet text-indigo-500 w-4 text-center" />
+                            <i className={`fa-solid fa-wallet ${theme.iconColor} w-4 text-center`} />
                             <span>Max budget: <strong>{post.maxBudget ? `${parseFloat(post.maxBudget).toLocaleString()} DA` : 'Flexible'}</strong></span>
                           </div>
                         </div>
@@ -219,7 +240,7 @@ export default function PostsPage() {
                         {post.necessities && post.necessities.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             {post.necessities.slice(0, 4).map((n, i) => (
-                              <span key={i} className="inline-block bg-white text-indigo-700 text-xs px-2 py-0.5 rounded border border-indigo-200">{n}</span>
+                              <span key={i} className={`inline-block bg-white ${theme.necessityText} text-xs px-2 py-0.5 rounded border ${theme.necessityBorder}`}>{n}</span>
                             ))}
                             {post.necessities.length > 4 && (
                               <span className="text-xs text-indigo-500">+{post.necessities.length - 4} more</span>

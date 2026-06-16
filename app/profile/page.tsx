@@ -7,6 +7,7 @@ import { Edit2, Trash2, AlertCircle, Phone, Mail, Lock } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { DeleteConfirmationModal } from '@/components/delete-confirmation-modal';
 import { useSession } from '@/lib/auth-client';
+import { useI18n } from '@/lib/i18n';
 
 interface Post {
   id: string;
@@ -54,6 +55,7 @@ function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, isPending } = useSession();
+  const { t } = useI18n();
   
   const targetUserId = searchParams.get('userId');
   const isOwnProfile = !targetUserId || targetUserId === session?.user?.id;
@@ -569,17 +571,38 @@ function ProfileContent() {
                 
                 if (isProfilePost) {
                   // Profile-style card
+                  const isFemale = post.author?.gender === 'Female';
+                  const theme = isFemale
+                    ? {
+                        cardBg: 'bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200',
+                        avatarBg: 'bg-pink-100 border-2 border-pink-300',
+                        avatarIcon: 'text-pink-500',
+                        tagBadge: 'bg-pink-600',
+                        iconColor: 'text-pink-500',
+                        necessityText: 'text-pink-700',
+                        necessityBorder: 'border-pink-200'
+                      }
+                    : {
+                        cardBg: 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200',
+                        avatarBg: 'bg-indigo-100 border-2 border-indigo-300',
+                        avatarIcon: 'text-indigo-500',
+                        tagBadge: 'bg-blue-600',
+                        iconColor: 'text-indigo-500',
+                        necessityText: 'text-indigo-700',
+                        necessityBorder: 'border-indigo-200'
+                      };
+
                   return (
                     <div
                       key={post.id}
-                      className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer justify-between"
+                      className={`group relative ${theme.cardBg} rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer justify-between`}
                       onClick={() => router.push(`/post/${post.id}`)}
                     >
                       <div className="p-5 flex-1 flex flex-col justify-between">
                         <div>
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center overflow-hidden">
+                              <div className={`w-10 h-10 rounded-full ${theme.avatarBg} flex items-center justify-center overflow-hidden`}>
                                 {post.author?.image ? (
                                   <Image
                                     src={post.author.image}
@@ -590,7 +613,7 @@ function ProfileContent() {
                                     unoptimized
                                   />
                                 ) : (
-                                  <i className="fa-solid fa-user text-indigo-500 text-base" />
+                                  <i className={`fa-solid fa-user ${theme.avatarIcon} text-base`} />
                                 )}
                               </div>
                               <div>
@@ -606,16 +629,25 @@ function ProfileContent() {
                             </button>
                           </div>
 
+                          <div className="flex gap-1 mb-2.5 flex-wrap">
+                            <span className={`${theme.tagBadge} text-white px-2 py-0.5 rounded text-[10px] font-semibold`}>Looking for both</span>
+                            {post.author?.gender && (
+                              <span className={`text-white px-2 py-0.5 rounded text-[10px] font-semibold ${post.author.gender === 'Female' ? 'bg-pink-500' : 'bg-blue-500'}`}>
+                                {post.author.gender === 'Female' ? t('posts.womenOnly') : t('posts.menOnly')}
+                              </span>
+                            )}
+                          </div>
+
                           <h3 className="text-base font-bold text-gray-900 mb-1.5 line-clamp-1">{post.title}</h3>
                           <p className="text-gray-600 text-xs mb-3 line-clamp-2">{post.description}</p>
 
                           <div className="space-y-1.5 text-xs text-gray-700">
                             <div className="flex items-center gap-2">
-                              <i className="fa-solid fa-location-dot text-indigo-500 w-4 text-center" />
+                              <i className={`fa-solid fa-location-dot ${theme.iconColor} w-4 text-center`} />
                               <span>{post.wilaya || 'Any location'}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <i className="fa-solid fa-wallet text-indigo-500 w-4 text-center" />
+                              <i className={`fa-solid fa-wallet ${theme.iconColor} w-4 text-center`} />
                               <span>Max budget: <strong>{post.maxBudget ? `${parseFloat(post.maxBudget).toLocaleString()} DA` : 'Flexible'}</strong></span>
                             </div>
                           </div>
@@ -624,7 +656,7 @@ function ProfileContent() {
                         {post.necessities && post.necessities.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-3">
                             {post.necessities.slice(0, 3).map((n, i) => (
-                              <span key={i} className="inline-block bg-white text-indigo-700 text-[10px] px-1.5 py-0.5 rounded border border-indigo-150">{n}</span>
+                              <span key={i} className={`inline-block bg-white ${theme.necessityText} text-[10px] px-1.5 py-0.5 rounded border ${theme.necessityBorder}`}>{n}</span>
                             ))}
                             {post.necessities.length > 3 && (
                               <span className="text-[10px] text-indigo-500">+{post.necessities.length - 3} more</span>
