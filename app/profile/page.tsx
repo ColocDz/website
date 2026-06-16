@@ -760,6 +760,13 @@ function ProfileContent() {
                         </button>
                       </div>
                     )}
+
+                    {/* Bottom Gender Line */}
+                    {post.author?.gender && (
+                      <div className={`h-2.5 w-full ${
+                        post.author.gender.toUpperCase() === 'MALE' ? 'bg-blue-600' : post.author.gender.toUpperCase() === 'FEMALE' ? 'bg-pink-600' : 'bg-gray-400'
+                      }`} />
+                    )}
                   </div>
                 );
               })}

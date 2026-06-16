@@ -254,48 +254,56 @@ export default function PostsPage() {
 
                 // Standard property card for "roommate" posts
                 return (
-                  <div key={post.id} className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                    <div className="relative h-48 overflow-hidden bg-gray-200">
-                      <Image
-                        src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
-                        alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
-                        <div className="bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
-                        {post.author?.gender && (
-                          <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${
-                            post.author.gender.toUpperCase() === 'MALE' ? 'bg-blue-600' : post.author.gender.toUpperCase() === 'FEMALE' ? 'bg-pink-600' : 'bg-gray-600'
-                          }`}>
-                            {post.author.gender.toUpperCase() === 'MALE' ? t('posts.menOnly') : post.author.gender.toUpperCase() === 'FEMALE' ? t('posts.womenOnly') : post.author.gender}
-                          </div>
-                        )}
+                  <div key={post.id} className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between" onClick={() => router.push(`/post/${post.id}`)}>
+                    <div>
+                      <div className="relative h-48 overflow-hidden bg-gray-200">
+                        <Image
+                          src={post.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop'}
+                          alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
+                          <div className="bg-black text-white px-3 py-1 rounded text-xs font-semibold">{post.type}</div>
+                          {post.author?.gender && (
+                            <div className={`text-white px-3 py-1 rounded text-xs font-semibold ${
+                              post.author.gender.toUpperCase() === 'MALE' ? 'bg-blue-600' : post.author.gender.toUpperCase() === 'FEMALE' ? 'bg-pink-600' : 'bg-gray-600'
+                            }`}>
+                              {post.author.gender.toUpperCase() === 'MALE' ? t('posts.menOnly') : post.author.gender.toUpperCase() === 'FEMALE' ? t('posts.womenOnly') : post.author.gender}
+                            </div>
+                          )}
+                        </div>
+                        <button className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" onClick={(e) => toggleSavePost(post.id, e)}>
+                          <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'}`} />
+                        </button>
                       </div>
-                      <button className="absolute top-3 right-3 bg-white rounded-full p-2 hover:bg-gray-100 shadow-md transition-all active:scale-90 z-10" onClick={(e) => toggleSavePost(post.id, e)}>
-                        <i className={`fa-heart ${savedPostIds.includes(post.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-600'}`} />
-                      </button>
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                          <span className="text-xs font-medium text-gray-600">{new Date(post.createdAt).toLocaleDateString()}</span>
+                          <span className="text-xs">•</span>
+                          <i className="fa-solid fa-location-dot text-gray-400" />
+                          <span className="text-xs">{post.wilaya || 'N/A'}</span>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{post.description}</p>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {post.tags.map((tag, idx) => (
+                            <span key={idx} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">{tag}</span>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">{t('posts.perMonth')}</span></span>
+                          <span className="text-xs text-gray-500 hover:underline hover:text-black cursor-pointer"
+                            onClick={(e) => { e.stopPropagation(); if (post.author?.id) router.push(`/profile?userId=${post.author.id}`); }}>
+                            {t('posts.by')} {post.author?.name || 'Anonymous'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                        <span className="text-xs font-medium text-gray-600">{new Date(post.createdAt).toLocaleDateString()}</span>
-                        <span className="text-xs">•</span>
-                        <i className="fa-solid fa-location-dot text-gray-400" />
-                        <span className="text-xs">{post.wilaya || 'N/A'}</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{post.description}</p>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {post.tags.map((tag, idx) => (
-                          <span key={idx} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">{tag}</span>
-                        ))}
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="font-bold text-gray-900">{parseFloat(post.price || '0').toLocaleString()} DA<span className="text-sm font-normal text-gray-500">{t('posts.perMonth')}</span></span>
-                        <span className="text-xs text-gray-500 hover:underline hover:text-black cursor-pointer"
-                          onClick={(e) => { e.stopPropagation(); if (post.author?.id) router.push(`/profile?userId=${post.author.id}`); }}>
-                          {t('posts.by')} {post.author?.name || 'Anonymous'}
-                        </span>
-                      </div>
-                    </div>
+                    {/* Bottom Gender Line */}
+                    {post.author?.gender && (
+                      <div className={`h-2.5 w-full ${
+                        post.author.gender.toUpperCase() === 'MALE' ? 'bg-blue-600' : post.author.gender.toUpperCase() === 'FEMALE' ? 'bg-pink-600' : 'bg-gray-400'
+                      }`} />
+                    )}
                   </div>
                 );
               })}
