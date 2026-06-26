@@ -1,9 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-color: #0f131b;
+  color: #dfe2ec;
+}
+
+.serif-italic {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+}
+
+.glass-nav {
+  background: rgba(15, 19, 27, 0.8);
+  backdrop-filter: blur(20px);
+}
+
+.section-fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease-out;
+}
+
+.section-fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 @layer utilities {
