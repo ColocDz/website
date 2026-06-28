@@ -85,29 +85,30 @@ export default function HomePage() {
   const testimonials = [
     {
       name: 'Sarah Chen',
-      role: 'Tenant, San Francisco',
+      role: t('home.testimonial1.role'),
       initials: 'SC',
-      quote: 'Found my perfect roommate in two weeks and couldn\'t be happier with the match.',
+      quote: t('home.testimonial1.quote'),
     },
     {
       name: 'Marcus Webb',
-      role: 'Homeowner, Portland',
+      role: t('home.testimonial2.role'),
       initials: 'MW',
-      quote: 'The process was simple and I met someone who truly fits our household.',
+      quote: t('home.testimonial2.quote'),
     },
     {
       name: 'Elena Rodriguez',
-      role: 'Renter, Austin',
+      role: t('home.testimonial3.role'),
       initials: 'ER',
-      quote: 'No more endless searching, just honest listings and real connections.',
+      quote: t('home.testimonial3.quote'),
     },
   ];
 
   const faqs = [
-    { question: 'How do I post a listing?', answer: 'Simply click the "Add Post" button in the navigation bar. Fill in your details, upload photos, and your listing will be live in minutes.' },
-    { question: 'Can I message people privately?', answer: 'Yes, our built-in messaging system allows you to coordinate with potential roommates safely and privately.' },
-    { question: 'What if I change my mind?', answer: 'You can edit or delete your post at any time from the "My Posts" section in your dashboard.' },
-    { question: 'Is my information safe here?', answer: 'Security is our priority. We use industry-standard encryption and verification protocols to protect your personal data.' },
+    { question: t('faq.q1'), answer: t('faq.a1') },
+    { question: t('faq.q2'), answer: t('faq.a2') },
+    { question: t('faq.q3'), answer: t('faq.a3') },
+    { question: t('faq.q4'), answer: t('faq.a4') },
+    { question: t('faq.q5'), answer: t('faq.a5') },
   ];
 
   return (
@@ -125,11 +126,11 @@ export default function HomePage() {
             />
           </div>
           <h1 className="font-display-lg text-4xl md:text-7xl font-bold leading-tight tracking-tight mb-6">
-            Ready to find <br />
-            your <span className="serif-italic font-normal">place</span>
+            {t('home.heroTitle').split(' ').slice(0, -1).join(' ')}{' '}
+            <span className="serif-italic font-normal">{t('home.heroTitle').split(' ').slice(-1)[0]}</span>
           </h1>
           <p className="text-[#d5c1cf] text-base md:text-lg max-w-md mb-8">
-            Post what you need or search for the right fit today. We facilitate real connections for better living.
+            {t('home.heroDescription')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mb-10">
@@ -137,14 +138,14 @@ export default function HomePage() {
               onClick={() => setShowSearchBar(!showSearchBar)}
               className="bg-[#ffaaf7] text-[#5a005e] px-8 py-4 rounded-lg flex items-center justify-center gap-2 font-semibold hover:bg-[#ffd6f7] transition-all"
             >
-              <span className="font-label-caps uppercase tracking-widest text-xs">Search</span>
+              <span className="font-label-caps uppercase tracking-widest text-xs">{t('home.search')}</span>
               <i className="fa-solid fa-magnifying-glass text-sm" />
             </button>
             <button 
               onClick={() => router.push('/adding-post')}
               className="text-[#dfe2ec] border-b border-[#dfe2ec] pb-1 flex items-center justify-center gap-2 hover:text-[#ffaaf7] hover:border-[#ffaaf7] transition-all"
             >
-              <span className="font-label-caps uppercase tracking-widest text-xs">Post listing</span>
+              <span className="font-label-caps uppercase tracking-widest text-xs">{t('home.postListing')}</span>
             </button>
           </div>
 
@@ -155,20 +156,20 @@ export default function HomePage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by city, keyword, or budget..."
+                placeholder={t('home.getStartedPlaceholder')}
                 className="w-full px-4 py-2 bg-[#0f131b] border border-[#31353d] rounded-lg text-[#dfe2ec] focus:outline-none focus:border-[#ffaaf7] placeholder-gray-500 text-sm"
               />
               <button
                 onClick={() => router.push(`/posts?search=${encodeURIComponent(search)}`)}
                 className="mt-3 w-full bg-[#ffaaf7] text-[#5a005e] px-4 py-2 rounded-lg text-xs uppercase tracking-widest font-semibold hover:bg-[#ffd6f7] transition-all"
               >
-                Go to Search
+                {t('home.search')}
               </button>
             </div>
           )}
 
           <div className="flex items-center gap-4 opacity-60">
-            <span className="text-[10px] font-label-caps uppercase tracking-widest">Global Community</span>
+            <span className="text-[10px] font-label-caps uppercase tracking-widest">{t('home.globalCommunity')}</span>
             <i className="fa-solid fa-globe text-xs" />
             <i className="fa-solid fa-users text-xs" />
             <i className="fa-solid fa-shield-halved text-xs" />
@@ -192,11 +193,11 @@ export default function HomePage() {
                 src="https://lh3.googleusercontent.com/aida/AP1WRLuQdj5zPotWJjpl5e-Rt1tsHxlttfWWyvBtIfvg6dzlqSuRu_UbwD0AvGF4W4prShAgJ87sahMbCjwsNzfgs4K22qFt5F2Zp4Q-rufEY0AfYIPaySlWzalyHOD0YUmgl4JuxQasuW6yTrYkSucBKal7tWOybGaYCMbnFfHZIq0BM97rI93qh9UBNEfzBGlEPntESSEXl-DawABIhe6g7TkUWChORYFrYXaJYIQ9IYgCRYvcNfDYpz9UjJES"
               />
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#93b4ff]">LATEST ACTIVITY</p>
-                <p className="text-xs font-medium italic text-[#dfe2ec]">"Matched in 3 days!"</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#93b4ff]">{t('home.latestActivity')}</p>
+                <p className="text-xs font-medium italic text-[#dfe2ec]">{t('home.matchedInDays')}</p>
               </div>
             </div>
-            <p className="text-[11px] text-[#d5c1cf]">Ahmad just listed a shared room in Algiers. 14 people are viewing.</p>
+            <p className="text-[11px] text-[#d5c1cf]">{t('home.activityDetail')}</p>
           </div>
         </div>
       </section>
@@ -205,14 +206,19 @@ export default function HomePage() {
       <section className="py-24 px-6 max-w-container-max mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
           <div>
-            <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-3">Find your <span className="serif-italic font-normal">next home</span></h2>
-            <p className="text-[#d5c1cf] text-sm md:text-base">Browse available rooms and shared spaces from people looking for roommates.</p>
+            <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-3">
+              {t('home.findNextHome').split(' ').slice(0, -2).join(' ')}{' '}
+              <span className="serif-italic font-normal">
+                {t('home.findNextHome').split(' ').slice(-2).join(' ')}
+              </span>
+            </h2>
+            <p className="text-[#d5c1cf] text-sm md:text-base">{t('home.findNextHomeDesc')}</p>
           </div>
           <button
             onClick={() => router.push('/posts')}
             className="text-[#dfe2ec] border-b border-[#dfe2ec] pb-1 flex items-center gap-2 font-label-caps uppercase tracking-widest text-xs hover:text-[#ffaaf7] hover:border-[#ffaaf7] transition-all"
           >
-            View all →
+            {t('home.viewAll')} →
           </button>
         </div>
 
@@ -298,7 +304,10 @@ export default function HomePage() {
       {/* Testimonials Section */}
       <section className="py-24 bg-[#0a0e15] border-t border-[#31353d]">
         <div className="max-w-container-max mx-auto px-6">
-          <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-16 text-center">Real <span className="serif-italic font-normal">stories</span></h2>
+          <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-16 text-center">
+            {t('home.realStories').split(' ').slice(0, -1).join(' ')}{' '}
+            <span className="serif-italic font-normal">{t('home.realStories').split(' ').slice(-1)[0]}</span>
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, idx) => (
               <div 
@@ -328,8 +337,11 @@ export default function HomePage() {
 
       {/* FAQ Section */}
       <section className="py-24 px-6 max-w-3xl mx-auto">
-        <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-4 text-center">Common <span className="serif-italic font-normal">questions</span></h2>
-        <p className="text-[#d5c1cf] text-center text-sm md:text-base mb-12">Quick answers to help you get started</p>
+        <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-4 text-center">
+          {t('home.faqTitle').split(' ').slice(0, -1).join(' ')}{' '}
+          <span className="serif-italic font-normal">{t('home.faqTitle').split(' ').slice(-1)[0]}</span>
+        </h2>
+        <p className="text-[#d5c1cf] text-center text-sm md:text-base mb-12">{t('home.faqSubtitle')}</p>
         <div className="space-y-4">
           {faqs.map((faq, idx) => {
             const isOpen = activeAccordion === idx;
@@ -358,14 +370,19 @@ export default function HomePage() {
       {/* Secondary CTA Section */}
       <section className="bg-[#1c2027] py-24 px-6 text-center border-y border-[#31353d]">
         <div className="max-w-3xl mx-auto">
-          <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-6">Get started finding <span className="serif-italic font-normal">your match</span></h2>
+          <h2 className="font-display-lg text-3xl md:text-5xl font-bold mb-6">
+            {t('home.getStartedTitle').split(' ').slice(0, -2).join(' ')}{' '}
+            <span className="serif-italic font-normal">
+              {t('home.getStartedTitle').split(' ').slice(-2).join(' ')}
+            </span>
+          </h2>
           <p className="text-sm md:text-base text-[#d5c1cf] mb-10 max-w-xl mx-auto">
-            Join others who&apos;ve found their place through ColocDZ Platform. You can post, message and even search for matches, just with one easy fast click.
+            {t('home.getStartedDesc')}
           </p>
           <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
             <input 
               type="text" 
-              placeholder="Search rooms or roommates..."
+              placeholder={t('home.getStartedPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 px-4 py-3 bg-[#0f131b] border border-[#31353d] rounded-lg text-sm text-[#dfe2ec] focus:outline-none focus:border-[#ffaaf7]"
@@ -374,7 +391,7 @@ export default function HomePage() {
               onClick={() => router.push(`/posts?search=${encodeURIComponent(search)}`)}
               className="bg-[#ffaaf7] text-[#5a005e] px-8 py-3 rounded-lg font-label-caps uppercase tracking-widest text-xs font-semibold hover:bg-[#ffd6f7] transition-all"
             >
-              Get Started
+              {t('home.getStartedButton')}
             </button>
           </div>
         </div>
@@ -386,43 +403,43 @@ export default function HomePage() {
           <div className="space-y-4">
             <div className="font-display-lg text-2xl font-bold italic text-[#dfe2ec]">ColocDz</div>
             <p className="text-[#d5c1cf] text-xs leading-relaxed">
-              Quiet Authority in Housing. We curate high-impact living spaces for a mission-driven generation.
+              {t('footer.description')}
             </p>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="font-label-caps text-[10px] uppercase tracking-widest text-[#ffaaf7] mb-1 font-bold">Browse</span>
-            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/posts">Find rooms</Link>
-            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/adding-post">Post listing</Link>
-            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/profile">My posts</Link>
-            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/messages">Messages</Link>
+            <span className="font-label-caps text-[10px] uppercase tracking-widest text-[#ffaaf7] mb-1 font-bold">{t('footer.browse')}</span>
+            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/posts">{t('nav.findHousing')}</Link>
+            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/adding-post">{t('nav.addPost')}</Link>
+            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/profile">{t('nav.myPosts')}</Link>
+            <Link className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors no-underline" href="/messages">{t('nav.messages')}</Link>
           </div>
           <div className="flex flex-col gap-3">
-            <span className="font-label-caps text-[10px] uppercase tracking-widest text-[#ffaaf7] mb-1 font-bold">Support</span>
-            <a className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors" href="#">Contact us</a>
+            <span className="font-label-caps text-[10px] uppercase tracking-widest text-[#ffaaf7] mb-1 font-bold">{t('footer.support')}</span>
+            <a className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors" href="#">{t('footer.contact')}</a>
             <a className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors" href="#">Help center</a>
             <a className="text-[#d5c1cf] text-xs hover:text-[#ffaaf7] transition-colors" href="#">Safety tips</a>
           </div>
           <div className="flex flex-col gap-4">
-            <span className="font-label-caps text-[10px] uppercase tracking-widest text-[#ffaaf7] font-bold">Newsletter</span>
+            <span className="font-label-caps text-[10px] uppercase tracking-widest text-[#ffaaf7] font-bold">{t('footer.newsletter')}</span>
             <div className="relative">
               <input 
                 className="bg-transparent border-b border-[#31353d] w-full py-2 focus:outline-none focus:border-[#ffaaf7] text-xs text-[#dfe2ec] placeholder-gray-500" 
-                placeholder="Email address" 
+                placeholder={t('footer.emailAddress')}
                 type="email"
               />
               <button className="absolute right-0 top-1/2 -translate-y-1/2 text-[#ffaaf7]">
                 <i className="fa-solid fa-arrow-right text-xs" />
               </button>
             </div>
-            <p className="text-[9px] text-[#d5c1cf] leading-tight uppercase tracking-widest">By subscribing you agree to our Privacy Policy.</p>
+            <p className="text-[9px] text-[#d5c1cf] leading-tight uppercase tracking-widest">{t('footer.newsletterNotice')}</p>
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center border-t border-[#31353d] pt-8 text-[9px] font-label-caps uppercase tracking-[0.2em] text-[#d5c1cf]">
-          <div className="text-center md:text-left">© 2026 ColocDz. All rights reserved.</div>
+          <div className="text-center md:text-left">© 2026 ColocDz. {t('footer.rights')}</div>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <a className="hover:text-[#ffaaf7] transition-colors" href="#">Terms of service</a>
-            <a className="hover:text-[#ffaaf7] transition-colors" href="#">Privacy Policy</a>
+            <a className="hover:text-[#ffaaf7] transition-colors" href="#">{t('footer.terms')}</a>
+            <a className="hover:text-[#ffaaf7] transition-colors" href="#">{t('footer.privacy')}</a>
           </div>
           <div className="mt-4 md:mt-0">Developed by MorenaDev</div>
         </div>

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface MenuItem {
   label: string;
@@ -21,6 +22,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
   const startX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const CLOSE_THRESHOLD = 80;
+  const { locale, setLocale } = useI18n();
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -80,12 +82,12 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/50 z-[39]" 
+        className="fixed inset-0 bg-black/70 z-[39] backdrop-blur-sm" 
         onClick={onClose} 
       />
       <div
         ref={containerRef}
-        className="w-[64%] max-w-[256px] h-screen bg-[#1e1e2f] text-white flex flex-col pt-4 fixed left-0 top-0 z-[40]"
+        className="w-[75%] max-w-[280px] h-screen bg-[#0f131b] text-[#dfe2ec] flex flex-col fixed left-0 top-0 z-[40] border-r border-[#31353d]"
         style={{
           transform: `translateX(${translateX}px)`,
           transition: translateX === 0 || translateX === -300 ? 'transform 0.3s ease-out' : 'none',
@@ -96,40 +98,65 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ menuItems, onClose
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
       >
-        <div className="p-4 text-xl font-bold bg-[#151521] flex items-center justify-between mb-4">
-          <span>Coloc DZ</span>
-          <button onClick={onClose} className="text-white bg-transparent border-none cursor-pointer p-1 hover:opacity-80">
-            <X size={24} />
+        <div className="p-4 text-xl font-bold bg-[#0c0f16] flex items-center justify-between border-b border-[#31353d]">
+          <span className="font-display-lg italic text-[#dfe2ec]">Coloc DZ</span>
+          <button onClick={onClose} className="text-[#dfe2ec] bg-transparent border-none cursor-pointer p-1 hover:text-[#ffaaf7] transition-colors">
+            <X size={20} />
           </button>
         </div>
 
-        <ul className="list-none p-0 m-0 flex-1">
+        <ul className="list-none p-0 m-0 flex-1 overflow-y-auto pt-2">
           {menuItems.map((item, index) => (
-            <li key={index} className="hover:bg-[#2a2a40] transition-colors">
+            <li key={index} className="hover:bg-[#1c2027] border-b border-white/5 transition-colors">
               {item.onClick ? (
                 <button
                   onClick={() => {
                     item.onClick?.();
                     onClose();
                   }}
-                  className="w-full p-4 cursor-pointer flex items-center gap-4 text-white no-underline text-base bg-transparent border-none text-left"
+                  className="w-full p-4 cursor-pointer flex items-center gap-4 text-[#dfe2ec] hover:text-[#ffaaf7] no-underline text-sm font-semibold bg-transparent border-none text-left"
                 >
-                  <div className="flex items-center justify-center text-xl">{item.icon}</div>
-                  <span>{item.label}</span>
+                  <div className="flex items-center justify-center text-lg">{item.icon}</div>
+                  <span className="font-label-caps uppercase tracking-widest text-xs">{item.label}</span>
                 </button>
               ) : (
                 <Link 
                   href={item.path || '/'} 
                   onClick={onClose}
-                  className="p-4 cursor-pointer flex items-center gap-4 text-white no-underline text-base w-full block"
+                  className="p-4 cursor-pointer flex items-center gap-4 text-[#dfe2ec] hover:text-[#ffaaf7] no-underline text-sm font-semibold w-full block"
                 >
-                  <div className="flex items-center justify-center text-xl">{item.icon}</div>
-                  <span>{item.label}</span>
+                  <div className="flex items-center justify-center text-lg">{item.icon}</div>
+                  <span className="font-label-caps uppercase tracking-widest text-xs">{item.label}</span>
                 </Link>
               )}
             </li>
           ))}
         </ul>
+
+        {/* Language Selection at the bottom */}
+        <div className="p-4 border-t border-[#31353d] bg-[#0c0f16]">
+          <p className="text-[9px] uppercase tracking-widest text-[#ffaaf7] font-bold mb-3">Language / Langue / اللغة</p>
+          <div className="flex gap-2">
+            {[
+              { code: 'en', flag: '🇬🇧', label: 'EN' },
+              { code: 'fr', flag: '🇫🇷', label: 'FR' },
+              { code: 'ar', flag: '🇩🇿', label: 'عربي' }
+            ].map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => setLocale(lang.code as any)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
+                  locale === lang.code
+                    ? 'bg-[#ffaaf7] text-[#5a005e] border-[#ffaaf7]'
+                    : 'bg-[#1c2027] text-[#dfe2ec] border-[#31353d] hover:bg-[#262a32]'
+                }`}
+              >
+                <span>{lang.flag}</span>
+                <span>{lang.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </>
   );
