@@ -1,0 +1,8 @@
+User-Agent: *
+Allow: /
+Disallow: /api/
+Disallow: /settings
+Disallow: /messages
+Disallow: /profile
+
+Sitemap: http://localhost:3000/sitemap.xml

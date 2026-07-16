@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/adding-post/layout,_N_T_/adding-post/page,_N_T_/adding-post"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/adding-post/__PAGE__",
+    "/adding-post",
+    "/_index",
+    "/_head"
+  ]
+}

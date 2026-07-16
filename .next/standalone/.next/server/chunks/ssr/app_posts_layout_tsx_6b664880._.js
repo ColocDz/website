@@ -1,0 +1,3 @@
+module.exports=[71892,a=>{"use strict";var b=a.i(81332);function c({children:a}){return(0,b.jsx)(b.Fragment,{children:a})}a.s(["default",()=>c,"metadata",0,{title:"ColocDz",description:"Search and find verified roommates, shared apartments, and housing offers across all 58 wilayas in Algeria.",openGraph:{title:"ColocDz",description:"Find verified roommates and shared housing in Algeria.",type:"website"}}])}];
+
+//# sourceMappingURL=app_posts_layout_tsx_6b664880._.js.map

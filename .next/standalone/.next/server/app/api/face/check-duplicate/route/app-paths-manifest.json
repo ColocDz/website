@@ -1,0 +1,3 @@
+{
+  "/api/face/check-duplicate/route": "app/api/face/check-duplicate/route.js"
+}

@@ -1,0 +1,3 @@
+{
+  "/api/phone-otp/verify/route": "app/api/phone-otp/verify/route.js"
+}
