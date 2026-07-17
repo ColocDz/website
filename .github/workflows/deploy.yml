@@ -33,3 +33,7 @@ jobs:
           password: ${{ secrets.FTP_PASS }}
           local-dir: .next/standalone/
           server-dir: /repositories/website/colocdz-app/
+          port: 21
+          protocol: ftp
+          security: loose
+          timeout: 180000
