@@ -3,16 +3,26 @@
 // Secure PHP Deployment Script for cPanel
 // ==========================================
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // 1. CHOOSE A STRONG SECRET TOKEN
-// Replace this with a strong random string or use the one generated for you.
-// You MUST add this same token as a GitHub Repository Secret named DEPLOY_TOKEN.
 define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
 
 // 2. TARGET DIRECTORY
-// Relative to your cPanel home directory.
 define('TARGET_DIR_NAME', 'repositories/website/colocdz-app');
 
 header('Content-Type: application/json');
+
+// Check if POST data was discarded due to post_max_size limit
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && $_SERVER['CONTENT_LENGTH'] > 0) {
+    http_response_code(413);
+    echo json_encode([
+        'error' => 'The uploaded file size (' . round($_SERVER['CONTENT_LENGTH'] / 1024 / 1024, 2) . 'MB) exceeds the server\'s post_max_size limit in PHP. Please increase post_max_size and upload_max_filesize in cPanel (Select PHP Version -> Options or MultiPHP INI Editor) to at least 100M.'
+    ]);
+    exit;
+}
 
 // Check token
 if (!isset($_POST['token']) || $_POST['token'] !== DEPLOY_TOKEN) {
@@ -59,15 +69,87 @@ if (!is_dir($target_dir)) {
 // Clean target directory of old files (keeping .env)
 clean_dir($target_dir);
 
-$zip_file = $_FILES['file']['tmp_name'];
+$uploaded_file = $_FILES['file']['tmp_name'];
 
-// Extract ZIP
-$zip = new ZipArchive;
-if ($zip->open($zip_file) === TRUE) {
-    $zip->extractTo($target_dir);
-    $zip->close();
-    echo json_encode(['success' => true, 'message' => 'Deployment successful!']);
+// Helper to extract .tar.gz files in pure PHP without extensions
+function extract_tar_gz($archivePath, $targetDir) {
+    if (!function_exists('gzdecode')) {
+        return 'The zlib PHP extension (gzdecode function) is missing on this server. Please contact your host to enable it.';
+    }
+    
+    $data = file_get_contents($archivePath);
+    if ($data === false) {
+        return 'Failed to read uploaded archive file.';
+    }
+    
+    $data = @gzdecode($data);
+    if ($data === false) {
+        return 'Failed to decompress Gzip archive. The file might be corrupted.';
+    }
+    
+    $offset = 0;
+    $len = strlen($data);
+    $long_filename = null;
+    
+    while ($offset < $len) {
+        $header = substr($data, $offset, 512);
+        if (strlen($header) < 512 || pack("a512", $header) === pack("a512", "")) {
+            break;
+        }
+        
+        $filename = trim(substr($header, 0, 100), "\0 ");
+        $filesize = octdec(trim(substr($header, 124, 12), "\0 "));
+        $typeflag = substr($header, 156, 1);
+        
+        $offset += 512;
+        
+        if ($typeflag === 'L') {
+            // GNU long filename extension
+            $long_filename = trim(substr($data, $offset, $filesize), "\0 ");
+            $offset += ceil($filesize / 512) * 512;
+            continue;
+        }
+        
+        // Use long filename if available from the previous block
+        if ($long_filename !== null) {
+            $filename = $long_filename;
+            $long_filename = null;
+        }
+        
+        // Skip empty filenames or paths attempting directory traversal
+        if ($filename === '' || strpos($filename, '..') !== false) {
+            $offset += ceil($filesize / 512) * 512;
+            continue;
+        }
+        
+        if ($typeflag === '5') {
+            // Directory
+            $dest = $targetDir . '/' . $filename;
+            if (!is_dir($dest)) {
+                @mkdir($dest, 0755, true);
+            }
+        } else if ($typeflag === '0' || $typeflag === "\0" || $typeflag === '') {
+            // Regular file
+            $dest = $targetDir . '/' . $filename;
+            $dir = dirname($dest);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            @file_put_contents($dest, substr($data, $offset, $filesize));
+        }
+        
+        $offset += ceil($filesize / 512) * 512;
+    }
+    return true;
+}
+
+// Extract .tar.gz file
+$result = extract_tar_gz($uploaded_file, $target_dir);
+
+if ($result === true) {
+    echo json_encode(['success' => true, 'message' => 'Deployment successful (extracted via pure PHP TarExtractor)!']);
 } else {
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to extract ZIP file on the server. Make sure the ZipArchive extension is enabled in PHP.']);
+    echo json_encode(['error' => $result]);
 }
+exit;
