@@ -31,7 +31,7 @@ jobs:
 
       - name: Deploy via HTTP (PHP)
         run: |
-          curl -f -X POST \
+          curl -k -f -X POST \
             -F "token=${{ secrets.DEPLOY_TOKEN }}" \
             -F "file=@deploy.zip" \
-            https://colocdz.com/deploy.php
+            https://deploy.colocdz.com/deploy.php
