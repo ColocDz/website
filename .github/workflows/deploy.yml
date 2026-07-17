@@ -1,0 +1,33 @@
+name: Build and Deploy to cPanel
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with: { version: 8 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - run: pnpm install
+      - run: pnpm run build   # output: 'standalone' in next.config
+
+      # Copy assets Next doesn't include automatically
+      - run: |
+          cp -r public .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          rm -rf .next/standalone/node_modules
+          cp -r node_modules .next/standalone/node_modules
+
+      - name: FTP upload
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: .next/standalone/
+          server-dir: /repositories/website/colocdz-app/
