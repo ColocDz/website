@@ -34,4 +34,4 @@ jobs:
           curl -k -f -X POST \
             -F "token=${{ secrets.DEPLOY_TOKEN }}" \
             -F "file=@deploy.zip" \
-            https://deploy.colocdz.com/deploy.php
+            http://deploy.colocdz.com/deploy.php
