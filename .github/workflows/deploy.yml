@@ -22,8 +22,6 @@ jobs:
       - run: |
           cp -r public .next/standalone/public
           cp -r .next/static .next/standalone/.next/static
-          rm -rf .next/standalone/node_modules
-          cp -r node_modules .next/standalone/node_modules
 
       - name: Create deployment ZIP
         run: |
