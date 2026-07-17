@@ -25,15 +25,15 @@ jobs:
           rm -rf .next/standalone/node_modules
           cp -r node_modules .next/standalone/node_modules
 
-      - name: FTP upload
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: .next/standalone/
-          server-dir: /repositories/website/colocdz-app/
-          port: 21
-          protocol: ftp
-          security: loose
-          timeout: 180000
+      - name: Create deployment ZIP
+        run: |
+          cd .next/standalone
+          zip -r ../../deploy.zip .
+          cd ../..
+
+      - name: Deploy via HTTP (PHP)
+        run: |
+          curl -X POST \
+            -F "token=${{ secrets.DEPLOY_TOKEN }}" \
+            -F "file=@deploy.zip" \
+            https://colocdz.com/deploy.php
