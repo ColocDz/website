@@ -18,10 +18,12 @@ jobs:
       - run: pnpm install
       - run: pnpm run build   # output: 'standalone' in next.config
 
-      # Copy assets Next doesn't include automatically
+      # Copy assets and standalone dependencies Next doesn't include automatically
       - run: |
           cp -r public .next/standalone/public
           cp -r .next/static .next/standalone/.next/static
+          mkdir -p .next/standalone/node_modules/@swc/helpers
+          cp -rL node_modules/@swc/helpers/. .next/standalone/node_modules/@swc/helpers/
 
       - name: Create deployment TAR
         run: |
@@ -34,4 +36,4 @@ jobs:
           curl -k -f -X POST \
             -F "token=${{ secrets.DEPLOY_TOKEN }}" \
             -F "file=@deploy.tar.gz" \
-            http://deploy.colocdz.com/deploy.php
+            https://deploy.colocdz.com/deploy.php
