@@ -27,9 +27,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && 
 }
 
 // Check token
-if (!isset($_POST['token']) || $_POST['token'] !== DEPLOY_TOKEN) {
+$token = isset($_POST['token']) ? $_POST['token'] : (isset($_GET['token']) ? $_GET['token'] : null);
+if ($token !== DEPLOY_TOKEN) {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized token']);
+    exit;
+}
+
+// Debug logs retrieval
+if (isset($_GET['action']) && $_GET['action'] === 'log') {
+    header('Content-Type: text/plain');
+    $log_path = '/home/colocdz1/logs/passenger.log';
+    if (file_exists($log_path)) {
+        $lines = file($log_path);
+        $last_lines = array_slice($lines, -150);
+        echo implode("", $last_lines);
+    } else {
+        echo "Log file not found at: " . $log_path;
+    }
     exit;
 }
 
