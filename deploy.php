@@ -6,6 +6,8 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+ini_set('memory_limit', '512M');
+ini_set('max_execution_time', 300);
 
 // 1. CHOOSE A STRONG SECRET TOKEN
 define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
