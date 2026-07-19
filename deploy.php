@@ -13,7 +13,7 @@ ini_set('max_execution_time', 300);
 define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
 
 // 2. TARGET DIRECTORY
-define('TARGET_DIR_NAME', 'repositories/website/.next/standalone');
+define('TARGET_DIR_NAME', 'repositories/website/standalone');
 
 header('Content-Type: application/json');
 
