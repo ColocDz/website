@@ -56,10 +56,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
     exit;
 }
 
+// Helper to get user home directory reliably (e.g. /home/colocdz1)
+function get_user_home() {
+    $document_root = $_SERVER['DOCUMENT_ROOT'];
+    if (preg_match('#^(/home[0-9]*/[^/]+)#', $document_root, $matches)) {
+        return $matches[1];
+    }
+    return dirname(dirname($document_root));
+}
+
 // Restart Passenger Node.js app
 if (isset($_GET['action']) && $_GET['action'] === 'restart') {
     header('Content-Type: text/plain');
-    $home = dirname($_SERVER['DOCUMENT_ROOT']);
+    $home = get_user_home();
     $tmp_dir = $home . '/repositories/website/standalone/tmp';
     if (!is_dir($tmp_dir)) {
         @mkdir($tmp_dir, 0755, true);
@@ -74,7 +83,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'restart') {
 // File structure check
 if (isset($_GET['action']) && $_GET['action'] === 'check') {
     header('Content-Type: text/plain');
-    $home = dirname($_SERVER['DOCUMENT_ROOT']);
+    $home = get_user_home();
     $paths = [
         'repositories/website/server.js',
         'repositories/website/standalone/server.js',
@@ -104,7 +113,7 @@ if (!isset($_FILES['file'])) {
     exit;
 }
 
-$home_dir = dirname($_SERVER['DOCUMENT_ROOT']);
+$home_dir = get_user_home();
 $target_dir = $home_dir . '/' . TARGET_DIR_NAME;
 
 // Helper to clean up old build files, but keep .env intact
