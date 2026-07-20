@@ -56,13 +56,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
     exit;
 }
 
-// Helper to get user home directory reliably (e.g. /home/colocdz1)
+// Helper to get user home directory reliably
 function get_user_home() {
-    $document_root = $_SERVER['DOCUMENT_ROOT'];
-    if (preg_match('#^(/home[0-9]*/[^/]+)#', $document_root, $matches)) {
-        return $matches[1];
-    }
-    return dirname(dirname($document_root));
+    return '/home/colocdz1';
 }
 
 // Restart Passenger Node.js app
