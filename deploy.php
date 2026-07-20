@@ -48,6 +48,31 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
     exit;
 }
 
+// File structure check
+if (isset($_GET['action']) && $_GET['action'] === 'check') {
+    header('Content-Type: text/plain');
+    $home = dirname($_SERVER['DOCUMENT_ROOT']);
+    $paths = [
+        'repositories/website/standalone/server.js',
+        'repositories/website/.next/standalone/server.js',
+        'repositories/website/colocdz-app/server.js',
+        'repositories/server.js',
+    ];
+    echo "--- File Existence Check ---\n";
+    foreach ($paths as $p) {
+        $full = $home . '/' . $p;
+        echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
+    }
+    echo "\n--- Scanning repositories/website ---\n";
+    $dir = $home . '/repositories/website';
+    if (is_dir($dir)) {
+        print_r(scandir($dir));
+    } else {
+        echo "Directory $dir does not exist.\n";
+    }
+    exit;
+}
+
 // Check file upload
 if (!isset($_FILES['file'])) {
     http_response_code(400);
