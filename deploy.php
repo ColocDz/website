@@ -56,6 +56,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
     exit;
 }
 
+// Restart Passenger Node.js app
+if (isset($_GET['action']) && $_GET['action'] === 'restart') {
+    header('Content-Type: text/plain');
+    $home = dirname($_SERVER['DOCUMENT_ROOT']);
+    $tmp_dir = $home . '/repositories/website/standalone/tmp';
+    if (!is_dir($tmp_dir)) {
+        @mkdir($tmp_dir, 0755, true);
+    }
+    $restart_file = $tmp_dir . '/restart.txt';
+    file_put_contents($restart_file, time());
+    echo "Passenger restart trigger created at: " . $restart_file . "\n";
+    echo "Please refresh https://colocdz.com now!";
+    exit;
+}
+
 // File structure check
 if (isset($_GET['action']) && $_GET['action'] === 'check') {
     header('Content-Type: text/plain');
@@ -198,6 +213,10 @@ function extract_tar_gz($archivePath, $targetDir) {
 $result = extract_tar_gz($uploaded_file, $target_dir);
 
 if ($result === true) {
+    // Automatically trigger Passenger restart
+    $tmp_dir = $target_dir . '/tmp';
+    if (!is_dir($tmp_dir)) @mkdir($tmp_dir, 0755, true);
+    @file_put_contents($tmp_dir . '/restart.txt', time());
     echo json_encode(['success' => true, 'message' => 'Deployment successful (extracted via pure PHP TarExtractor)!']);
 } else {
     http_response_code(500);
