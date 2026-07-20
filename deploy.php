@@ -53,6 +53,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     header('Content-Type: text/plain');
     $home = dirname($_SERVER['DOCUMENT_ROOT']);
     $paths = [
+        'repositories/website/server.js',
         'repositories/website/standalone/server.js',
         'repositories/website/.next/standalone/server.js',
         'repositories/website/colocdz-app/server.js',
