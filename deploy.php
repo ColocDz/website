@@ -40,8 +40,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
     $log_path = '/home/colocdz1/logs/passenger.log';
     if (file_exists($log_path)) {
         $lines = file($log_path);
-        $last_lines = array_slice($lines, -150);
-        echo implode("", $last_lines);
+        $search = isset($_GET['q']) ? $_GET['q'] : null;
+        if ($search) {
+            $matching = array_filter($lines, function($line) use ($search) {
+                return strpos($line, $search) !== false;
+            });
+            echo implode("", $matching);
+        } else {
+            $last_lines = array_slice($lines, -400);
+            echo implode("", $last_lines);
+        }
     } else {
         echo "Log file not found at: " . $log_path;
     }
