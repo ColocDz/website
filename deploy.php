@@ -72,8 +72,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
         $full = $home . '/' . $p;
         echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
     }
-    echo "\n--- Scanning repositories/website ---\n";
-    $dir = $home . '/repositories/website';
+    echo "\n--- Scanning repositories/website/standalone ---\n";
+    $dir = $home . '/repositories/website/standalone';
     if (is_dir($dir)) {
         print_r(scandir($dir));
     } else {
