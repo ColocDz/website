@@ -1,0 +1,1 @@
+# Keep standalone directory tracked in git so cPanel git pull never wipes it
