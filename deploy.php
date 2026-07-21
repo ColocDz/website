@@ -65,13 +65,16 @@ function get_user_home() {
 if (isset($_GET['action']) && $_GET['action'] === 'restart') {
     header('Content-Type: text/plain');
     $home = get_user_home();
-    $tmp_dir = $home . '/repositories/website/standalone/tmp';
-    if (!is_dir($tmp_dir)) {
-        @mkdir($tmp_dir, 0755, true);
+    $paths = [
+        $home . '/repositories/website/standalone/tmp/restart.txt',
+        $home . '/repositories/website/tmp/restart.txt',
+    ];
+    foreach ($paths as $restart_file) {
+        $dir = dirname($restart_file);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        @file_put_contents($restart_file, time());
     }
-    $restart_file = $tmp_dir . '/restart.txt';
-    file_put_contents($restart_file, time());
-    echo "Passenger restart trigger created at: " . $restart_file . "\n";
+    echo "Passenger restart trigger created at both locations!\n";
     echo "Please refresh https://colocdz.com now!";
     exit;
 }
