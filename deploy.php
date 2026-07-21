@@ -213,6 +213,10 @@ function extract_tar_gz($archivePath, $targetDir) {
             $long_filename = null;
         }
         
+        // Normalize filename paths (replace Windows backslashes and remove leading ./ or /)
+        $filename = str_replace('\\', '/', $filename);
+        $filename = ltrim($filename, './');
+
         // Skip empty filenames or paths attempting directory traversal
         if ($filename === '' || strpos($filename, '..') !== false) {
             $offset += ceil($filesize / 512) * 512;
