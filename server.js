@@ -1,10 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const standaloneServer = path.join(__dirname, 'standalone', 'server.js');
+const standaloneDir = path.join(__dirname, 'standalone');
+const standaloneServer = path.join(standaloneDir, 'server.js');
+
+process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
+require('module').Module._initPaths();
 
 if (fs.existsSync(standaloneServer)) {
-  require(standaloneServer);
+  process.chdir(standaloneDir);
+  require('./server.js');
 } else {
   const { createServer } = require('http');
   const next = require('next');
@@ -16,4 +21,5 @@ if (fs.existsSync(standaloneServer)) {
     createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
   });
 }
+
 

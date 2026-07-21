@@ -110,7 +110,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
     header('Content-Type: text/plain');
     $home = get_user_home();
     $root_server = $home . '/repositories/website/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require('./server.js');\n}\n";
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nprocess.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');\nrequire('module').Module._initPaths();\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require('./server.js');\n}\n";
     file_put_contents($root_server, $wrapper);
     
     // Touch restart files
@@ -246,7 +246,7 @@ $result = extract_tar_gz($uploaded_file, $target_dir);
 if ($result === true) {
     // Automatically overwrite root server.js with wrapper script
     $root_server = $home_dir . '/repositories/website/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require('./server.js');\n}\n";
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nprocess.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');\nrequire('module').Module._initPaths();\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require('./server.js');\n}\n";
     @file_put_contents($root_server, $wrapper);
 
     // Automatically trigger Passenger restart in both directories
