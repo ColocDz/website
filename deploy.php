@@ -126,6 +126,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
     echo "Successfully updated " . $root_server . " and triggered Passenger restart!\n";
     echo "Updated content:\n" . file_get_contents($root_server);
     exit;
+// Update deploy.php itself from GitHub main branch
+if (isset($_GET['action']) && $_GET['action'] === 'update_self') {
+    header('Content-Type: text/plain');
+    $self_path = __FILE__;
+    $new_code = @file_get_contents('https://raw.githubusercontent.com/ColocDz/website/main/deploy.php');
+    if ($new_code && strpos($new_code, 'DEPLOY_TOKEN') !== false) {
+        file_put_contents($self_path, $new_code);
+        echo "Successfully updated " . $self_path . " from GitHub!\n";
+    } else {
+        echo "Failed to download deploy.php from GitHub.\n";
+    }
+    exit;
 }
 
 // Check file upload
