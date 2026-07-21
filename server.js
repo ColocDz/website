@@ -9,7 +9,7 @@ require('module').Module._initPaths();
 
 if (fs.existsSync(standaloneServer)) {
   process.chdir(standaloneDir);
-  require('./server.js');
+  require(standaloneServer);
 } else {
   const { createServer } = require('http');
   const next = require('next');
