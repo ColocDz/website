@@ -30,8 +30,10 @@ jobs:
       - name: Create deployment TAR
         run: |
           cd .next/standalone
+          find . -name "*.map" -type f -delete
           tar -czf ../../deploy.tar.gz .
           cd ../..
+
 
       - name: Deploy via HTTP (PHP)
         run: |
