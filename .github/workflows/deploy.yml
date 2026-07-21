@@ -24,6 +24,8 @@ jobs:
           cp -r .next/static .next/standalone/.next/static
           mkdir -p .next/standalone/node_modules/@swc/helpers
           cp -rL node_modules/@swc/helpers/. .next/standalone/node_modules/@swc/helpers/
+          mkdir -p .next/standalone/node_modules/next
+          cp -rL node_modules/next/. .next/standalone/node_modules/next/
 
       - name: Create deployment TAR
         run: |
@@ -36,4 +38,9 @@ jobs:
           curl -k -f -X POST \
             -F "token=${{ secrets.DEPLOY_TOKEN }}" \
             -F "file=@deploy.tar.gz" \
+            https://colocdz.com/deploy.php || \
+          curl -k -f -X POST \
+            -F "token=${{ secrets.DEPLOY_TOKEN }}" \
+            -F "file=@deploy.tar.gz" \
             https://deploy.colocdz.com/deploy.php
+
