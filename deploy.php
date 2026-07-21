@@ -86,15 +86,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     $paths = [
         'repositories/website/server.js',
         'repositories/website/standalone/server.js',
-        'repositories/website/.next/standalone/server.js',
-        'repositories/website/colocdz-app/server.js',
-        'repositories/server.js',
     ];
     echo "--- File Existence Check ---\n";
     foreach ($paths as $p) {
         $full = $home . '/' . $p;
         echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
     }
+    echo "\n--- Contents of repositories/website/server.js ---\n";
+    $root_s = $home . '/repositories/website/server.js';
+    echo file_exists($root_s) ? file_get_contents($root_s) : "File not found";
     echo "\n--- Scanning repositories/website/standalone ---\n";
     $dir = $home . '/repositories/website/standalone';
     if (is_dir($dir)) {
@@ -102,6 +102,29 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     } else {
         echo "Directory $dir does not exist.\n";
     }
+    exit;
+}
+
+// Direct fix for root server.js wrapper
+if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
+    header('Content-Type: text/plain');
+    $home = get_user_home();
+    $root_server = $home . '/repositories/website/server.js';
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require('./server.js');\n}\n";
+    file_put_contents($root_server, $wrapper);
+    
+    // Touch restart files
+    $paths = [
+        $home . '/repositories/website/standalone/tmp/restart.txt',
+        $home . '/repositories/website/tmp/restart.txt',
+    ];
+    foreach ($paths as $rf) {
+        $dir = dirname($rf);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        @file_put_contents($rf, time());
+    }
+    echo "Successfully updated " . $root_server . " and triggered Passenger restart!\n";
+    echo "Updated content:\n" . file_get_contents($root_server);
     exit;
 }
 
@@ -221,10 +244,21 @@ function extract_tar_gz($archivePath, $targetDir) {
 $result = extract_tar_gz($uploaded_file, $target_dir);
 
 if ($result === true) {
-    // Automatically trigger Passenger restart
-    $tmp_dir = $target_dir . '/tmp';
-    if (!is_dir($tmp_dir)) @mkdir($tmp_dir, 0755, true);
-    @file_put_contents($tmp_dir . '/restart.txt', time());
+    // Automatically overwrite root server.js with wrapper script
+    $root_server = $home_dir . '/repositories/website/server.js';
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require('./server.js');\n}\n";
+    @file_put_contents($root_server, $wrapper);
+
+    // Automatically trigger Passenger restart in both directories
+    $paths = [
+        $home_dir . '/repositories/website/standalone/tmp/restart.txt',
+        $home_dir . '/repositories/website/tmp/restart.txt',
+    ];
+    foreach ($paths as $restart_file) {
+        $dir = dirname($restart_file);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        @file_put_contents($restart_file, time());
+    }
     echo json_encode(['success' => true, 'message' => 'Deployment successful (extracted via pure PHP TarExtractor)!']);
 } else {
     http_response_code(500);
