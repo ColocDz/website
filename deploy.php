@@ -126,6 +126,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
     echo "Successfully updated " . $root_server . " and triggered Passenger restart!\n";
     echo "Updated content:\n" . file_get_contents($root_server);
     exit;
+}
 // Programmatic git pull & restart
 if (isset($_GET['action']) && $_GET['action'] === 'git_pull') {
     header('Content-Type: text/plain');
