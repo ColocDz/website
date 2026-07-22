@@ -9,6 +9,8 @@ instrumentation-client.ts
 node_modules/
 .next/*
 !.next/standalone/
+!standalone/
+!standalone/**
 .env*.local
 .DS_Store
 .env
