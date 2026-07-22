@@ -126,6 +126,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
     echo "Successfully updated " . $root_server . " and triggered Passenger restart!\n";
     echo "Updated content:\n" . file_get_contents($root_server);
     exit;
+}
+
 // Update deploy.php itself from GitHub main branch
 if (isset($_GET['action']) && $_GET['action'] === 'update_self') {
     header('Content-Type: text/plain');
