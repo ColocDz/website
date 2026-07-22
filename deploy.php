@@ -126,6 +126,32 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
     echo "Successfully updated " . $root_server . " and triggered Passenger restart!\n";
     echo "Updated content:\n" . file_get_contents($root_server);
     exit;
+// Programmatic git pull & restart
+if (isset($_GET['action']) && $_GET['action'] === 'git_pull') {
+    header('Content-Type: text/plain');
+    $home = get_user_home();
+    $repo = $home . '/repositories/website';
+    $cmd = "cd " . escapeshellarg($repo) . " && git pull origin main 2>&1";
+    $output = shell_exec($cmd);
+    echo "--- Git Pull Output ---\n" . $output . "\n";
+    
+    // Automatically overwrite root server.js with wrapper script
+    $root_server = $repo . '/server.js';
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nprocess.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');\nrequire('module').Module._initPaths();\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require(standaloneServer);\n}\n";
+    @file_put_contents($root_server, $wrapper);
+
+    // Touch restart files
+    $paths = [
+        $home . '/repositories/website/standalone/tmp/restart.txt',
+        $home . '/repositories/website/tmp/restart.txt',
+    ];
+    foreach ($paths as $rf) {
+        $dir = dirname($rf);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        @file_put_contents($rf, time());
+    }
+    echo "--- Restart Triggered ---\n";
+    exit;
 }
 
 // Update deploy.php itself from GitHub main branch
