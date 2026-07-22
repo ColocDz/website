@@ -1,0 +1,3 @@
+{
+  "/api/face/verify-token/route": "app/api/face/verify-token/route.js"
+}
