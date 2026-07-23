@@ -8,11 +8,18 @@ const Module = require('module');
 const originalRequire = Module.prototype.require;
 
 Module.prototype.require = function(request) {
-  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
-    if (this && this.filename && this.filename.includes('node_modules')) {
-      const parentDir = path.dirname(this.filename);
-      const absPath = path.resolve(parentDir, request);
-      return originalRequire.call(this, absPath);
+  if (typeof request === 'string') {
+    if (request.startsWith('./') || request.startsWith('../')) {
+      if (this && this.filename && this.filename.includes('node_modules')) {
+        const parentDir = path.dirname(this.filename);
+        const absPath = path.resolve(parentDir, request);
+        return originalRequire.call(this, absPath);
+      }
+    } else if (!path.isAbsolute(request)) {
+      const standaloneModule = path.join(standaloneDir, 'node_modules', request);
+      if (fs.existsSync(standaloneModule) || fs.existsSync(standaloneModule + '.js') || fs.existsSync(standaloneModule + '/package.json')) {
+        return originalRequire.call(this, standaloneModule);
+      }
     }
   }
   return originalRequire.call(this, request);
