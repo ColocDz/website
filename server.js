@@ -30,7 +30,19 @@ Module._initPaths();
 
 if (fs.existsSync(standaloneServer)) {
   process.chdir(standaloneDir);
-  require(standaloneServer);
+
+  const rawPort = process.env.PORT;
+  if (rawPort && isNaN(Number(rawPort))) {
+    const origParseInt = global.parseInt;
+    global.parseInt = function(val, radix) {
+      if (val === rawPort) return rawPort;
+      return origParseInt(val, radix);
+    };
+    require(standaloneServer);
+    global.parseInt = origParseInt;
+  } else {
+    require(standaloneServer);
+  }
 } else {
   const { createServer } = require('http');
   const next = require('next');
