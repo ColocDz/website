@@ -16,6 +16,7 @@ define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
 define('TARGET_DIR_NAME', 'repositories/website/standalone');
 
 header('Content-Type: application/json');
+usleep(300000); // Throttling delay (300ms) to prevent cPanel firewall rate-limit triggers
 
 // Check if POST data was discarded due to post_max_size limit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && $_SERVER['CONTENT_LENGTH'] > 0) {
