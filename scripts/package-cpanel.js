@@ -123,6 +123,19 @@ const nodeModulesSwcDir = path.join(__dirname, '..', 'node_modules', '@swc', 'he
 const targetNodeModulesSwcDir = path.join(standaloneDir, 'node_modules', '@swc', 'helpers');
 fs.cpSync(getLongPath(nodeModulesSwcDir), getLongPath(targetNodeModulesSwcDir), { recursive: true, dereference: true, force: true });
 
+console.log('⚡ Step 5.2: Copying Prisma Client packages into standalone/node_modules...');
+const nodeModulesPrismaDir = path.join(__dirname, '..', 'node_modules', '@prisma');
+const targetNodeModulesPrismaDir = path.join(standaloneDir, 'node_modules', '@prisma');
+if (fs.existsSync(nodeModulesPrismaDir)) {
+  fs.cpSync(getLongPath(nodeModulesPrismaDir), getLongPath(targetNodeModulesPrismaDir), { recursive: true, dereference: true, force: true });
+}
+
+const nodeModulesDotPrismaDir = path.join(__dirname, '..', 'node_modules', '.prisma');
+const targetNodeModulesDotPrismaDir = path.join(standaloneDir, 'node_modules', '.prisma');
+if (fs.existsSync(nodeModulesDotPrismaDir)) {
+  fs.cpSync(getLongPath(nodeModulesDotPrismaDir), getLongPath(targetNodeModulesDotPrismaDir), { recursive: true, dereference: true, force: true });
+}
+
 
 // Helper to recursively remove .map files to reduce package size
 function removeMapFiles(dir) {
