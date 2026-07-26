@@ -6,6 +6,7 @@ const standaloneServer = path.join(standaloneDir, 'server.js');
 
 const Module = require('module');
 const originalRequire = Module.prototype.require;
+const nativeLoad = Module._load;
 
 Module.prototype.require = function(request) {
   if (typeof request === 'string') {
@@ -23,12 +24,12 @@ Module.prototype.require = function(request) {
             targetPath += '.json';
           }
         }
-        return originalRequire.call(this, targetPath);
+        return nativeLoad(targetPath, this, false);
       }
     } else if (!path.isAbsolute(request)) {
       const standaloneModule = path.join(standaloneDir, 'node_modules', request);
       if (fs.existsSync(standaloneModule) || fs.existsSync(standaloneModule + '.js') || fs.existsSync(standaloneModule + '/package.json')) {
-        return originalRequire.call(this, standaloneModule);
+        return nativeLoad(standaloneModule, this, false);
       }
     }
   }
