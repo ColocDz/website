@@ -279,7 +279,8 @@ function extract_tar_gz($archivePath, $targetDir) {
         }
         
         $name = trim(substr($header, 0, 100), "\0 ");
-        $prefix = trim(substr($header, 345, 155), "\0 ");
+        $magic = substr($header, 257, 5);
+        $prefix = ($magic === 'ustar') ? trim(substr($header, 345, 155), "\0 ") : '';
         $filename = ($prefix !== '') ? $prefix . '/' . $name : $name;
         $filesize = octdec(trim(substr($header, 124, 12), "\0 "));
         $typeflag = substr($header, 156, 1);
