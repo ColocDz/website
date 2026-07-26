@@ -7,10 +7,9 @@ instrumentation-client.ts
 
 # Common ignores
 node_modules/
-.next/*
-!.next/standalone/
-!standalone/
-!standalone/**
+.next/
+standalone/
+deploy.tar.gz
 .env*.local
 .DS_Store
 .env

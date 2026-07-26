@@ -40,17 +40,129 @@ function copyDirSync(src, dest) {
 console.log('📂 Step 3: Copying public directory to standalone/public...');
 fs.cpSync(publicDir, targetPublicDir, { recursive: true, force: true });
 
+// Strip heavy face recognition model files from standalone build to ensure upload fits in cPanel PHP memory limit
+const standalonePublicModels = path.join(targetPublicDir, 'models');
+if (fs.existsSync(standalonePublicModels)) {
+  console.log('🧹 Stripping heavy public/models from standalone package...');
+  try { fs.rmSync(standalonePublicModels, { recursive: true, force: true }); } catch (e) {}
+}
+
 console.log('🎨 Step 4: Copying .next/static directory to standalone/.next/static...');
 fs.cpSync(nextStaticDir, targetNextStaticDir, { recursive: true, force: true });
+
+console.log('📋 Step 4.5: Copying Next.js manifest files to standalone/.next...');
+const dotNextDir = path.join(__dirname, '..', '.next');
+const targetDotNextDir = path.join(standaloneDir, '.next');
+const manifestFiles = fs.readdirSync(dotNextDir).filter(file => file.endsWith('.json'));
+for (const file of manifestFiles) {
+  fs.copyFileSync(path.join(dotNextDir, file), path.join(targetDotNextDir, file));
+}
+
+console.log('🔧 Step 4.8: Injecting Passenger module isolation & socket binding into standalone/server.js...');
+const standaloneServerFile = path.join(standaloneDir, 'server.js');
+const standaloneServerCode = `const fs = require('fs');
+const path = require('path');
+const Module = require('module');
+
+const standaloneDir = __dirname;
+const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
+
+process.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');
+const originalRequire = Module.prototype.require;
+const nativeRequire = Module.createRequire ? Module.createRequire(__filename) : originalRequire;
+
+Module.prototype.require = function(request) {
+  if (request === 'next' || request.startsWith('next/')) {
+    const nextStandalonePath = path.join(standaloneNodeModules, request);
+    try {
+      return nativeRequire.call(this, nextStandalonePath);
+    } catch (e) {}
+  }
+  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
+    if (this && this.filename) {
+      const parentDir = path.dirname(this.filename);
+      const absPath = path.resolve(parentDir, request);
+      if (!fs.existsSync(absPath)) {
+        if (fs.existsSync(absPath + '.js')) {
+          return nativeRequire.call(this, absPath + '.js');
+        } else if (fs.existsSync(absPath + '/index.js')) {
+          return nativeRequire.call(this, absPath + '/index.js');
+        } else if (fs.existsSync(absPath + '.json')) {
+          return nativeRequire.call(this, absPath + '.json');
+        }
+      }
+    }
+  }
+  return nativeRequire.call(this, request);
+};
+
+process.env.NODE_ENV = 'production';
+process.chdir(standaloneDir);
+
+const currentPort = (process.env.PORT && isNaN(Number(process.env.PORT))) ? process.env.PORT : (parseInt(process.env.PORT, 10) || 3000);
+const hostname = process.env.HOSTNAME || '0.0.0.0';
+
+let keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
+if (isNaN(keepAliveTimeout)) {
+  keepAliveTimeout = undefined;
+}
+
+if (process.env.NEXT_MANUAL_SIGHANDLE) {
+  process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down...');
+    process.exit(0);
+  });
+  process.on('SIGINT', () => {
+    console.log('Received SIGINT, shutting down...');
+    process.exit(0);
+  });
+}
+
+require('next');
+const { startServer } = require('next/dist/server/lib/start-server');
+
+const dir = standaloneDir;
+const nextConfig = {"env":{}};
+
+startServer({
+  dir,
+  isDev: false,
+  config: nextConfig,
+  hostname,
+  port: currentPort,
+  allowRetry: false,
+  keepAliveTimeout,
+}).catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+`;
+fs.writeFileSync(standaloneServerFile, standaloneServerCode, 'utf8');
+
+// Remove top-level 'next' directory inside standalone if present to prevent require('next') collision
+const standaloneNextFolder = path.join(standaloneDir, 'next');
+if (fs.existsSync(standaloneNextFolder)) {
+  fs.rmSync(standaloneNextFolder, { recursive: true, force: true });
+}
+
+// Helper for Windows long paths
+function getLongPath(p) {
+  const resolved = path.resolve(p);
+  if (process.platform === 'win32' && !resolved.startsWith('\\\\?\\')) {
+    return '\\\\?\\' + resolved;
+  }
+  return resolved;
+}
 
 console.log('⚡ Step 5: Copying Next.js server package into standalone/node_modules...');
 const nodeModulesNextDir = path.join(__dirname, '..', 'node_modules', 'next');
 const targetNodeModulesNextDir = path.join(standaloneDir, 'node_modules', 'next');
-fs.cpSync(nodeModulesNextDir, targetNodeModulesNextDir, { recursive: true, dereference: true, force: true });
+fs.rmSync(getLongPath(targetNodeModulesNextDir), { recursive: true, force: true });
+fs.cpSync(getLongPath(nodeModulesNextDir), getLongPath(targetNodeModulesNextDir), { recursive: true, dereference: true, force: true });
 
 const nodeModulesSwcDir = path.join(__dirname, '..', 'node_modules', '@swc', 'helpers');
 const targetNodeModulesSwcDir = path.join(standaloneDir, 'node_modules', '@swc', 'helpers');
-fs.cpSync(nodeModulesSwcDir, targetNodeModulesSwcDir, { recursive: true, dereference: true, force: true });
+fs.cpSync(getLongPath(nodeModulesSwcDir), getLongPath(targetNodeModulesSwcDir), { recursive: true, dereference: true, force: true });
 
 
 // Helper to recursively remove .map files to reduce package size
@@ -76,17 +188,32 @@ function cleanupUnusedBinaries(dir) {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      cleanupUnusedBinaries(fullPath);
+      const lowerName = entry.name.toLowerCase();
+      if (lowerName === '__tests__' || lowerName === 'test' || lowerName === 'tests' || lowerName === 'docs' || lowerName === 'example' || lowerName === 'examples') {
+        try { fs.rmSync(fullPath, { recursive: true, force: true }); } catch (e) {}
+      } else {
+        cleanupUnusedBinaries(fullPath);
+      }
     } else {
       const lower = entry.name.toLowerCase();
       if (
+        (entry.name.startsWith('libquery_engine-') && !entry.name.includes('openssl-3.0')) ||
         lower.endsWith('.dll.node') ||
         lower.endsWith('.exe') ||
         lower.endsWith('.darwin-arm64.node') ||
         lower.endsWith('.darwin-x64.node') ||
         lower.endsWith('.win32-x64-msvc.node') ||
         lower.includes('musl') ||
-        lower.endsWith('.wasm')
+        lower.endsWith('.wasm') ||
+        lower.endsWith('.map') ||
+        lower.endsWith('.d.ts') ||
+        lower.endsWith('.md') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.includes('debian-openssl-1.1') ||
+        lower.includes('rhel-openssl-1.0') ||
+        lower.includes('rhel-openssl-1.1') ||
+        lower.includes('query_engine-windows')
       ) {
         try { fs.unlinkSync(fullPath); } catch (e) {}
       }
@@ -94,9 +221,56 @@ function cleanupUnusedBinaries(dir) {
   }
 }
 
-cleanupUnusedBinaries(standaloneDir);
+// Extra cleanup for build-time compiler packages inside next/dist/compiled
+const nextCompiledDir = path.join(standaloneDir, 'node_modules', 'next', 'dist', 'compiled');
+if (fs.existsSync(nextCompiledDir)) {
+  const compilerDirsToStrip = ['terser', 'babel', 'cssnano', 'browserslist', 'caniuse-lite'];
+  for (const cDir of compilerDirsToStrip) {
+    const p = path.join(nextCompiledDir, cDir);
+    if (fs.existsSync(p)) {
+      try { fs.rmSync(p, { recursive: true, force: true }); } catch (e) {}
+    }
+  }
+}
 
-console.log('✅ Standalone package prepared successfully in .next/standalone!');
+// Remove redundant Prisma query engine binaries from standalone/node_modules
+function cleanPrismaEngines(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      cleanPrismaEngines(fullPath);
+    } else {
+      const name = entry.name;
+      if (
+        name.endsWith('.dll.node') ||
+        name.includes('openssl-1.0') ||
+        name.includes('openssl-1.1') ||
+        name.includes('musl') ||
+        (name.startsWith('libquery_engine-') && !name.includes('openssl-3.0'))
+      ) {
+        try { fs.unlinkSync(fullPath); } catch (e) {}
+      }
+    }
+  }
+}
 
+cleanPrismaEngines(path.join(standaloneDir, 'node_modules'));
 
-console.log('💡 Upload the contents of .next/standalone to /home/colocdz1/repositories/website/standalone on cPanel.');
+console.log('🧹 Step 6.5: Deleting incomplete top-level standalone/next folder...');
+const standaloneNextDir = path.join(standaloneDir, 'next');
+if (fs.existsSync(standaloneNextDir)) {
+  fs.rmSync(standaloneNextDir, { recursive: true, force: true });
+}
+
+console.log('📦 Step 7: Creating deploy.tar.gz archive...');
+const archivePath = path.join(__dirname, '..', 'deploy.tar.gz');
+if (fs.existsSync(archivePath)) {
+  try { fs.unlinkSync(archivePath); } catch (e) {}
+}
+execSync(`tar -czf "${archivePath}" -C "${standaloneDir}" .`, { stdio: 'inherit' });
+
+console.log('✅ Standalone package & deploy.tar.gz prepared successfully!');
+console.log('💡 Upload deploy.tar.gz to /home/colocdz1/repositories/website/standalone via deploy.php');
+
