@@ -2,12 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const Module = require('module');
 
-// Force-kill cached Passenger workers once to ensure clean process start
-if (!process.env.PASSENGER_CLEAN_RESTART) {
-  process.env.PASSENGER_CLEAN_RESTART = '1';
-  process.exit(1);
-}
-
 const standaloneDir = path.join(__dirname, 'standalone');
 const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
 
