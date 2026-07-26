@@ -6,7 +6,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-ini_set('memory_limit', '512M');
+ini_set('memory_limit', '1024M');
 ini_set('max_execution_time', 300);
 
 // 1. CHOOSE A STRONG SECRET TOKEN
@@ -210,28 +210,21 @@ clean_dir($target_dir);
 
 $uploaded_file = $_FILES['file']['tmp_name'];
 
-// Helper to extract .tar.gz files in pure PHP without extensions
+// Helper to extract .tar.gz files in pure PHP streaming mode (uses < 5MB RAM)
 function extract_tar_gz($archivePath, $targetDir) {
-    if (!function_exists('gzdecode')) {
-        return 'The zlib PHP extension (gzdecode function) is missing on this server. Please contact your host to enable it.';
+    if (!function_exists('gzopen')) {
+        return 'The zlib PHP extension (gzopen function) is missing on this server.';
     }
     
-    $data = file_get_contents($archivePath);
-    if ($data === false) {
-        return 'Failed to read uploaded archive file.';
+    $fp = @gzopen($archivePath, 'rb');
+    if (!$fp) {
+        return 'Failed to open Gzip archive stream.';
     }
     
-    $data = @gzdecode($data);
-    if ($data === false) {
-        return 'Failed to decompress Gzip archive. The file might be corrupted.';
-    }
-    
-    $offset = 0;
-    $len = strlen($data);
     $long_filename = null;
     
-    while ($offset < $len) {
-        $header = substr($data, $offset, 512);
+    while (!gzeof($fp)) {
+        $header = gzread($fp, 512);
         if (strlen($header) < 512 || pack("a512", $header) === pack("a512", "")) {
             break;
         }
@@ -240,49 +233,66 @@ function extract_tar_gz($archivePath, $targetDir) {
         $filesize = octdec(trim(substr($header, 124, 12), "\0 "));
         $typeflag = substr($header, 156, 1);
         
-        $offset += 512;
-        
         if ($typeflag === 'L') {
-            // GNU long filename extension
-            $long_filename = trim(substr($data, $offset, $filesize), "\0 ");
-            $offset += ceil($filesize / 512) * 512;
+            $readLen = ceil($filesize / 512) * 512;
+            $longData = gzread($fp, $readLen);
+            $long_filename = trim(substr($longData, 0, $filesize), "\0 ");
             continue;
         }
         
-        // Use long filename if available from the previous block
         if ($long_filename !== null) {
             $filename = $long_filename;
             $long_filename = null;
         }
         
-        // Normalize filename paths (replace Windows backslashes and remove leading ./ or /)
         $filename = str_replace('\\', '/', $filename);
         $filename = ltrim($filename, './');
 
-        // Skip empty filenames or paths attempting directory traversal
         if ($filename === '' || strpos($filename, '..') !== false) {
-            $offset += ceil($filesize / 512) * 512;
+            $skipLen = ceil($filesize / 512) * 512;
+            if ($skipLen > 0) {
+                while ($skipLen > 0) {
+                    $readSize = min($skipLen, 65536);
+                    gzread($fp, $readSize);
+                    $skipLen -= $readSize;
+                }
+            }
             continue;
         }
         
         if ($typeflag === '5') {
-            // Directory
             $dest = $targetDir . '/' . $filename;
-            if (!is_dir($dest)) {
-                @mkdir($dest, 0755, true);
-            }
+            if (!is_dir($dest)) @mkdir($dest, 0755, true);
         } else if ($typeflag === '0' || $typeflag === "\0" || $typeflag === '') {
-            // Regular file
             $dest = $targetDir . '/' . $filename;
             $dir = dirname($dest);
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0755, true);
+            if (!is_dir($dir)) @mkdir($dir, 0755, true);
+            
+            $outFp = @fopen($dest, 'wb');
+            $remaining = $filesize;
+            while ($remaining > 0 && !gzeof($fp)) {
+                $chunkSize = min($remaining, 65536);
+                $chunk = gzread($fp, $chunkSize);
+                if ($chunk === false) break;
+                if ($outFp) fwrite($outFp, $chunk);
+                $remaining -= strlen($chunk);
             }
-            @file_put_contents($dest, substr($data, $offset, $filesize));
+            if ($outFp) fclose($outFp);
+            
+            $padding = (512 - ($filesize % 512)) % 512;
+            if ($padding > 0) gzread($fp, $padding);
+        } else {
+            $skipLen = ceil($filesize / 512) * 512;
+            if ($skipLen > 0) {
+                while ($skipLen > 0) {
+                    $readSize = min($skipLen, 65536);
+                    gzread($fp, $readSize);
+                    $skipLen -= $readSize;
+                }
+            }
         }
-        
-        $offset += ceil($filesize / 512) * 512;
     }
+    gzclose($fp);
     return true;
 }
 
@@ -310,7 +320,7 @@ if ($result === true) {
 
     // Automatically overwrite root server.js with wrapper script
     $root_server = $home_dir . '/repositories/website/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\nconst originalRequire = Module.prototype.require;\nModule.prototype.require = function(request) {\n  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {\n    if (this && this.filename) {\n      const parentDir = path.dirname(this.filename);\n      const absPath = path.resolve(parentDir, request);\n      if (!fs.existsSync(absPath)) {\n        if (fs.existsSync(absPath + '.js')) {\n          return originalRequire.call(this, absPath + '.js');\n        } else if (fs.existsSync(absPath + '/index.js')) {\n          return originalRequire.call(this, absPath + '/index.js');\n        } else if (fs.existsSync(absPath + '.json')) {\n          return originalRequire.call(this, absPath + '.json');\n        }\n      }\n    }\n  }\n  return originalRequire.call(this, request);\n};\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nprocess.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');\nModule._initPaths();\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  const rawPort = process.env.PORT;\n  if (rawPort && isNaN(Number(rawPort))) {\n    const origParseInt = global.parseInt;\n    global.parseInt = function(val, radix) {\n      if (val === rawPort) return rawPort;\n      return origParseInt(val, radix);\n    };\n    require(standaloneServer);\n    global.parseInt = origParseInt;\n  } else {\n    require(standaloneServer);\n  }\n}\n";
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneNodeModules = path.join(standaloneDir, 'node_modules');\nprocess.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');\nModule._initPaths();\nconst originalRequire = Module.prototype.require;\nModule.prototype.require = function(request) {\n  if (request === 'next' || request.startsWith('next/')) {\n    const nextStandalonePath = path.join(standaloneNodeModules, request);\n    try { return originalRequire.call(this, nextStandalonePath); } catch (e) {}\n  }\n  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {\n    if (this && this.filename) {\n      const parentDir = path.dirname(this.filename);\n      const absPath = path.resolve(parentDir, request);\n      if (!fs.existsSync(absPath)) {\n        if (fs.existsSync(absPath + '.js')) {\n          return originalRequire.call(this, absPath + '.js');\n        } else if (fs.existsSync(absPath + '/index.js')) {\n          return originalRequire.call(this, absPath + '/index.js');\n        } else if (fs.existsSync(absPath + '.json')) {\n          return originalRequire.call(this, absPath + '.json');\n        }\n      }\n    }\n  }\n  return originalRequire.call(this, request);\n};\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.dir ? process.chdir(standaloneDir) : null;\n  const rawPort = process.env.PORT;\n  if (rawPort && isNaN(Number(rawPort))) {\n    const origParseInt = global.parseInt;\n    global.parseInt = function(val, radix) {\n      if (val === rawPort) return rawPort;\n      return origParseInt(val, radix);\n    };\n    require(standaloneServer);\n    global.parseInt = origParseInt;\n  } else {\n    require(standaloneServer);\n  }\n}\n";
     @file_put_contents($root_server, $wrapper);
 
     // Automatically trigger Passenger restart in both directories
