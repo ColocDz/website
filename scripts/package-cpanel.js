@@ -217,10 +217,11 @@ function cleanPrismaEngines(dir) {
       const name = entry.name;
       if (
         name.endsWith('.dll.node') ||
-        name.includes('openssl-1.0') ||
-        name.includes('openssl-1.1') ||
-        name.includes('musl') ||
-        (name.startsWith('libquery_engine-') && !name.includes('openssl-3.0'))
+        name.endsWith('.exe') ||
+        name.includes('darwin-arm64') ||
+        name.includes('darwin-x64') ||
+        name.includes('win32-x64') ||
+        name.includes('musl')
       ) {
         try { fs.unlinkSync(fullPath); } catch (e) {}
       }
