@@ -309,6 +309,7 @@ function extract_tar_gz($archivePath, $targetDir) {
                 $remaining -= strlen($chunk);
             }
             if ($outFp) fclose($outFp);
+            $GLOBALS['extracted_files_list'][] = $filename;
             
             $padding = (512 - ($filesize % 512)) % 512;
             if ($padding > 0) gzread($fp, $padding);
@@ -336,12 +337,13 @@ if ($result === true) {
     $public_deploy = $home_dir . '/public_html/deploy.colocdz.com/deploy.php';
     if (file_exists($extracted_deploy) && is_file($extracted_deploy)) {
         @chmod($public_deploy, 0777);
-        if (function_exists('opcache_invalidate')) {
-            @opcache_invalidate($public_deploy, true);
-            @opcache_invalidate($extracted_deploy, true);
+        $new_deploy_code = @file_get_contents($extracted_deploy);
+        if ($new_deploy_code && strpos($new_deploy_code, 'DEPLOY_TOKEN') !== false) {
+            @file_put_contents($public_deploy, $new_deploy_code);
+            if (function_exists('opcache_invalidate')) {
+                @opcache_invalidate($public_deploy, true);
+            }
         }
-        @unlink($public_deploy);
-        @copy($extracted_deploy, $public_deploy);
         @chmod($public_deploy, 0755);
     }
 
@@ -378,7 +380,15 @@ if ($result === true) {
         if (!is_dir($dir)) @mkdir($dir, 0755, true);
         @file_put_contents($restart_file, time());
     }
-    echo json_encode(['success' => true, 'message' => 'Deployment successful (extracted via pure PHP TarExtractor)!']);
+    $dot_next_count = count(array_filter($GLOBALS['extracted_files_list'] ?? [], function($f) {
+        return strpos($f, '.next') !== false;
+    }));
+    echo json_encode([
+        'success' => true,
+        'message' => 'Deployment successful!',
+        'total_extracted' => count($GLOBALS['extracted_files_list'] ?? []),
+        'dot_next_files' => $dot_next_count
+    ]);
 } else {
     http_response_code(500);
     echo json_encode(['error' => $result]);
