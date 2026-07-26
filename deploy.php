@@ -46,9 +46,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
             $matching = array_filter($lines, function($line) use ($search) {
                 return strpos($line, $search) !== false;
             });
-            echo implode("", $matching);
+            echo implode("", array_slice($matching, -200));
         } else {
-            $last_lines = array_slice($lines, -400);
+            $count = isset($_GET['lines']) ? intval($_GET['lines']) : 100;
+            $last_lines = array_slice($lines, -$count);
             echo implode("", $last_lines);
         }
     } else {
@@ -363,7 +364,7 @@ if ($result === true) {
 
     // Automatically overwrite root server.js with wrapper script
     $root_server = $home_dir . '/repositories/website/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneNodeModules = path.join(standaloneDir, 'node_modules');\nprocess.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');\nconst originalRequire = Module.prototype.require;\nlet inCustomRequire = false;\nModule.prototype.require = function(request) {\n  if (inCustomRequire) {\n    return originalRequire.call(this, request);\n  }\n  inCustomRequire = true;\n  try {\n    if (request === 'next' || (typeof request === 'string' && request.startsWith('next/'))) {\n      const nextStandalonePath = path.join(standaloneNodeModules, request);\n      try {\n        return originalRequire.call(this, nextStandalonePath);\n      } catch (e) {}\n    }\n    if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {\n      if (this && this.filename) {\n        const parentDir = path.dirname(this.filename);\n        const absPath = path.resolve(parentDir, request);\n        if (!fs.existsSync(absPath)) {\n          if (fs.existsSync(absPath + '.js')) {\n            return originalRequire.call(this, absPath + '.js');\n          } else if (fs.existsSync(absPath + '/index.js')) {\n            return originalRequire.call(this, absPath + '/index.js');\n          } else if (fs.existsSync(absPath + '.json')) {\n            return originalRequire.call(this, absPath + '.json');\n          }\n        }\n      }\n    }\n    return originalRequire.call(this, request);\n  } finally {\n    inCustomRequire = false;\n  }\n};\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  require(standaloneServer);\n}\n";
+    $wrapper = "const path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nprocess.chdir(standaloneDir);\nrequire(path.join(standaloneDir, 'server.js'));\n";
     @file_put_contents($root_server, $wrapper);
 
     // Automatically trigger Passenger restart in both directories

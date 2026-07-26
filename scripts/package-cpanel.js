@@ -56,19 +56,23 @@ if (fs.existsSync(standalonePublicModels)) {
 console.log('🎨 Step 4: Copying .next/static directory to standalone/.next/static...');
 fs.cpSync(nextStaticDir, targetNextStaticDir, { recursive: true, force: true });
 
-console.log('📋 Step 4.5: Copying Next.js manifest files to standalone/.next...');
+console.log('📋 Step 4.5: Copying Next.js BUILD_ID and manifest files to standalone/.next...');
 const dotNextDir = path.join(__dirname, '..', '.next');
 const targetDotNextDir = path.join(standaloneDir, '.next');
-const manifestFiles = fs.readdirSync(dotNextDir).filter(file => file.endsWith('.json'));
-for (const file of manifestFiles) {
-  fs.copyFileSync(path.join(dotNextDir, file), path.join(targetDotNextDir, file));
+const nextFiles = fs.readdirSync(dotNextDir);
+for (const file of nextFiles) {
+  const srcFile = path.join(dotNextDir, file);
+  if (fs.statSync(srcFile).isFile()) {
+    fs.copyFileSync(srcFile, path.join(targetDotNextDir, file));
+  }
 }
 
-console.log('🔧 Step 4.8: Injecting Passenger module isolation & socket binding into standalone/server.js...');
+console.log('🔧 Step 4.8: Injecting Passenger setup into standalone/server.js...');
 const standaloneServerFile = path.join(standaloneDir, 'server.js');
-const standaloneServerCode = `const fs = require('fs');
+const originalContent = fs.readFileSync(standaloneServerFile, 'utf8');
+
+const setupHeader = `const fs = require('fs');
 const path = require('path');
-const Module = require('module');
 
 const standaloneDir = __dirname;
 const deploySrc = path.join(standaloneDir, 'deploy.php');
@@ -76,88 +80,17 @@ const deployDest = path.resolve(standaloneDir, '../../../public_html/deploy.colo
 if (fs.existsSync(deploySrc)) {
   try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
 }
-const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
 
-process.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');
-const originalRequire = Module.prototype.require;
-const nativeRequire = Module.createRequire ? Module.createRequire(__filename) : originalRequire;
-
-let inCustomRequire = false;
-Module.prototype.require = function(request) {
-  if (inCustomRequire) {
-    return originalRequire.call(this, request);
-  }
-  inCustomRequire = true;
-  try {
-    if (request === 'next' || (typeof request === 'string' && request.startsWith('next/'))) {
-      const nextStandalonePath = path.join(standaloneNodeModules, request);
-      try {
-        return originalRequire.call(this, nextStandalonePath);
-      } catch (e) {}
-    }
-    if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
-      if (this && this.filename) {
-        const parentDir = path.dirname(this.filename);
-        const absPath = path.resolve(parentDir, request);
-        if (!fs.existsSync(absPath)) {
-          if (fs.existsSync(absPath + '.js')) {
-            return originalRequire.call(this, absPath + '.js');
-          } else if (fs.existsSync(absPath + '/index.js')) {
-            return originalRequire.call(this, absPath + '/index.js');
-          } else if (fs.existsSync(absPath + '.json')) {
-            return originalRequire.call(this, absPath + '.json');
-          }
-        }
-      }
-    }
-    return originalRequire.call(this, request);
-  } finally {
-    inCustomRequire = false;
-  }
-};
-
+process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
+require('module').Module._initPaths();
 process.env.NODE_ENV = 'production';
 process.chdir(standaloneDir);
 
-const currentPort = (process.env.PORT && isNaN(Number(process.env.PORT))) ? process.env.PORT : (parseInt(process.env.PORT, 10) || 3000);
-const hostname = process.env.HOSTNAME || '0.0.0.0';
-
-let keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
-if (isNaN(keepAliveTimeout)) {
-  keepAliveTimeout = undefined;
-}
-
-if (process.env.NEXT_MANUAL_SIGHANDLE) {
-  process.on('SIGTERM', () => {
-    console.log('Received SIGTERM, shutting down...');
-    process.exit(0);
-  });
-  process.on('SIGINT', () => {
-    console.log('Received SIGINT, shutting down...');
-    process.exit(0);
-  });
-}
-
-require('next');
-const { startServer } = require('next/dist/server/lib/start-server');
-
-const dir = standaloneDir;
-const nextConfig = {"env":{}};
-
-startServer({
-  dir,
-  isDev: false,
-  config: nextConfig,
-  hostname,
-  port: currentPort,
-  allowRetry: false,
-  keepAliveTimeout,
-}).catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
 `;
-fs.writeFileSync(standaloneServerFile, standaloneServerCode, 'utf8');
+
+if (!originalContent.includes('deployDest')) {
+  fs.writeFileSync(standaloneServerFile, setupHeader + originalContent, 'utf8');
+}
 
 // Remove top-level 'next' directory inside standalone if present to prevent require('next') collision
 const standaloneNextFolder = path.join(standaloneDir, 'next');
