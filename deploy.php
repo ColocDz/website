@@ -100,6 +100,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     $dir = $home . '/repositories/website/standalone';
     if (is_dir($dir)) {
         print_r(scandir($dir));
+        if (is_dir($dir . '/next')) {
+            echo "\n--- Scanning repositories/website/standalone/next ---\n";
+            print_r(scandir($dir . '/next'));
+        }
     } else {
         echo "Directory $dir does not exist.\n";
     }
