@@ -96,6 +96,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     echo "\n--- Contents of repositories/website/server.js ---\n";
     $root_s = $home . '/repositories/website/server.js';
     echo file_exists($root_s) ? file_get_contents($root_s) : "File not found";
+    echo "\n--- Content of repositories/website/server.js ---\n";
+    $rs = $home . '/repositories/website/server.js';
+    if (file_exists($rs)) {
+        echo file_get_contents($rs);
+    } else {
+        echo "server.js does not exist.\n";
+    }
+
     echo "\n--- Scanning repositories/website/standalone ---\n";
     $dir = $home . '/repositories/website/standalone';
     if (is_dir($dir)) {
