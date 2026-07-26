@@ -46,6 +46,12 @@ if (fs.existsSync(deployPhpSrc)) {
   fs.copyFileSync(deployPhpSrc, path.join(standaloneDir, 'deploy.php'));
 }
 
+// Copy .env into standalone root
+const envSrc = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envSrc)) {
+  fs.copyFileSync(envSrc, path.join(standaloneDir, '.env'));
+}
+
 // Strip heavy face recognition model files from standalone build to ensure upload fits in cPanel PHP memory limit
 const standalonePublicModels = path.join(targetPublicDir, 'models');
 if (fs.existsSync(standalonePublicModels)) {
