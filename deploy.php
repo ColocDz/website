@@ -180,20 +180,32 @@ if (!isset($_FILES['file'])) {
 $home_dir = get_user_home();
 $target_dir = $home_dir . '/' . TARGET_DIR_NAME;
 
-// Helper to clean up old build files, but keep .env intact
-function clean_dir($dir) {
+// Helper to forcefully wipe target directory except .env
+function clean_dir_force($dir) {
     if (!is_dir($dir)) return;
-    $items = scandir($dir);
+    $items = array_diff(scandir($dir), ['.', '..', '.env']);
     foreach ($items as $item) {
-        if ($item === '.' || $item === '..' || $item === '.env') continue;
         $path = $dir . '/' . $item;
         if (is_dir($path)) {
-            clean_dir($path);
+            clean_dir_force($path);
+            @chmod($path, 0777);
             @rmdir($path);
         } else {
+            @chmod($path, 0666);
             @unlink($path);
         }
     }
+}
+
+// Wipe target directory manually
+if (isset($_GET['action']) && $_GET['action'] === 'wipe_standalone') {
+    header('Content-Type: text/plain');
+    $home = get_user_home();
+    $target = $home . '/' . TARGET_DIR_NAME;
+    clean_dir_force($target);
+    echo "Wiped " . $target . " cleanly (preserved .env)!\n";
+    print_r(scandir($target));
+    exit;
 }
 
 // Ensure target directory exists
@@ -206,7 +218,7 @@ if (!is_dir($target_dir)) {
 }
 
 // Clean target directory of old files (keeping .env)
-clean_dir($target_dir);
+clean_dir_force($target_dir);
 
 $uploaded_file = $_FILES['file']['tmp_name'];
 
