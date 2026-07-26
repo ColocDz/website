@@ -5,35 +5,26 @@ const standaloneDir = path.join(__dirname, 'standalone');
 const standaloneServer = path.join(standaloneDir, 'server.js');
 
 const Module = require('module');
-const originalRequire = Module.prototype.require;
-const nativeLoad = Module._load;
 
-Module.prototype.require = function(request) {
-  if (typeof request === 'string') {
-    if (request.startsWith('./') || request.startsWith('../')) {
-      if (this && this.filename && this.filename.includes('node_modules')) {
-        const parentDir = path.dirname(this.filename);
-        const absPath = path.resolve(parentDir, request);
-        let targetPath = absPath;
-        if (!fs.existsSync(targetPath)) {
-          if (fs.existsSync(targetPath + '.js')) {
-            targetPath += '.js';
-          } else if (fs.existsSync(targetPath + '/index.js')) {
-            targetPath += '/index.js';
-          } else if (fs.existsSync(targetPath + '.json')) {
-            targetPath += '.json';
-          }
-        }
-        return nativeLoad(targetPath, this, false);
-      }
-    } else if (!path.isAbsolute(request)) {
-      const standaloneModule = path.join(standaloneDir, 'node_modules', request);
-      if (fs.existsSync(standaloneModule) || fs.existsSync(standaloneModule + '.js') || fs.existsSync(standaloneModule + '/package.json')) {
-        return nativeLoad(standaloneModule, this, false);
-      }
-    }
+// Hook Node's native Module._findPath to include standalone/node_modules
+const originalFindPath = Module._findPath;
+Module._findPath = function(request, paths, isMain) {
+  const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
+  let searchPaths = paths || [];
+  if (Array.isArray(searchPaths) && !searchPaths.includes(standaloneNodeModules)) {
+    searchPaths = [standaloneNodeModules].concat(searchPaths);
   }
-  return originalRequire.call(this, request);
+  const result = originalFindPath.call(this, request, searchPaths, isMain);
+  if (result) return result;
+
+  // Fallback check directly in standaloneDir/node_modules
+  if (typeof request === 'string' && !path.isAbsolute(request) && !request.startsWith('.')) {
+    const directPath = path.join(standaloneNodeModules, request);
+    const directResult = originalFindPath.call(this, directPath, [], isMain);
+    if (directResult) return directResult;
+  }
+
+  return originalFindPath.call(this, request, paths, isMain);
 };
 
 process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
@@ -65,5 +56,3 @@ if (fs.existsSync(standaloneServer)) {
     createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
   });
 }
-
-
