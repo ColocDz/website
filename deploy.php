@@ -35,10 +35,10 @@ if ($token !== DEPLOY_TOKEN) {
     exit;
 }
 
-// Direct script update via POST file upload
-if (isset($_FILES['deploy_script'])) {
+// Direct script update via Base64 payload
+if (isset($_POST['b64_script'])) {
     header('Content-Type: text/plain');
-    $code = file_get_contents($_FILES['deploy_script']['tmp_name']);
+    $code = base64_decode($_POST['b64_script']);
     $self = __FILE__;
     if ($code && strpos($code, 'DEPLOY_TOKEN') !== false) {
         @chmod($self, 0777);
@@ -46,9 +46,9 @@ if (isset($_FILES['deploy_script'])) {
         if (function_exists('opcache_invalidate')) {
             @opcache_invalidate($self, true);
         }
-        echo "Updated " . $self . " directly via POST upload!\n";
+        echo "Updated " . $self . " successfully via Base64 payload!\n";
     } else {
-        echo "Invalid script uploaded.\n";
+        echo "Invalid Base64 script payload.\n";
     }
     exit;
 }
