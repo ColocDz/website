@@ -71,20 +71,20 @@ console.log('🔧 Step 4.8: Injecting Passenger setup into standalone/server.js.
 const standaloneServerFile = path.join(standaloneDir, 'server.js');
 const originalContent = fs.readFileSync(standaloneServerFile, 'utf8');
 
-const setupHeader = `const fs = require('fs');
-const path = require('path');
-
-const standaloneDir = __dirname;
-const deploySrc = path.join(standaloneDir, 'deploy.php');
-const deployDest = path.resolve(standaloneDir, '../../../public_html/deploy.colocdz.com/deploy.php');
-if (fs.existsSync(deploySrc)) {
-  try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
-}
-
-process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
-require('module').Module._initPaths();
-process.env.NODE_ENV = 'production';
-process.chdir(standaloneDir);
+const setupHeader = `(function() {
+  const fs = require('fs');
+  const path = require('path');
+  const standaloneDir = __dirname;
+  const deploySrc = path.join(standaloneDir, 'deploy.php');
+  const deployDest = path.resolve(standaloneDir, '../../../public_html/deploy.colocdz.com/deploy.php');
+  if (fs.existsSync(deploySrc)) {
+    try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
+  }
+  process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
+  require('module').Module._initPaths();
+  process.env.NODE_ENV = 'production';
+  process.chdir(standaloneDir);
+})();
 
 `;
 
