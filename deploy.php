@@ -109,9 +109,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     $dir = $home . '/repositories/website/standalone';
     if (is_dir($dir)) {
         print_r(scandir($dir));
-        if (is_dir($dir . '/next')) {
-            echo "\n--- Scanning repositories/website/standalone/next ---\n";
-            print_r(scandir($dir . '/next'));
+        if (is_dir($dir . '/.next')) {
+            echo "\n--- Scanning repositories/website/standalone/.next ---\n";
+            print_r(scandir($dir . '/.next'));
+        } else {
+            echo "\n--- .next directory DOES NOT EXIST in standalone! ---\n";
         }
     } else {
         echo "Directory $dir does not exist.\n";
@@ -263,7 +265,9 @@ function extract_tar_gz($archivePath, $targetDir) {
             break;
         }
         
-        $filename = trim(substr($header, 0, 100), "\0 ");
+        $name = trim(substr($header, 0, 100), "\0 ");
+        $prefix = trim(substr($header, 345, 155), "\0 ");
+        $filename = ($prefix !== '') ? $prefix . '/' . $name : $name;
         $filesize = octdec(trim(substr($header, 124, 12), "\0 "));
         $typeflag = substr($header, 156, 1);
         
