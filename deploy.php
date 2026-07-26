@@ -280,9 +280,9 @@ function extract_tar_gz($archivePath, $targetDir) {
         }
         
         $filename = str_replace('\\', '/', $filename);
-        $filename = ltrim($filename, './');
+        $filename = preg_replace('#^\./+#', '', $filename);
 
-        if ($filename === '' || strpos($filename, '..') !== false) {
+        if ($filename === '' || $filename === '.' || strpos($filename, '..') !== false) {
             $skipLen = ceil($filesize / 512) * 512;
             if ($skipLen > 0) {
                 while ($skipLen > 0) {
