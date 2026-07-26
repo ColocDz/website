@@ -40,6 +40,12 @@ function copyDirSync(src, dest) {
 console.log('📂 Step 3: Copying public directory to standalone/public...');
 fs.cpSync(publicDir, targetPublicDir, { recursive: true, force: true });
 
+// Copy deploy.php into standalone root so deploy.php self-updates on server upon archive extraction
+const deployPhpSrc = path.join(__dirname, '..', 'deploy.php');
+if (fs.existsSync(deployPhpSrc)) {
+  fs.copyFileSync(deployPhpSrc, path.join(standaloneDir, 'deploy.php'));
+}
+
 // Strip heavy face recognition model files from standalone build to ensure upload fits in cPanel PHP memory limit
 const standalonePublicModels = path.join(targetPublicDir, 'models');
 if (fs.existsSync(standalonePublicModels)) {
@@ -65,6 +71,11 @@ const path = require('path');
 const Module = require('module');
 
 const standaloneDir = __dirname;
+const deploySrc = path.join(standaloneDir, 'deploy.php');
+const deployDest = path.resolve(standaloneDir, '../../../public_html/deploy.colocdz.com/deploy.php');
+if (fs.existsSync(deploySrc)) {
+  try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
+}
 const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
 
 process.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');

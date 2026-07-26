@@ -37,11 +37,11 @@ jobs:
 
       - name: Deploy via HTTP (PHP)
         run: |
-          curl -k -f -X POST \
+          curl -k -f --connect-timeout 30 --max-time 180 --resolve "colocdz.com:443:89.117.50.245" -X POST \
             -F "token=${{ secrets.DEPLOY_TOKEN }}" \
             -F "file=@deploy.tar.gz" \
             https://colocdz.com/deploy.php || \
-          curl -k -f -X POST \
+          curl -k -f --connect-timeout 30 --max-time 180 --resolve "deploy.colocdz.com:443:89.117.50.245" -X POST \
             -F "token=${{ secrets.DEPLOY_TOKEN }}" \
             -F "file=@deploy.tar.gz" \
             https://deploy.colocdz.com/deploy.php

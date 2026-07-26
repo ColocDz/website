@@ -337,7 +337,10 @@ if ($result === true) {
     $extracted_deploy = $target_dir . '/deploy.php';
     $public_deploy = $home_dir . '/public_html/deploy.colocdz.com/deploy.php';
     if (file_exists($extracted_deploy) && is_file($extracted_deploy)) {
+        @chmod($public_deploy, 0777);
+        @unlink($public_deploy);
         @copy($extracted_deploy, $public_deploy);
+        @chmod($public_deploy, 0755);
     }
 
     // Remove top-level standalone/next directory to prevent require('next') collision
