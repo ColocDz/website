@@ -82,29 +82,38 @@ process.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NO
 const originalRequire = Module.prototype.require;
 const nativeRequire = Module.createRequire ? Module.createRequire(__filename) : originalRequire;
 
+let inCustomRequire = false;
 Module.prototype.require = function(request) {
-  if (request === 'next' || request.startsWith('next/')) {
-    const nextStandalonePath = path.join(standaloneNodeModules, request);
-    try {
-      return nativeRequire.call(this, nextStandalonePath);
-    } catch (e) {}
+  if (inCustomRequire) {
+    return originalRequire.call(this, request);
   }
-  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
-    if (this && this.filename) {
-      const parentDir = path.dirname(this.filename);
-      const absPath = path.resolve(parentDir, request);
-      if (!fs.existsSync(absPath)) {
-        if (fs.existsSync(absPath + '.js')) {
-          return nativeRequire.call(this, absPath + '.js');
-        } else if (fs.existsSync(absPath + '/index.js')) {
-          return nativeRequire.call(this, absPath + '/index.js');
-        } else if (fs.existsSync(absPath + '.json')) {
-          return nativeRequire.call(this, absPath + '.json');
+  inCustomRequire = true;
+  try {
+    if (request === 'next' || (typeof request === 'string' && request.startsWith('next/'))) {
+      const nextStandalonePath = path.join(standaloneNodeModules, request);
+      try {
+        return originalRequire.call(this, nextStandalonePath);
+      } catch (e) {}
+    }
+    if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
+      if (this && this.filename) {
+        const parentDir = path.dirname(this.filename);
+        const absPath = path.resolve(parentDir, request);
+        if (!fs.existsSync(absPath)) {
+          if (fs.existsSync(absPath + '.js')) {
+            return originalRequire.call(this, absPath + '.js');
+          } else if (fs.existsSync(absPath + '/index.js')) {
+            return originalRequire.call(this, absPath + '/index.js');
+          } else if (fs.existsSync(absPath + '.json')) {
+            return originalRequire.call(this, absPath + '.json');
+          }
         }
       }
     }
+    return originalRequire.call(this, request);
+  } finally {
+    inCustomRequire = false;
   }
-  return nativeRequire.call(this, request);
 };
 
 process.env.NODE_ENV = 'production';
