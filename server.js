@@ -1,10 +1,23 @@
 const fs = require('fs');
 const path = require('path');
-
 const Module = require('module');
-const originalRequire = Module.prototype.require;
 
+const standaloneDir = path.join(__dirname, 'standalone');
+const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
+
+// 1. Force standalone/node_modules to the top of module resolution
+process.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');
+Module._initPaths();
+
+// 2. Intercept require calls to force loading from standalone/node_modules
+const originalRequire = Module.prototype.require;
 Module.prototype.require = function(request) {
+  if (request === 'next' || request.startsWith('next/')) {
+    const nextStandalonePath = path.join(standaloneNodeModules, request);
+    try {
+      return originalRequire.call(this, nextStandalonePath);
+    } catch (e) {}
+  }
   if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
     if (this && this.filename) {
       const parentDir = path.dirname(this.filename);
@@ -23,11 +36,7 @@ Module.prototype.require = function(request) {
   return originalRequire.call(this, request);
 };
 
-const standaloneDir = path.join(__dirname, 'standalone');
 const standaloneServer = path.join(standaloneDir, 'server.js');
-
-process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
-Module._initPaths();
 
 if (fs.existsSync(standaloneServer)) {
   process.chdir(standaloneDir);
