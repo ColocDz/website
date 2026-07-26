@@ -343,6 +343,10 @@ if ($result === true) {
     $public_deploy = $home_dir . '/public_html/deploy.colocdz.com/deploy.php';
     if (file_exists($extracted_deploy) && is_file($extracted_deploy)) {
         @chmod($public_deploy, 0777);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($public_deploy, true);
+            @opcache_invalidate($extracted_deploy, true);
+        }
         @unlink($public_deploy);
         @copy($extracted_deploy, $public_deploy);
         @chmod($public_deploy, 0755);
