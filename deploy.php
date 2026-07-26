@@ -209,7 +209,16 @@ function clean_dir_force($dir) {
     }
 }
 
-// Wipe target directory manually
+// Kill all stale Node processes for user to force Passenger to re-spawn
+if (isset($_GET['action']) && $_GET['action'] === 'kill_passenger') {
+    header('Content-Type: text/plain');
+    @exec("pkill -9 -u colocdz1 -f node");
+    $home = get_user_home();
+    @file_put_contents($home . '/repositories/website/standalone/tmp/restart.txt', time());
+    @file_put_contents($home . '/repositories/website/tmp/restart.txt', time());
+    echo "Killed all stale Node processes and touched restart.txt!\n";
+    exit;
+}
 if (isset($_GET['action']) && $_GET['action'] === 'wipe_standalone') {
     header('Content-Type: text/plain');
     $home = get_user_home();
@@ -324,6 +333,13 @@ function extract_tar_gz($archivePath, $targetDir) {
 $result = extract_tar_gz($uploaded_file, $target_dir);
 
 if ($result === true) {
+    // Self-update deploy.php script in public_html/deploy.colocdz.com if present in package
+    $extracted_deploy = $target_dir . '/deploy.php';
+    $public_deploy = $home_dir . '/public_html/deploy.colocdz.com/deploy.php';
+    if (file_exists($extracted_deploy) && is_file($extracted_deploy)) {
+        @copy($extracted_deploy, $public_deploy);
+    }
+
     // Remove top-level standalone/next directory to prevent require('next') collision
     $top_next = $target_dir . '/next';
     if (is_dir($top_next)) {
