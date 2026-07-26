@@ -178,6 +178,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'update_self') {
     $new_code = @file_get_contents('https://raw.githubusercontent.com/ColocDz/website/main/deploy.php?v=' . time());
     if ($new_code && strpos($new_code, 'DEPLOY_TOKEN') !== false) {
         file_put_contents($self_path, $new_code);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($self_path, true);
+        }
         echo "Successfully updated " . $self_path . " from GitHub!\n";
     } else {
         echo "Failed to download deploy.php from GitHub.\n";
