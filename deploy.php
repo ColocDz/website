@@ -199,6 +199,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'update_self') {
         if (function_exists('opcache_invalidate')) {
             @opcache_invalidate($self_path, true);
         }
+        $home = get_user_home();
+        @touch($home . '/public_html/deploy.colocdz.com/.htaccess');
         echo "Successfully updated " . $self_path . " from GitHub!\n";
     } else {
         echo "Failed to download deploy.php from GitHub.\n";
