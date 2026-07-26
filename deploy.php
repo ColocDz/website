@@ -185,16 +185,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'update_self') {
     exit;
 }
 
-// Check file upload
-if (!isset($_FILES['file'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'No file uploaded']);
-    exit;
-}
-
-$home_dir = get_user_home();
-$target_dir = $home_dir . '/' . TARGET_DIR_NAME;
-
 // Helper to forcefully wipe target directory except .env
 function clean_dir_force($dir) {
     if (!is_dir($dir)) return;
@@ -212,16 +202,6 @@ function clean_dir_force($dir) {
     }
 }
 
-// Kill all stale Node processes for user to force Passenger to re-spawn
-if (isset($_GET['action']) && $_GET['action'] === 'kill_passenger') {
-    header('Content-Type: text/plain');
-    @exec("pkill -9 -u colocdz1 -f node");
-    $home = get_user_home();
-    @file_put_contents($home . '/repositories/website/standalone/tmp/restart.txt', time());
-    @file_put_contents($home . '/repositories/website/tmp/restart.txt', time());
-    echo "Killed all stale Node processes and touched restart.txt!\n";
-    exit;
-}
 if (isset($_GET['action']) && $_GET['action'] === 'wipe_standalone') {
     header('Content-Type: text/plain');
     $home = get_user_home();
@@ -231,6 +211,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'wipe_standalone') {
     print_r(scandir($target));
     exit;
 }
+
+// Check file upload
+if (!isset($_FILES['file'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'No file uploaded']);
+    exit;
+}
+
+$home_dir = get_user_home();
+$target_dir = $home_dir . '/' . TARGET_DIR_NAME;
 
 // Ensure target directory exists
 if (!is_dir($target_dir)) {
