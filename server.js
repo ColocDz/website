@@ -13,7 +13,17 @@ Module.prototype.require = function(request) {
       if (this && this.filename && this.filename.includes('node_modules')) {
         const parentDir = path.dirname(this.filename);
         const absPath = path.resolve(parentDir, request);
-        return originalRequire.call(this, absPath);
+        let targetPath = absPath;
+        if (!fs.existsSync(targetPath)) {
+          if (fs.existsSync(targetPath + '.js')) {
+            targetPath += '.js';
+          } else if (fs.existsSync(targetPath + '/index.js')) {
+            targetPath += '/index.js';
+          } else if (fs.existsSync(targetPath + '.json')) {
+            targetPath += '.json';
+          }
+        }
+        return originalRequire.call(this, targetPath);
       }
     } else if (!path.isAbsolute(request)) {
       const standaloneModule = path.join(standaloneDir, 'node_modules', request);
