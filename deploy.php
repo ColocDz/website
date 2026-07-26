@@ -35,6 +35,24 @@ if ($token !== DEPLOY_TOKEN) {
     exit;
 }
 
+// Direct script update via POST file upload
+if (isset($_FILES['script'])) {
+    header('Content-Type: text/plain');
+    $code = file_get_contents($_FILES['script']['tmp_name']);
+    $self = __FILE__;
+    if ($code && strpos($code, 'DEPLOY_TOKEN') !== false) {
+        @chmod($self, 0777);
+        file_put_contents($self, $code);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($self, true);
+        }
+        echo "Updated " . $self . " directly via POST upload!\n";
+    } else {
+        echo "Invalid script uploaded.\n";
+    }
+    exit;
+}
+
 // Debug logs retrieval
 if (isset($_GET['action']) && $_GET['action'] === 'log') {
     header('Content-Type: text/plain');
