@@ -169,7 +169,7 @@ function cleanupUnusedBinaries(dir) {
     } else {
       const lower = entry.name.toLowerCase();
       if (
-        (entry.name.startsWith('libquery_engine-') && !entry.name.includes('openssl-3.0')) ||
+        (entry.name.startsWith('libquery_engine-') && !entry.name.includes('openssl-1.0') && !entry.name.includes('openssl-3.0')) ||
         lower.endsWith('.dll.node') ||
         lower.endsWith('.exe') ||
         lower.endsWith('.darwin-arm64.node') ||
@@ -182,9 +182,6 @@ function cleanupUnusedBinaries(dir) {
         lower.endsWith('.md') ||
         lower.endsWith('.png') ||
         lower.endsWith('.jpg') ||
-        lower.includes('debian-openssl-1.1') ||
-        lower.includes('rhel-openssl-1.0') ||
-        lower.includes('rhel-openssl-1.1') ||
         lower.includes('query_engine-windows')
       ) {
         try { fs.unlinkSync(fullPath); } catch (e) {}
