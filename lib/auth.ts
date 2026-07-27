@@ -15,6 +15,8 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: [
     "http://localhost:3000",
+    "https://colocdz.com",
+    "https://www.colocdz.com",
     process.env.BETTER_AUTH_URL || "",
   ].filter(Boolean),
   database: prismaAdapter(prisma, {
