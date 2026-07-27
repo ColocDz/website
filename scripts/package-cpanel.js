@@ -221,7 +221,8 @@ function cleanPrismaEngines(dir) {
         name.includes('darwin-arm64') ||
         name.includes('darwin-x64') ||
         name.includes('win32-x64') ||
-        name.includes('musl')
+        name.includes('musl') ||
+        (name.startsWith('libquery_engine-') && !name.includes('openssl-1.0'))
       ) {
         try { fs.unlinkSync(fullPath); } catch (e) {}
       }
