@@ -6,48 +6,50 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     nodeVersion: process.version,
     platform: process.platform,
-    arch: process.arch,
     env: {
       NODE_ENV: process.env.NODE_ENV,
       DATABASE_URL_SET: !!process.env.DATABASE_URL,
-      DATABASE_URL_PREFIX: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 25) : null,
       BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
-    },
-    system: {
-      totalmem: os.totalmem(),
-      freemem: os.freemem(),
     }
   };
 
+  const directUrl = "mongodb://colocdz:ugDtojEk84H1iWaM@ac-wulwfie-shard-00-00.7o4uabo.mongodb.net:27017,ac-wulwfie-shard-00-01.7o4uabo.mongodb.net:27017,ac-wulwfie-shard-00-02.7o4uabo.mongodb.net:27017/colocdz?ssl=true&replicaSet=atlas-13c548-shard-0&authSource=admin&retryWrites=true&w=majority&serverSelectionTimeoutMS=4000&connectTimeoutMS=4000";
+  const srvUrl = (process.env.DATABASE_URL || "") + (process.env.DATABASE_URL?.includes('?') ? '&' : '?') + "serverSelectionTimeoutMS=4000&connectTimeoutMS=4000";
+
+  // Test 1: Test Direct Connection String
   try {
     const { PrismaClient } = await import('@prisma/client');
-    info.prismaClientImported = true;
-
-    // Add connectTimeoutMS and serverSelectionTimeoutMS to DATABASE_URL if missing
-    let dbUrl = process.env.DATABASE_URL || '';
-    if (!dbUrl.includes('serverSelectionTimeoutMS')) {
-      dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'serverSelectionTimeoutMS=4000&connectTimeoutMS=4000';
-    }
-
-    const prismaClient = new PrismaClient({
-      datasources: { db: { url: dbUrl } },
+    const clientDirect = new PrismaClient({
+      datasources: { db: { url: directUrl } },
       log: ['error']
     });
-    info.prismaClientInstantiated = true;
-
-    const connectPromise = prismaClient.$connect();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Prisma $connect timed out after 4 seconds')), 4000)
-    );
-
-    await Promise.race([connectPromise, timeoutPromise]);
-    info.prismaConnected = true;
-
-    const userCount = await prismaClient.user.count();
-    info.userCount = userCount;
-    await prismaClient.$disconnect();
+    info.testingDirect = true;
+    await clientDirect.$connect();
+    info.directConnected = true;
+    info.directUserCount = await clientDirect.user.count();
+    await clientDirect.$disconnect();
   } catch (error: any) {
-    info.prismaError = {
+    info.directError = {
+      name: error?.name,
+      message: error?.message,
+      code: error?.code,
+    };
+  }
+
+  // Test 2: Test SRV Connection String
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const clientSrv = new PrismaClient({
+      datasources: { db: { url: srvUrl } },
+      log: ['error']
+    });
+    info.testingSrv = true;
+    await clientSrv.$connect();
+    info.srvConnected = true;
+    info.srvUserCount = await clientSrv.user.count();
+    await clientSrv.$disconnect();
+  } catch (error: any) {
+    info.srvError = {
       name: error?.name,
       message: error?.message,
       code: error?.code,
