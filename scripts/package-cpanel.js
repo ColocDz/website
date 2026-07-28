@@ -89,7 +89,7 @@ const setupHeader = `(function() {
   const Module = require('module');
   const origResolve = Module._resolveFilename;
   Module._resolveFilename = function (request, parent, isMain, options) {
-    if (typeof request === 'string' && request.startsWith('@prisma/client-')) {
+    if (typeof request === 'string' && request.includes('@prisma/client-')) {
       return origResolve.call(this, '@prisma/client', parent, isMain, options);
     }
     return origResolve.call(this, request, parent, isMain, options);
