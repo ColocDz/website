@@ -93,6 +93,9 @@ const setupHeader = `(function() {
     try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
   }
   const Module = require('module');
+  process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
+  Module._initPaths();
+
   const origResolve = Module._resolveFilename;
   Module._resolveFilename = function (request, parent, isMain, options) {
     if (typeof request === 'string' && (request.includes('@prisma/client-') || request === '@prisma/client')) {
@@ -105,8 +108,6 @@ const setupHeader = `(function() {
     }
     return origResolve.call(this, request, parent, isMain, options);
   };
-  process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
-  Module._initPaths();
   process.env.NODE_ENV = 'production';
   process.chdir(standaloneDir);
 })();
