@@ -156,6 +156,34 @@ if (fs.existsSync(nodeModulesDotPrismaDir)) {
   fs.cpSync(getLongPath(nodeModulesDotPrismaDir), getLongPath(targetNodeModulesDotPrismaDir), { recursive: true, dereference: true, force: true });
 }
 
+console.log('⚡ Step 5.3: Auto-bundling Turbopack hashed Prisma Client packages into standalone/node_modules/@prisma...');
+if (fs.existsSync(targetNodeModulesPrismaDir)) {
+  const prismaClientTarget = path.join(targetNodeModulesPrismaDir, 'client');
+  if (fs.existsSync(prismaClientTarget)) {
+    const dotNextChunksDir = path.join(standaloneDir, '.next', 'server', 'chunks');
+    if (fs.existsSync(dotNextChunksDir)) {
+      const chunkFiles = fs.readdirSync(dotNextChunksDir);
+      for (const cf of chunkFiles) {
+        const fullChunkPath = path.join(dotNextChunksDir, cf);
+        if (fs.statSync(fullChunkPath).isFile()) {
+          const content = fs.readFileSync(fullChunkPath, 'utf8');
+          const matches = content.match(/@prisma\/client-[a-f0-9]+/g);
+          if (matches) {
+            for (const match of matches) {
+              const folderName = match.replace('@prisma/', '');
+              const hashedTarget = path.join(targetNodeModulesPrismaDir, folderName);
+              if (!fs.existsSync(hashedTarget)) {
+                console.log(`📋 Bundled Turbopack Prisma Client chunk: @prisma/${folderName}`);
+                fs.cpSync(getLongPath(prismaClientTarget), getLongPath(hashedTarget), { recursive: true, dereference: true, force: true });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 
 // Helper to recursively remove .map files to reduce package size
 function removeMapFiles(dir) {
