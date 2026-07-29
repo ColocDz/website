@@ -175,6 +175,14 @@ if (fs.existsSync(targetNodeModulesPrismaDir)) {
               if (!fs.existsSync(hashedTarget)) {
                 console.log(`📋 Bundled Turbopack Prisma Client chunk: @prisma/${folderName}`);
                 fs.cpSync(getLongPath(prismaClientTarget), getLongPath(hashedTarget), { recursive: true, dereference: true, force: true });
+                const pkgJsonPath = path.join(hashedTarget, 'package.json');
+                if (fs.existsSync(pkgJsonPath)) {
+                  try {
+                    const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+                    pkg.name = `@prisma/${folderName}`;
+                    fs.writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2));
+                  } catch (e) {}
+                }
               }
             }
           }
