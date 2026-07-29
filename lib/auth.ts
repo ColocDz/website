@@ -20,12 +20,9 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_URL || "",
   ].filter(Boolean),
   database: prismaAdapter(prisma, {
-    provider: "mongodb",
+    provider: "sqlite",
   }),
   advanced: {
-    database: {
-      generateId: false, // Let MongoDB generate ObjectIds
-    },
     disableOriginCheck: true,
   },
   emailAndPassword: {

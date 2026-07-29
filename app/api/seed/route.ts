@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { stringifyJsonField } from '@/lib/prisma-utils';
 
 export async function GET() {
   try {
@@ -98,11 +99,12 @@ export async function GET() {
         wilaya: 'Algiers',
         location: 'Bab Ezzouar',
         description: 'Appartement F3 entièrement équipé et meublé. Cuisine équipée, Wi-Fi haut débit, climatisation. Idéal pour étudiante ou jeune travailleuse.',
-        images: [
+        images: stringifyJsonField([
           'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
           'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'
-        ],
-        amenities: ['wifi', 'ac', 'furnished', 'parking'],
+        ]),
+        amenities: stringifyJsonField(['wifi', 'ac', 'furnished', 'parking']),
+        rules: stringifyJsonField(['no_smoking', 'female_only']),
         author: { connect: { id: fatima.id } },
       }
     });
@@ -117,10 +119,10 @@ export async function GET() {
         wilaya: 'Algiers',
         location: 'Hydra',
         description: 'Superbe studio meublé avec terrasse et vue dégagée. Quartier calme et très sécurisé.',
-        images: [
+        images: stringifyJsonField([
           'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
-        ],
-        amenities: ['wifi', 'ac', 'elevator', 'furnished'],
+        ]),
+        amenities: stringifyJsonField(['wifi', 'ac', 'elevator', 'furnished']),
         author: { connect: { id: ahmed.id } },
       }
     });
@@ -135,17 +137,17 @@ export async function GET() {
         wilaya: 'Algiers',
         location: 'Kouba',
         description: 'Cherche un jeune colocataire sérieux pour partager les frais de loyer d\'un F3 à Kouba.',
-        images: [
+        images: stringifyJsonField([
           'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'
-        ],
-        amenities: ['wifi', 'furnished'],
+        ]),
+        amenities: stringifyJsonField(['wifi', 'furnished']),
         author: { connect: { id: karim.id } },
       }
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Database cleared and fresh test data seeded successfully!',
+      message: 'SQLite database cleared and fresh test data seeded successfully!',
       seeded: {
         usersCount: 3,
         postsCount: 3,

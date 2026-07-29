@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { formatPost, stringifyJsonField } from '@/lib/prisma-utils';
 
 export async function GET(
   request: NextRequest,
@@ -52,7 +53,7 @@ export async function GET(
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    return NextResponse.json(post);
+    return NextResponse.json(formatPost(post));
   } catch (error) {
     console.error('Error fetching post:', error);
     return NextResponse.json({ error: 'Failed to fetch post' }, { status: 500 });
@@ -103,7 +104,6 @@ export async function PUT(
   try {
     const unwrappedParams = await params;
     const { id } = unwrappedParams;
-    
     const session = await auth.api.getSession({ headers: await headers() });
                          
     if (!session || !session.user) {
@@ -124,30 +124,6 @@ export async function PUT(
 
     const data = await request.json();
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (!user.faceVerified) {
-      return NextResponse.json({ error: 'Face verification is required to edit/publish posts' }, { status: 400 });
-    }
-
-    const isPublishing = data.status === 'published' || !data.status;
-    if (isPublishing && post.status !== 'published') {
-      const postCount = await prisma.post.count({
-        where: { authorId: session.user.id, isArchived: false, status: 'published' }
-      });
-      if (postCount >= 3 && !user.identityVerified) {
-        return NextResponse.json({ error: 'You have already published 3 or more posts. Identity verification via National ID card is required to publish more.' }, { status: 400 });
-      }
-    }
-
-    const isRoommateAndPlace = data.searchType === 'roommate_and_place' || post.searchType === 'roommate_and_place';
-
     if (!data.title || !data.description) {
       return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
     }
@@ -155,6 +131,8 @@ export async function PUT(
     if (data.title.length > 30) {
       return NextResponse.json({ error: 'Title cannot exceed 30 characters' }, { status: 400 });
     }
+
+    const isRoommateAndPlace = data.searchType === 'roommate_and_place';
 
     if (isRoommateAndPlace) {
       if (!data.maxBudget) {
@@ -187,15 +165,16 @@ export async function PUT(
         wilaya: data.wilaya,
         bedrooms: (data.bedrooms && !isNaN(parseInt(data.bedrooms))) ? parseInt(data.bedrooms) : null,
         bathrooms: (data.bathrooms && !isNaN(parseInt(data.bathrooms))) ? parseInt(data.bathrooms) : null,
-        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.amenities) : [],
-        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.necessities) : [],
-        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : data.tags) : [],
-        images: data.images || [],
+        amenities: stringifyJsonField(data.amenities || []),
+        necessities: stringifyJsonField(data.necessities || []),
+        tags: stringifyJsonField(data.tags || []),
+        images: stringifyJsonField(data.images || []),
+        rules: stringifyJsonField(data.rules || []),
         status: data.status || 'published',
       }
     });
 
-    return NextResponse.json(updatedPost);
+    return NextResponse.json(formatPost(updatedPost));
   } catch (error: any) {
     console.error('Error updating post:', error);
     return NextResponse.json({ error: error?.message || 'Failed to update post' }, { status: 500 });

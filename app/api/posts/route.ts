@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { formatPost, parseJsonField, stringifyJsonField } from '@/lib/prisma-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,24 +31,24 @@ export async function GET(request: NextRequest) {
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-      whereClause.id = { in: user.savedPostIds || [] };
+      const savedIds = parseJsonField(user.savedPostIds);
+      whereClause.id = { in: savedIds };
       whereClause.status = 'published';
     } else if (userId) {
       whereClause.authorId = userId;
-      // If requester is not the target user, only show published posts
       if (!session || session.user.id !== userId) {
         whereClause.status = 'published';
       }
     } else {
-      whereClause.status = 'published'; // Only show published in public feed
+      whereClause.status = 'published';
     }
     
     if (type) whereClause.type = type;
     if (searchType) whereClause.searchType = searchType;
     if (query) {
       whereClause.OR = [
-        { title: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
+        { title: { contains: query } },
+        { description: { contains: query } },
       ];
     }
 
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
-    return NextResponse.json(posts);
+    return NextResponse.json(posts.map(formatPost));
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
@@ -106,7 +107,6 @@ export async function POST(request: NextRequest) {
     
     const isRoommateAndPlace = data.searchType === 'roommate_and_place';
 
-    // Validate required fields based on search type
     if (!data.title || !data.description) {
       return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
     }
@@ -116,7 +116,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (isRoommateAndPlace) {
-      // For "roommate + place" posts: maxBudget and wilaya are required
       if (!data.maxBudget) {
         return NextResponse.json({ error: 'Max budget is required' }, { status: 400 });
       }
@@ -124,7 +123,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Preferred wilaya is required' }, { status: 400 });
       }
     } else {
-      // For "roommate" posts: price and location are required
       if (!data.price || !data.location) {
         return NextResponse.json({ error: 'Price and location are required' }, { status: 400 });
       }
@@ -147,16 +145,17 @@ export async function POST(request: NextRequest) {
         wilaya: data.wilaya,
         bedrooms: (data.bedrooms && !isNaN(parseInt(data.bedrooms))) ? parseInt(data.bedrooms) : null,
         bathrooms: (data.bathrooms && !isNaN(parseInt(data.bathrooms))) ? parseInt(data.bathrooms) : null,
-        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.amenities) : [],
-        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.necessities) : [],
-        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : data.tags) : [],
-        images: data.images || [],
+        amenities: stringifyJsonField(data.amenities || []),
+        necessities: stringifyJsonField(data.necessities || []),
+        tags: stringifyJsonField(data.tags || []),
+        images: stringifyJsonField(data.images || []),
+        rules: stringifyJsonField(data.rules || []),
         status: data.status || 'published',
         authorId: session.user.id
       }
     });
 
-    return NextResponse.json(post, { status: 201 });
+    return NextResponse.json(formatPost(post), { status: 201 });
   } catch (error: any) {
     console.error('Error creating post:', error);
     return NextResponse.json({ error: error?.message || 'Failed to create post' }, { status: 500 });

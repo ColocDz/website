@@ -4,71 +4,69 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 // ─── Auth Models (required by Better Auth) ───
 
 model User {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  name            String
-  email           String    @unique
-  emailVerified   Boolean   @default(false)
-  image           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  name              String
+  email             String    @unique
+  emailVerified     Boolean   @default(false)
+  image             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Extended profile fields for ColocDZ
-  lastName        String?
-  phone           String?
-  gender          String?
-  birthday        DateTime?
-  bio             String?
-  wilaya          String?
-  city            String?
-  isPrivate       Boolean   @default(false)
-  nameChanged     Boolean   @default(false)
-  isArchived      Boolean   @default(false)
-  identityVerified Boolean  @default(false)
-  faceVerified    Boolean   @default(false)
-  faceVerifiedAt  DateTime?
+  lastName          String?
+  phone             String?
+  gender            String?
+  birthday          DateTime?
+  bio               String?
+  wilaya            String?
+  city              String?
+  isPrivate         Boolean   @default(false)
+  nameChanged       Boolean   @default(false)
+  isArchived        Boolean   @default(false)
+  identityVerified  Boolean   @default(false)
+  faceVerified      Boolean   @default(false)
+  faceVerifiedAt    DateTime?
   faceVerifiedUntil DateTime?
-  faceImage       String?
-  faceDescriptor  Float[]
-  password        String?
-  phoneOtp        String?
-  phoneOtpExpiry  DateTime?
-  phoneVerified   Boolean   @default(false)
-  savedPostIds    String[]
+  faceImage         String?
+  faceDescriptor    String?   // JSON string
+  password          String?
+  phoneOtp          String?
+  phoneOtpExpiry    DateTime?
+  phoneVerified     Boolean   @default(false)
+  savedPostIds      String?   // JSON string
 
   // Relations
-  sessions        Session[]
-  accounts        Account[]
-  posts           Post[]
-  sentMessages    Message[]        @relation("SentMessages")
-  conversations   Conversation[]   @relation(fields: [conversationIds], references: [id])
-  conversationIds String[]         @db.ObjectId
-  comments        Comment[]
+  sessions          Session[]
+  accounts          Account[]
+  posts             Post[]
+  sentMessages      Message[]  @relation("SentMessages")
+  comments          Comment[]
 }
 
 model Session {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   expiresAt DateTime
   token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
-  userId    String   @db.ObjectId
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
-  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  id                    String    @id @default(cuid())
   accountId             String
   providerId            String
-  userId                String    @db.ObjectId
+  userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
@@ -82,7 +80,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime
@@ -93,77 +91,69 @@ model Verification {
 // ─── Application Models ───
 
 model Post {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  type        String   // Apartment, House, Studio, Room, Shared Space
-  postType    String   // offer, request
-  searchType  String   @default("roommate") // "roommate" = has place, "roommate_and_place" = needs both
-  description String
-  price       String?
-  maxBudget   String?  // For roommate_and_place posts: max affordable rent
-  location    String?
-  wilaya      String?
-  bedrooms    Int?
-  bathrooms   Int?
-  amenities   String[]
-  necessities String[] // For roommate_and_place posts: what they need (WiFi, Parking, etc.)
-  tags        String[]
-  images      String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  status      String   @default("published") // published or draft
-  isArchived  Boolean  @default(false)
+  id               String   @id @default(cuid())
+  title            String
+  type             String   // Apartment, House, Studio, Room, Shared Space
+  postType         String   // offer, request
+  searchType       String   @default("roommate") // "roommate" = has place, "roommate_and_place" = needs both
+  description      String
+  price            String?
+  maxBudget        String?  // For roommate_and_place posts: max affordable rent
+  location         String?
+  wilaya           String?
+  bedrooms         Int?
+  bathrooms        Int?
+  amenities        String?  // JSON string
+  necessities      String?  // JSON string
+  tags             String?  // JSON string
+  images           String?  // JSON string
+  rules            String?  // JSON string
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  status           String   @default("published") // published or draft
+  isArchived       Boolean  @default(false)
 
   // Author relation
-  authorId    String   @db.ObjectId
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments    Comment[]
+  authorId         String
+  author           User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments         Comment[]
 }
 
 model Conversation {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  // Participants (many-to-many via User.conversationIds)
-  participants   User[]    @relation(fields: [participantIds], references: [id])
-  participantIds String[]  @db.ObjectId
-
-  // Users who have archived this conversation (per-user archival)
-  archivedBy     String[]  @db.ObjectId
-
-  // Messages
+  archivedBy     String?   // JSON string
   messages       Message[]
 }
 
 model Message {
-  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  id             String       @id @default(cuid())
   content        String
   createdAt      DateTime     @default(now())
 
-  // Sender
-  senderId       String       @db.ObjectId
+  senderId       String
   sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
-  // Conversation
-  conversationId String       @db.ObjectId
+  conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
 
 model Comment {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   text      String
   createdAt DateTime @default(now())
 
-  postId    String   @db.ObjectId
+  postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  authorId  String   @db.ObjectId
+  authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model RateLimit {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   key       String
   timestamp DateTime @default(now())
 }
