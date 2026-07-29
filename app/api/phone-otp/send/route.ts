@@ -28,19 +28,30 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // We are forcing SMS sending via Twilio now.
-    // Make sure your Twilio account is configured properly.
+    // Check if Twilio environment variables are configured
+    const hasTwilioConfig = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER);
 
-    // PRODUCTION: send real SMS via Twilio
-    const twilio = (await import('twilio')).default;
-    const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    await twilioClient.messages.create({
-      body: `Your ColocDZ verification code is: ${code}. Valid for 10 minutes.`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phoneNumber
+    if (hasTwilioConfig) {
+      try {
+        const twilio = (await import('twilio')).default;
+        const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        await twilioClient.messages.create({
+          body: `Your ColocDZ verification code is: ${code}. Valid for 10 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: phoneNumber
+        });
+      } catch (twilioErr) {
+        console.error('[Twilio Error] Failed to send SMS:', twilioErr);
+        return NextResponse.json({ error: 'Failed to send SMS via Twilio. Check Twilio credentials.' }, { status: 502 });
+      }
+    } else {
+      console.log(`[OTP Dev Fallback] Code for user ${session.user.id} (${phoneNumber}): ${code}`);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: hasTwilioConfig ? 'OTP sent via SMS' : 'OTP generated (Development mode: see server logs)'
     });
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error sending OTP:', error);
     return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 });

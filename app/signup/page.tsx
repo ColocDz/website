@@ -47,7 +47,7 @@ export default function SignupPage() {
       const result = await signUp.email({
         email: data.email,
         password: data.password,
-        name: `${data.name} ${data.lastName}`.trim(),
+        name: data.name.trim(),
       });
 
       if (result.error) {

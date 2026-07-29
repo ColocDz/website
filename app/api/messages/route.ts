@@ -27,21 +27,37 @@ export async function GET(request: NextRequest) {
       orderBy: { updatedAt: 'desc' }
     });
 
-    // For each conversation, fetch the details of the OTHER participant
-    const enrichedConversations = await Promise.all(
-      conversations.map(async (conv) => {
-        const otherUserId = conv.participantIds.find(id => id !== userId);
-        const otherUser = otherUserId ? await prisma.user.findUnique({ where: { id: otherUserId }, select: { id: true, name: true, lastName: true, email: true, image: true } }) : null;
-        
-        return {
-          id: conv.id,
-          otherUser,
-          lastMessage: conv.messages[0] || null,
-          updatedAt: conv.updatedAt,
-          archived: conv.archivedBy?.includes(userId) ?? false,
-        };
-      })
+    // Collect all unique participant IDs (excluding current user)
+    const otherUserIds = Array.from(
+      new Set(
+        conversations
+          .map(conv => conv.participantIds.find(id => id !== userId))
+          .filter((id): id is string => Boolean(id))
+      )
     );
+
+    // Fetch details of all other participants in a single batch query
+    const otherUsers = otherUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: otherUserIds } },
+          select: { id: true, name: true, lastName: true, email: true, image: true }
+        })
+      : [];
+
+    const userMap = new Map(otherUsers.map(user => [user.id, user]));
+
+    const enrichedConversations = conversations.map((conv) => {
+      const otherUserId = conv.participantIds.find(id => id !== userId);
+      const otherUser = otherUserId ? userMap.get(otherUserId) || null : null;
+      
+      return {
+        id: conv.id,
+        otherUser,
+        lastMessage: conv.messages[0] || null,
+        updatedAt: conv.updatedAt,
+        archived: conv.archivedBy?.includes(userId) ?? false,
+      };
+    });
 
     return NextResponse.json(enrichedConversations);
   } catch (error) {

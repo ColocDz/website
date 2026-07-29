@@ -62,7 +62,7 @@ if (fs.existsSync(standalonePublicModels)) {
 console.log('🎨 Step 4: Copying .next/static directory to standalone/.next/static...');
 fs.cpSync(nextStaticDir, targetNextStaticDir, { recursive: true, force: true });
 
-console.log('📋 Step 4.5: Copying Next.js BUILD_ID and manifest files to standalone/.next...');
+console.log('📋 Step 4.5: Copying Next.js BUILD_ID, server chunks and manifest files to standalone/.next...');
 const dotNextDir = path.join(__dirname, '..', '.next');
 const targetDotNextDir = path.join(standaloneDir, '.next');
 const nextFiles = fs.readdirSync(dotNextDir);
@@ -71,6 +71,12 @@ for (const file of nextFiles) {
   if (fs.statSync(srcFile).isFile()) {
     fs.copyFileSync(srcFile, path.join(targetDotNextDir, file));
   }
+}
+
+const dotNextServerChunks = path.join(dotNextDir, 'server', 'chunks');
+const targetDotNextServerChunks = path.join(targetDotNextDir, 'server', 'chunks');
+if (fs.existsSync(dotNextServerChunks)) {
+  fs.cpSync(dotNextServerChunks, targetDotNextServerChunks, { recursive: true, force: true });
 }
 
 console.log('🔧 Step 4.8: Injecting Passenger setup into standalone/server.js...');
