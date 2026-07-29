@@ -388,7 +388,7 @@ if ($result === true) {
 
     // Automatically overwrite root server.js with wrapper script
     $root_server = $home_dir . '/repositories/website/server.js';
-    $wrapper = "const path = require('path');\nconst standaloneDir = path.join(__dirname, 'standalone');\nprocess.chdir(standaloneDir);\nrequire(path.join(standaloneDir, 'server.js'));\n";
+    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\n\nconst standaloneDir = path.join(__dirname, 'standalone');\nprocess.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');\nModule._initPaths();\n\nconst origResolve = Module._resolveFilename;\nModule._resolveFilename = function (request, parent, isMain, options) {\n  if (typeof request === 'string' && (request.includes('@prisma/client-') || request === '@prisma/client')) {\n    try {\n      return origResolve.call(this, '@prisma/client', parent, isMain, options);\n    } catch (e) {\n      const fallback = path.join(standaloneDir, 'node_modules', '@prisma', 'client');\n      if (fs.existsSync(fallback)) return origResolve.call(this, fallback, parent, isMain, options);\n    }\n  }\n  return origResolve.call(this, request, parent, isMain, options);\n};\n\nprocess.chdir(standaloneDir);\nrequire(path.join(standaloneDir, 'server.js'));\n";
     @file_put_contents($root_server, $wrapper);
 
     // Automatically trigger Passenger restart in both directories
