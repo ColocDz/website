@@ -1,5 +1,10 @@
 import { PrismaClient } from '@prisma/client'
 
+// Force SQLite DATABASE_URL for local & production
+if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith('file:')) {
+  process.env.DATABASE_URL = "file:./dev.db";
+}
+
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 export const prisma =

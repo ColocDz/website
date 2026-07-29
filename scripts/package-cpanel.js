@@ -92,6 +92,7 @@ const setupHeader = `(function() {
   if (fs.existsSync(deploySrc)) {
     try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
   }
+  process.env.DATABASE_URL = "file:./dev.db";
   const Module = require('module');
   process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
   Module._initPaths();
