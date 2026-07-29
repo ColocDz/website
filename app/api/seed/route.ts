@@ -88,67 +88,58 @@ export async function GET() {
     });
 
     // 5. Create Sample Listings
-    const post1 = await prisma.post.create({
+    await prisma.post.create({
       data: {
         title: 'Appartement F3 meublé proche USTHB',
         type: 'Apartment',
         postType: 'offer',
         searchType: 'roommate',
-        price: 25000,
+        price: '25000',
         wilaya: 'Algiers',
-        commune: 'Bab Ezzouar',
-        address: 'Résidence les Bananiers, Bab Ezzouar',
+        location: 'Bab Ezzouar',
         description: 'Appartement F3 entièrement équipé et meublé. Cuisine équipée, Wi-Fi haut débit, climatisation. Idéal pour étudiante ou jeune travailleuse.',
-        genderPreference: 'female',
         images: [
           'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
           'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'
         ],
         amenities: ['wifi', 'ac', 'furnished', 'parking'],
-        rules: ['no_smoking', 'female_only'],
-        userId: fatima.id,
+        author: { connect: { id: fatima.id } },
       }
     });
 
-    const post2 = await prisma.post.create({
+    await prisma.post.create({
       data: {
         title: 'Studio moderne sécurisé à Hydra',
         type: 'Studio',
         postType: 'offer',
         searchType: 'roommate',
-        price: 35000,
+        price: '35000',
         wilaya: 'Algiers',
-        commune: 'Hydra',
-        address: 'Val d\'Hydra, Alger',
+        location: 'Hydra',
         description: 'Superbe studio meublé avec terrasse et vue dégagée. Quartier calme et très sécurisé.',
-        genderPreference: 'any',
         images: [
           'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
         ],
         amenities: ['wifi', 'ac', 'elevator', 'furnished'],
-        rules: ['no_parties'],
-        userId: ahmed.id,
+        author: { connect: { id: ahmed.id } },
       }
     });
 
-    const post3 = await prisma.post.create({
+    await prisma.post.create({
       data: {
         title: 'Recherche colocataire pour appartement à Kouba',
         type: 'Shared Space',
         postType: 'request',
         searchType: 'roommate_and_place',
-        price: 20000,
+        price: '20000',
         wilaya: 'Algiers',
-        commune: 'Kouba',
-        address: 'Kouba Centre',
+        location: 'Kouba',
         description: 'Cherche un jeune colocataire sérieux pour partager les frais de loyer d\'un F3 à Kouba.',
-        genderPreference: 'male',
         images: [
           'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'
         ],
         amenities: ['wifi', 'furnished'],
-        rules: ['no_smoking'],
-        userId: karim.id,
+        author: { connect: { id: karim.id } },
       }
     });
 
