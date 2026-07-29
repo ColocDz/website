@@ -16,23 +16,7 @@ jobs:
           node-version: 20
 
       - run: pnpm install
-      - run: pnpm run build   # output: 'standalone' in next.config
-
-      # Copy assets and standalone dependencies Next doesn't include automatically
-      - run: |
-          cp -r public .next/standalone/public
-          cp -r .next/static .next/standalone/.next/static
-          mkdir -p .next/standalone/node_modules/@swc/helpers
-          cp -rL node_modules/@swc/helpers/. .next/standalone/node_modules/@swc/helpers/
-          mkdir -p .next/standalone/node_modules/next
-          cp -rL node_modules/next/. .next/standalone/node_modules/next/
-
-      - name: Create deployment TAR
-        run: |
-          cd .next/standalone
-          find . -name "*.map" -type f -delete
-          tar -czf ../../deploy.tar.gz .
-          cd ../..
+      - run: node scripts/package-cpanel.js
 
 
       - name: Deploy via HTTP (PHP)
