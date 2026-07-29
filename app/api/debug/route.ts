@@ -15,7 +15,7 @@ export async function GET() {
     const userCount = await prisma.user.count();
     const users = await prisma.user.findMany({
       take: 5,
-      select: { id: true, email: true, name: true, role: true }
+      select: { id: true, email: true, name: true }
     });
     const postCount = await prisma.post.count();
     
