@@ -17,9 +17,12 @@ export const auth = betterAuth({
     getBaseUrl(),
   ].filter(Boolean),
   database: prismaAdapter(prisma, {
-    provider: "sqlite",
+    provider: "mongodb",
   }),
   advanced: {
+    database: {
+      generateId: false,
+    },
     disableOriginCheck: true,
   },
   emailAndPassword: {
@@ -37,7 +40,7 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || "873960820010-r65bcqgvgg5m805tle3kgqb8ghv8bdor.apps.googleusercontent.com",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
-      redirectURI: "https://colocdz.com/api/auth/callback/google",
+      redirectURI: process.env.GOOGLE_REDIRECT_URI || `${getBaseUrl()}/api/auth/callback/google`,
     },
   },
 });

@@ -164,12 +164,10 @@ export async function PUT(
         location: data.location || null,
         wilaya: data.wilaya,
         bedrooms: (data.bedrooms && !isNaN(parseInt(data.bedrooms))) ? parseInt(data.bedrooms) : null,
-        bathrooms: (data.bathrooms && !isNaN(parseInt(data.bathrooms))) ? parseInt(data.bathrooms) : null,
-        amenities: stringifyJsonField(data.amenities || []),
-        necessities: stringifyJsonField(data.necessities || []),
-        tags: stringifyJsonField(data.tags || []),
-        images: stringifyJsonField(data.images || []),
-        rules: stringifyJsonField(data.rules || []),
+        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.amenities) : [],
+        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.necessities) : [],
+        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : data.tags) : [],
+        images: data.images || [],
         status: data.status || 'published',
       }
     });

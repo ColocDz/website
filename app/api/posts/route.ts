@@ -52,17 +52,47 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const posts = await prisma.post.findMany({
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+    const cursor = searchParams.get('cursor');
+
+    const queryArgs: any = {
       where: whereClause,
+      take: limit + 1,
       include: {
         author: {
           select: { id: true, name: true, lastName: true, email: true, image: true, gender: true }
         }
       },
       orderBy: { createdAt: 'desc' }
-    });
+    };
 
-    return NextResponse.json(posts.map(formatPost));
+    if (cursor) {
+      queryArgs.cursor = { id: cursor };
+      queryArgs.skip = 1;
+    }
+
+    const rawPosts = await prisma.post.findMany(queryArgs);
+
+    let hasMore = false;
+    let nextCursor: string | null = null;
+
+    if (rawPosts.length > limit) {
+      hasMore = true;
+      rawPosts.pop();
+      nextCursor = rawPosts[rawPosts.length - 1]?.id || null;
+    }
+
+    const formattedPosts = rawPosts.map(formatPost);
+
+    if (searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginated')) {
+      return NextResponse.json({
+        posts: formattedPosts,
+        nextCursor,
+        hasMore,
+      });
+    }
+
+    return NextResponse.json(formattedPosts);
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
@@ -144,12 +174,10 @@ export async function POST(request: NextRequest) {
         location: data.location || null,
         wilaya: data.wilaya,
         bedrooms: (data.bedrooms && !isNaN(parseInt(data.bedrooms))) ? parseInt(data.bedrooms) : null,
-        bathrooms: (data.bathrooms && !isNaN(parseInt(data.bathrooms))) ? parseInt(data.bathrooms) : null,
-        amenities: stringifyJsonField(data.amenities || []),
-        necessities: stringifyJsonField(data.necessities || []),
-        tags: stringifyJsonField(data.tags || []),
-        images: stringifyJsonField(data.images || []),
-        rules: stringifyJsonField(data.rules || []),
+        amenities: data.amenities ? (typeof data.amenities === 'string' ? data.amenities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.amenities) : [],
+        necessities: data.necessities ? (typeof data.necessities === 'string' ? data.necessities.split(',').map((s: string) => s.trim()).filter(Boolean) : data.necessities) : [],
+        tags: data.tags ? (typeof data.tags === 'string' ? data.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : data.tags) : [],
+        images: data.images || [],
         status: data.status || 'published',
         authorId: session.user.id
       }
