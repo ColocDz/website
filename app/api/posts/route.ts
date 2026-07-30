@@ -63,7 +63,10 @@ export async function GET(request: NextRequest) {
           select: { id: true, name: true, lastName: true, email: true, image: true, gender: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { createdAt: 'desc' },
+        { id: 'desc' }
+      ]
     };
 
     if (cursor) {
