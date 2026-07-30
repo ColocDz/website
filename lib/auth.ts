@@ -10,20 +10,25 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
   twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 }
 
+const getBaseUrl = () => {
+  return process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://colocdz.com";
+};
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: getBaseUrl(),
+  secret: process.env.BETTER_AUTH_SECRET || "colocdz-secret-key-change-me-in-production-2026",
   trustedOrigins: [
     "http://localhost:3000",
     "https://colocdz.com",
     "https://www.colocdz.com",
-    process.env.BETTER_AUTH_URL || "",
+    getBaseUrl(),
   ].filter(Boolean),
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
   advanced: {
     disableOriginCheck: true,
+    useSecureCookies: true,
   },
   emailAndPassword: {
     enabled: true,
@@ -38,8 +43,8 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID || "873960820010-r65bcqgvgg5m805tle3kgqb8ghv8bdor.apps.googleusercontent.com",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
     },
   },
 });
