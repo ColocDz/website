@@ -24,7 +24,6 @@ export function Navbar({ brandName = 'ColocDz' }: NavbarProps) {
 
   const handleLogout = async () => {
     await signOut();
-    window.location.href = '/';
   };
 
   const navLinks = [

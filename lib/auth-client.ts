@@ -48,8 +48,8 @@ export const signUp = {
 export const signOut = async () => {
   try {
     await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/login';
   } catch (e) {}
+  window.location.href = '/login';
 };
 
 export function useSession() {
