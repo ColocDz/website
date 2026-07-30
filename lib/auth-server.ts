@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
 
 const COOKIE_NAME = 'colocdz_session';
 
@@ -48,8 +47,15 @@ export async function getSession() {
             phone: true,
             wilaya: true,
             city: true,
+            birthday: true,
+            bio: true,
+            isPrivate: true,
             identityVerified: true,
             faceVerified: true,
+            faceVerifiedUntil: true,
+            faceImage: true,
+            phoneVerified: true,
+            savedPostIds: true,
           }
         }
       }
