@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { stringifyJsonField } from '@/lib/prisma-utils';
 
 export async function GET() {
   try {
