@@ -131,6 +131,7 @@ model Post {
   comments    Comment[]
 
   @@index([status, isArchived, createdAt])
+  @@index([status, isArchived, createdAt, id])
   @@index([authorId, isArchived])
   @@index([wilaya, status, isArchived])
 }

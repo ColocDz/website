@@ -55,6 +55,8 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
     const cursor = searchParams.get('cursor');
 
+    const totalStart = performance.now();
+
     const queryArgs: any = {
       where: whereClause,
       take: limit + 1,
@@ -74,7 +76,9 @@ export async function GET(request: NextRequest) {
       queryArgs.skip = 1;
     }
 
+    const dbStart = performance.now();
     const rawPosts = await prisma.post.findMany(queryArgs);
+    const dbDurationMs = Math.round(performance.now() - dbStart);
 
     let hasMore = false;
     let nextCursor: string | null = null;
@@ -86,16 +90,17 @@ export async function GET(request: NextRequest) {
     }
 
     const formattedPosts = rawPosts.map(formatPost);
+    const totalDurationMs = Math.round(performance.now() - totalStart);
 
-    if (searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginated')) {
-      return NextResponse.json({
-        posts: formattedPosts,
-        nextCursor,
-        hasMore,
-      });
-    }
+    const responsePayload = (searchParams.has('cursor') || searchParams.has('limit') || searchParams.has('paginated'))
+      ? { posts: formattedPosts, nextCursor, hasMore }
+      : formattedPosts;
 
-    return NextResponse.json(formattedPosts);
+    const response = NextResponse.json(responsePayload);
+    response.headers.set('Server-Timing', `db;dur=${dbDurationMs}, total;dur=${totalDurationMs}`);
+    response.headers.set('X-Response-Time-DB', `${dbDurationMs}ms`);
+    response.headers.set('X-Response-Time-Total', `${totalDurationMs}ms`);
+    return response;
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
