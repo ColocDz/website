@@ -92,7 +92,6 @@ const setupHeader = `(function() {
   if (fs.existsSync(deploySrc)) {
     try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
   }
-  process.env.DATABASE_URL = "file:./dev.db";
   const Module = require('module');
   process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
   Module._initPaths();
@@ -192,17 +191,6 @@ if (fs.existsSync(targetNodeModulesPrismaDir)) {
     }
   }
 }
-
-console.log('⚡ Step 5.4: Copying SQLite dev.db into standalone package...');
-const localDbPath = path.join(__dirname, '..', 'prisma', 'dev.db');
-if (fs.existsSync(localDbPath)) {
-  const standalonePrismaDir = path.join(standaloneDir, 'prisma');
-  fs.mkdirSync(standalonePrismaDir, { recursive: true });
-  fs.copyFileSync(localDbPath, path.join(standalonePrismaDir, 'dev.db'));
-  fs.copyFileSync(localDbPath, path.join(standaloneDir, 'dev.db'));
-  console.log('📋 Pre-seeded SQLite dev.db bundled in standalone package!');
-}
-
 
 // Helper to recursively remove .map files to reduce package size
 function removeMapFiles(dir) {
@@ -311,4 +299,3 @@ execSync(`tar -czf "${archivePath}" -C "${standaloneDir}" .`, { stdio: 'inherit'
 
 console.log('✅ Standalone package & deploy.tar.gz prepared successfully!');
 console.log('💡 Upload deploy.tar.gz to /home/colocdz1/repositories/website/standalone via deploy.php');
-

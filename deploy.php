@@ -13,7 +13,7 @@ ini_set('max_execution_time', 300);
 define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
 
 // 2. TARGET DIRECTORY
-define('TARGET_DIR_NAME', 'repositories/website/standalone');
+define('TARGET_DIR_NAME', 'repositories/website_v2/standalone');
 
 header('Content-Type: application/json');
 usleep(300000); // Throttling delay (300ms) to prevent cPanel firewall rate-limit triggers
@@ -86,8 +86,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'restart') {
     header('Content-Type: text/plain');
     $home = get_user_home();
     $paths = [
-        $home . '/repositories/website/standalone/tmp/restart.txt',
-        $home . '/repositories/website/tmp/restart.txt',
+        $home . '/repositories/website_v2/standalone/tmp/restart.txt',
+        $home . '/repositories/website_v2/tmp/restart.txt',
     ];
     foreach ($paths as $restart_file) {
         $dir = dirname($restart_file);
@@ -104,31 +104,28 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     header('Content-Type: text/plain');
     $home = get_user_home();
     $paths = [
-        'repositories/website/server.js',
-        'repositories/website/standalone/server.js',
+        'repositories/website_v2/server.js',
+        'repositories/website_v2/standalone/server.js',
     ];
     echo "--- File Existence Check ---\n";
     foreach ($paths as $p) {
         $full = $home . '/' . $p;
         echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
     }
-    echo "\n--- Contents of repositories/website/server.js ---\n";
-    $root_s = $home . '/repositories/website/server.js';
-    echo file_exists($root_s) ? file_get_contents($root_s) : "File not found";
-    echo "\n--- Content of repositories/website/server.js ---\n";
-    $rs = $home . '/repositories/website/server.js';
+    echo "\n--- Content of repositories/website_v2/standalone/server.js ---\n";
+    $rs = $home . '/repositories/website_v2/standalone/server.js';
     if (file_exists($rs)) {
         echo file_get_contents($rs);
     } else {
         echo "server.js does not exist.\n";
     }
 
-    echo "\n--- Scanning repositories/website/standalone ---\n";
-    $dir = $home . '/repositories/website/standalone';
+    echo "\n--- Scanning repositories/website_v2/standalone ---\n";
+    $dir = $home . '/repositories/website_v2/standalone';
     if (is_dir($dir)) {
         print_r(scandir($dir));
         if (is_dir($dir . '/.next')) {
-            echo "\n--- Scanning repositories/website/standalone/.next ---\n";
+            echo "\n--- Scanning repositories/website_v2/standalone/.next ---\n";
             print_r(scandir($dir . '/.next'));
         } else {
             echo "\n--- .next directory DOES NOT EXIST in standalone! ---\n";
@@ -136,102 +133,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     } else {
         echo "Directory $dir does not exist.\n";
     }
-    exit;
-}
-
-// Direct fix for root server.js wrapper
-if (isset($_GET['action']) && $_GET['action'] === 'fix_wrapper') {
-    header('Content-Type: text/plain');
-    $home = get_user_home();
-    $root_server = $home . '/repositories/website/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneNodeModules = path.join(standaloneDir, 'node_modules');\nprocess.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');\nModule._initPaths();\nconst originalRequire = Module.prototype.require;\nModule.prototype.require = function(request) {\n  if (request === 'next' || request.startsWith('next/')) {\n    const nextStandalonePath = path.join(standaloneNodeModules, request);\n    try { return originalRequire.call(this, nextStandalonePath); } catch (e) {}\n  }\n  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {\n    if (this && this.filename) {\n      const parentDir = path.dirname(this.filename);\n      const absPath = path.resolve(parentDir, request);\n      if (!fs.existsSync(absPath)) {\n        if (fs.existsSync(absPath + '.js')) {\n          return originalRequire.call(this, absPath + '.js');\n        } else if (fs.existsSync(absPath + '/index.js')) {\n          return originalRequire.call(this, absPath + '/index.js');\n        } else if (fs.existsSync(absPath + '.json')) {\n          return originalRequire.call(this, absPath + '.json');\n        }\n      }\n    }\n  }\n  return originalRequire.call(this, request);\n};\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  const rawPort = process.env.PORT;\n  if (rawPort && isNaN(Number(rawPort))) {\n    const origParseInt = global.parseInt;\n    global.parseInt = function(val, radix) {\n      if (val === rawPort) return rawPort;\n      return origParseInt(val, radix);\n    };\n    require(standaloneServer);\n    global.parseInt = origParseInt;\n  } else {\n    require(standaloneServer);\n  }\n}\n";
-    file_put_contents($root_server, $wrapper);
-    
-    // Touch restart files
-    $paths = [
-        $home . '/repositories/website/standalone/tmp/restart.txt',
-        $home . '/repositories/website/tmp/restart.txt',
-    ];
-    foreach ($paths as $rf) {
-        $dir = dirname($rf);
-        if (!is_dir($dir)) @mkdir($dir, 0755, true);
-        @file_put_contents($rf, time());
-    }
-    echo "Successfully updated " . $root_server . " and triggered Passenger restart!\n";
-    echo "Updated content:\n" . file_get_contents($root_server);
-    exit;
-}
-// Programmatic git pull & restart
-if (isset($_GET['action']) && $_GET['action'] === 'git_pull') {
-    header('Content-Type: text/plain');
-    $home = get_user_home();
-    $repo = $home . '/repositories/website';
-    $cmd = "cd " . escapeshellarg($repo) . " && git pull origin main 2>&1";
-    $output = shell_exec($cmd);
-    echo "--- Git Pull Output ---\n" . $output . "\n";
-    
-    // Automatically overwrite root server.js with wrapper script
-    $root_server = $repo . '/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\nconst standaloneDir = path.join(__dirname, 'standalone');\nconst standaloneNodeModules = path.join(standaloneDir, 'node_modules');\nprocess.env.NODE_PATH = standaloneNodeModules + path.delimiter + (process.env.NODE_PATH || '');\nModule._initPaths();\nconst originalRequire = Module.prototype.require;\nModule.prototype.require = function(request) {\n  if (request === 'next' || request.startsWith('next/')) {\n    const nextStandalonePath = path.join(standaloneNodeModules, request);\n    try { return originalRequire.call(this, nextStandalonePath); } catch (e) {}\n  }\n  if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {\n    if (this && this.filename) {\n      const parentDir = path.dirname(this.filename);\n      const absPath = path.resolve(parentDir, request);\n      if (!fs.existsSync(absPath)) {\n        if (fs.existsSync(absPath + '.js')) {\n          return originalRequire.call(this, absPath + '.js');\n        } else if (fs.existsSync(absPath + '/index.js')) {\n          return originalRequire.call(this, absPath + '/index.js');\n        } else if (fs.existsSync(absPath + '.json')) {\n          return originalRequire.call(this, absPath + '.json');\n        }\n      }\n    }\n  }\n  return originalRequire.call(this, request);\n};\nconst standaloneServer = path.join(standaloneDir, 'server.js');\nif (fs.existsSync(standaloneServer)) {\n  process.chdir(standaloneDir);\n  const rawPort = process.env.PORT;\n  if (rawPort && isNaN(Number(rawPort))) {\n    const origParseInt = global.parseInt;\n    global.parseInt = function(val, radix) {\n      if (val === rawPort) return rawPort;\n      return origParseInt(val, radix);\n    };\n    require(standaloneServer);\n    global.parseInt = origParseInt;\n  } else {\n    require(standaloneServer);\n  }\n}\n";
-    @file_put_contents($root_server, $wrapper);
-
-    // Touch restart files
-    $paths = [
-        $home . '/repositories/website/standalone/tmp/restart.txt',
-        $home . '/repositories/website/tmp/restart.txt',
-    ];
-    foreach ($paths as $rf) {
-        $dir = dirname($rf);
-        if (!is_dir($dir)) @mkdir($dir, 0755, true);
-        @file_put_contents($rf, time());
-    }
-    echo "--- Restart Triggered ---\n";
-    exit;
-}
-
-// Update deploy.php itself from GitHub main branch
-if (isset($_GET['action']) && $_GET['action'] === 'update_self') {
-    header('Content-Type: text/plain');
-    $self_path = __FILE__;
-    $new_code = @file_get_contents('https://raw.githubusercontent.com/ColocDz/website/main/deploy.php?v=' . time());
-    if ($new_code && strpos($new_code, 'DEPLOY_TOKEN') !== false) {
-        file_put_contents($self_path, $new_code);
-        if (function_exists('opcache_invalidate')) {
-            @opcache_invalidate($self_path, true);
-        }
-        $home = get_user_home();
-        @touch($home . '/public_html/deploy.colocdz.com/.htaccess');
-        echo "Successfully updated " . $self_path . " from GitHub!\n";
-    } else {
-        echo "Failed to download deploy.php from GitHub.\n";
-    }
-    exit;
-}
-
-// Helper to forcefully wipe target directory except .env
-function clean_dir_force($dir) {
-    if (!is_dir($dir)) return;
-    $items = array_diff(scandir($dir), ['.', '..', '.env']);
-    foreach ($items as $item) {
-        $path = $dir . '/' . $item;
-        if (is_dir($path)) {
-            clean_dir_force($path);
-            @chmod($path, 0777);
-            @rmdir($path);
-        } else {
-            @chmod($path, 0666);
-            @unlink($path);
-        }
-    }
-}
-
-if (isset($_GET['action']) && $_GET['action'] === 'wipe_standalone') {
-    header('Content-Type: text/plain');
-    $home = get_user_home();
-    $target = $home . '/' . TARGET_DIR_NAME;
-    clean_dir_force($target);
-    echo "Wiped " . $target . " cleanly (preserved .env)!\n";
-    print_r(scandir($target));
     exit;
 }
 
@@ -353,62 +254,20 @@ function extract_tar_gz($archivePath, $targetDir) {
 $result = extract_tar_gz($uploaded_file, $target_dir);
 
 if ($result === true) {
-    // Self-update deploy.php script in public_html/deploy.colocdz.com if present in package
-    $extracted_deploy = $target_dir . '/deploy.php';
-    $public_deploy = $home_dir . '/public_html/deploy.colocdz.com/deploy.php';
-    if (file_exists($extracted_deploy) && is_file($extracted_deploy)) {
-        @chmod($public_deploy, 0777);
-        $new_deploy_code = @file_get_contents($extracted_deploy);
-        if ($new_deploy_code && strpos($new_deploy_code, 'DEPLOY_TOKEN') !== false) {
-            @file_put_contents($public_deploy, $new_deploy_code);
-            if (function_exists('opcache_invalidate')) {
-                @opcache_invalidate($public_deploy, true);
-            }
-        }
-        @chmod($public_deploy, 0755);
-    }
-
-    // Remove top-level standalone/next directory to prevent require('next') collision
-    $top_next = $target_dir . '/next';
-    if (is_dir($top_next)) {
-        function rrmdir_clean($dir) {
-            if (is_dir($dir)) {
-                $objects = scandir($dir);
-                foreach ($objects as $object) {
-                    if ($object != "." && $object != "..") {
-                        if (is_dir($dir . "/" . $object)) rrmdir_clean($dir . "/" . $object);
-                        else @unlink($dir . "/" . $object);
-                    }
-                }
-                @rmdir($dir);
-            }
-        }
-        rrmdir_clean($top_next);
-    }
-
-    // Automatically overwrite root server.js with wrapper script
-    $root_server = $home_dir . '/repositories/website/server.js';
-    $wrapper = "const fs = require('fs');\nconst path = require('path');\nconst Module = require('module');\n\nconst standaloneDir = path.join(__dirname, 'standalone');\nprocess.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');\nModule._initPaths();\n\nconst origResolve = Module._resolveFilename;\nModule._resolveFilename = function (request, parent, isMain, options) {\n  if (typeof request === 'string' && (request.includes('@prisma/client-') || request === '@prisma/client')) {\n    try {\n      return origResolve.call(this, '@prisma/client', parent, isMain, options);\n    } catch (e) {\n      const fallback = path.join(standaloneDir, 'node_modules', '@prisma', 'client');\n      if (fs.existsSync(fallback)) return origResolve.call(this, fallback, parent, isMain, options);\n    }\n  }\n  return origResolve.call(this, request, parent, isMain, options);\n};\n\nprocess.chdir(standaloneDir);\nrequire(path.join(standaloneDir, 'server.js'));\n";
-    @file_put_contents($root_server, $wrapper);
-
-    // Automatically trigger Passenger restart in both directories
+    // Automatically trigger Passenger restart
     $paths = [
-        $home_dir . '/repositories/website/standalone/tmp/restart.txt',
-        $home_dir . '/repositories/website/tmp/restart.txt',
+        $home_dir . '/repositories/website_v2/standalone/tmp/restart.txt',
+        $home_dir . '/repositories/website_v2/tmp/restart.txt',
     ];
     foreach ($paths as $restart_file) {
         $dir = dirname($restart_file);
         if (!is_dir($dir)) @mkdir($dir, 0755, true);
         @file_put_contents($restart_file, time());
     }
-    $dot_next_count = count(array_filter($GLOBALS['extracted_files_list'] ?? [], function($f) {
-        return strpos($f, '.next') !== false;
-    }));
     echo json_encode([
         'success' => true,
         'message' => 'Deployment successful!',
-        'total_extracted' => count($GLOBALS['extracted_files_list'] ?? []),
-        'dot_next_files' => $dot_next_count
+        'total_extracted' => count($GLOBALS['extracted_files_list'] ?? [])
     ]);
 } else {
     http_response_code(500);
