@@ -30,7 +30,9 @@ export async function createSession(userId: string) {
 export async function getSession() {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
+    const token = cookieStore.get(COOKIE_NAME)?.value 
+               || cookieStore.get('better-auth.session_token')?.value
+               || cookieStore.get('__Secure-better-auth.session_token')?.value;
     if (!token) return null;
 
     const session = await prisma.session.findUnique({
@@ -82,10 +84,14 @@ export async function getSession() {
 export async function destroySession() {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
+    const token = cookieStore.get(COOKIE_NAME)?.value 
+               || cookieStore.get('better-auth.session_token')?.value
+               || cookieStore.get('__Secure-better-auth.session_token')?.value;
     if (token) {
       await prisma.session.deleteMany({ where: { token } });
-      cookieStore.delete(COOKIE_NAME);
     }
+    cookieStore.delete(COOKIE_NAME);
+    cookieStore.delete('better-auth.session_token');
+    cookieStore.delete('__Secure-better-auth.session_token');
   } catch (e) {}
 }

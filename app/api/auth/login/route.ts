@@ -20,17 +20,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Incorrect email or password.' }, { status: 400 });
     }
 
-    const account = await prisma.account.findFirst({
+    let account = await prisma.account.findFirst({
       where: { userId: user.id, providerId: 'credential' }
     });
 
-    if (!account || !account.password) {
+    let passwordHash = account?.password || user.password;
+
+    if (!passwordHash) {
       return NextResponse.json({ error: 'Incorrect email or password.' }, { status: 400 });
     }
 
-    const isMatch = await bcrypt.compare(password, account.password);
+    const isMatch = await bcrypt.compare(password, passwordHash);
     if (!isMatch) {
       return NextResponse.json({ error: 'Incorrect email or password.' }, { status: 400 });
+    }
+
+    // Backfill missing Account row if user was created without one
+    if (!account) {
+      await prisma.account.create({
+        data: {
+          userId: user.id,
+          accountId: user.id,
+          providerId: 'credential',
+          password: passwordHash,
+        }
+      });
     }
 
     await createSession(user.id);

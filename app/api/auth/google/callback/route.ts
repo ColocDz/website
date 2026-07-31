@@ -3,7 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { createSession } from '@/lib/auth-server';
 
 export async function GET(request: NextRequest) {
-  const baseUrl = "https://colocdz.com";
+  const host = request.headers.get('host') || 'colocdz.com';
+  const protocol = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${baseUrl}/api/auth/google/callback`;
+
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
@@ -14,7 +18,6 @@ export async function GET(request: NextRequest) {
 
     const clientId = process.env.GOOGLE_CLIENT_ID || "873960820010-r65bcqgvgg5m805tle3kgqb8ghv8bdor.apps.googleusercontent.com";
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "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";
-    const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     // 1. Exchange code for access token with Google
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
