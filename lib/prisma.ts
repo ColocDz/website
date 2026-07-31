@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 
+// Clean and sanitize DATABASE_URL to strip accidental surrounding quotes or trailing whitespace
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL.trim().replace(/^["']|["']$/g, '');
+}
+
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:./dev.db";
+  process.env.DATABASE_URL = "mongodb+srv://colocdz:ugDtojEk84H1iWaM@cluster01.7o4uabo.mongodb.net/colocdz?retryWrites=true&w=majority&serverSelectionTimeoutMS=5000&connectTimeoutMS=5000";
 }
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
