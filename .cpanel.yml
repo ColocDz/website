@@ -1,5 +1,5 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/colocdz1/repositories/website
+    - export DEPLOYPATH=/home/colocdz1/repositories/website_v2
     - /bin/cp -R * $DEPLOYPATH
