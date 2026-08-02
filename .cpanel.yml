@@ -3,4 +3,4 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/colocdz1/repositories/website_v2
     - /bin/cp -R * $DEPLOYPATH
-    - if [ -d ".next/standalone" ]; then /bin/cp -Rf .next/standalone/* $DEPLOYPATH/standalone/ 2>/dev/null || true; fi
+    - /bin/cp -Rf .next/standalone/* $DEPLOYPATH/standalone/
