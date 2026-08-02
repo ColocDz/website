@@ -1,10 +1,24 @@
 const fs = require('fs');
 const path = require('path');
-
+const http = require('http');
 const Module = require('module');
-const originalRequire = Module.prototype.require;
 
-// Intercept require to handle relative extensions (.js/.json) for Passenger loader
+// Intercept http.Server.prototype.listen for Phusion Passenger named pipe sockets
+const origListen = http.Server.prototype.listen;
+http.Server.prototype.listen = function(...args) {
+  const passengerPort = process.env.PORT;
+  if (passengerPort && isNaN(Number(passengerPort))) {
+    if (typeof args[0] === 'number' || (typeof args[0] === 'string' && isNaN(Number(args[0])))) {
+      args[0] = passengerPort;
+      if (typeof args[1] === 'string') {
+        args.splice(1, 1);
+      }
+    }
+  }
+  return origListen.apply(this, args);
+};
+
+const originalRequire = Module.prototype.require;
 Module.prototype.require = function(request) {
   if (typeof request === 'string' && (request.startsWith('./') || request.startsWith('../'))) {
     if (this && this.filename) {
@@ -24,35 +38,21 @@ Module.prototype.require = function(request) {
   return originalRequire.call(this, request);
 };
 
-const standaloneDir = path.join(__dirname, 'standalone');
+// Check if running from project root or inside standalone folder
+const subStandalone = path.join(__dirname, 'standalone');
+const standaloneDir = fs.existsSync(path.join(subStandalone, 'server.js')) ? subStandalone : __dirname;
 const standaloneServer = path.join(standaloneDir, 'server.js');
 
 process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
 Module._initPaths();
 
-if (fs.existsSync(standaloneServer)) {
+if (standaloneDir !== __dirname && fs.existsSync(standaloneServer)) {
   process.chdir(standaloneDir);
-
-  const rawPort = process.env.PORT;
-  if (rawPort && isNaN(Number(rawPort))) {
-    const origParseInt = global.parseInt;
-    global.parseInt = function(val, radix) {
-      if (val === rawPort) return rawPort;
-      return origParseInt(val, radix);
-    };
-    require(standaloneServer);
-    global.parseInt = origParseInt;
-  } else {
-    require(standaloneServer);
-  }
+  require(standaloneServer);
 } else {
-  const { createServer } = require('http');
-  const next = require('next');
-
-  const app = next({ dev: false });
-  const handle = app.getRequestHandler();
-
-  app.prepare().then(() => {
-    createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
-  });
+  // Executing directly inside standalone/server.js
+  const nextServer = path.join(__dirname, '.next', 'standalone', 'server.js');
+  if (fs.existsSync(nextServer)) {
+    require(nextServer);
+  }
 }
