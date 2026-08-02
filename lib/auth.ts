@@ -4,7 +4,10 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 const getBaseUrl = () => {
-  return process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://colocdz.com";
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
+  if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "https://colocdz.com";
 };
 
 export const auth = betterAuth({
