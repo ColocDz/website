@@ -310,7 +310,7 @@ const archivePath = path.join(__dirname, '..', 'deploy.tar.gz');
 if (fs.existsSync(archivePath)) {
   try { fs.unlinkSync(archivePath); } catch (e) {}
 }
-execSync(`tar -czf "${archivePath}" -C "${standaloneDir}" .`, { stdio: 'inherit' });
+execSync(`tar --format ustar -czf "${archivePath}" -C "${standaloneDir}" .`, { stdio: 'inherit' });
 
 console.log('✅ Standalone package & deploy.tar.gz prepared successfully!');
 console.log('💡 Upload deploy.tar.gz to /home/colocdz1/repositories/website/standalone via deploy.php');
