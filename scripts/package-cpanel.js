@@ -102,8 +102,11 @@ const setupHeader = `(function() {
       }
     }
     return origListen.apply(this, args);
-  };
-
+  const deploySrc = path.join(standaloneDir, 'deploy.php');
+  const deployDest = path.resolve(standaloneDir, '../../../public_html/deploy.colocdz.com/deploy.php');
+  if (fs.existsSync(deploySrc)) {
+    try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
+  }
   const Module = require('module');
   process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
   Module._initPaths();
