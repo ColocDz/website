@@ -2,4 +2,11 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/colocdz1/repositories/website_v2
-    - /bin/cp -R * $DEPLOYPATH
+    - /bin/cp -R app $DEPLOYPATH
+    - /bin/cp -R components $DEPLOYPATH
+    - /bin/cp -R lib $DEPLOYPATH
+    - /bin/cp -R prisma $DEPLOYPATH
+    - /bin/cp -R public $DEPLOYPATH
+    - /bin/cp -R scripts $DEPLOYPATH
+    - /bin/cp server.js $DEPLOYPATH
+    - /bin/cp package.json $DEPLOYPATH
