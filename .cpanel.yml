@@ -2,6 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/colocdz1/repositories/website_v2/standalone
+    - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R app $DEPLOYPATH
     - /bin/cp -R components $DEPLOYPATH
     - /bin/cp -R lib $DEPLOYPATH
