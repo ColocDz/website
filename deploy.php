@@ -34,8 +34,45 @@ if ($token !== DEPLOY_TOKEN) {
 
 $home_dir = get_user_home();
 
-// Action: check
-if (isset($_GET['action']) && $_GET['action'] === 'check') {
+// Fix file permissions for Apache/Passenger
+if (isset($_GET['action']) && $_GET['action'] === 'fix_perms') {
+    header('Content-Type: text/plain');
+    $home = get_user_home();
+    @chmod($home, 0755);
+    @chmod($home . '/repositories', 0755);
+    @chmod($home . '/repositories/website', 0755);
+    @chmod($home . '/repositories/website/standalone', 0755);
+    
+    function chmod_recursive($dir) {
+        if (!is_dir($dir)) return;
+        @chmod($dir, 0755);
+        $items = @scandir($dir);
+        if ($items) {
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..') continue;
+                $path = $dir . '/' . $item;
+                if (is_dir($path)) {
+                    chmod_recursive($path);
+                } else {
+                    @chmod($path, 0644);
+                }
+            }
+        }
+    }
+    chmod_recursive($home . '/repositories/website');
+    
+    $paths = [
+        $home . '/repositories/website/standalone/tmp/restart.txt',
+        $home . '/repositories/website/tmp/restart.txt',
+    ];
+    foreach ($paths as $rf) {
+        $d = dirname($rf);
+        if (!is_dir($d)) @mkdir($d, 0755, true);
+        @file_put_contents($rf, time());
+    }
+    echo "Permissions fixed to 0755/0644 and Passenger restarted successfully!";
+    exit;
+}
     header('Content-Type: text/plain');
     echo "Detected Home Dir: " . $home_dir . "\n\n";
     $paths = [
@@ -288,6 +325,13 @@ $resultMessage = do_extract($uploaded_archive, $target_dir);
 if (isset($assembledFile) && file_exists($assembledFile)) {
     @unlink($assembledFile);
     @rmdir(dirname($assembledFile));
+}
+
+// Fix permissions on extracted files so Apache/Passenger can read them
+if (function_exists('chmod_recursive')) {
+    chmod_recursive($target_dir);
+} else {
+    @chmod($target_dir, 0755);
 }
 
 // Self-update deploy.php in public_html
