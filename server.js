@@ -38,21 +38,21 @@ Module.prototype.require = function(request) {
   return originalRequire.call(this, request);
 };
 
-// Check if running from project root or inside standalone folder
-const subStandalone = path.join(__dirname, 'standalone');
-const standaloneDir = fs.existsSync(path.join(subStandalone, 'server.js')) ? subStandalone : __dirname;
+const standaloneDir = path.join(__dirname, 'standalone');
 const standaloneServer = path.join(standaloneDir, 'server.js');
 
 process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
 Module._initPaths();
 
-if (standaloneDir !== __dirname && fs.existsSync(standaloneServer)) {
+if (fs.existsSync(standaloneServer)) {
   process.chdir(standaloneDir);
   require(standaloneServer);
 } else {
-  // Executing directly inside standalone/server.js
-  const nextServer = path.join(__dirname, '.next', 'standalone', 'server.js');
-  if (fs.existsSync(nextServer)) {
-    require(nextServer);
-  }
+  const next = require('next');
+  const app = next({ dev: false });
+  const handle = app.getRequestHandler();
+
+  app.prepare().then(() => {
+    http.createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
+  });
 }
