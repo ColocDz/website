@@ -44,13 +44,19 @@ export default function SignupPage() {
     setError('');
 
     try {
-      const result = await signUp.email({
+      const signupPromise = signUp.email({
         email: data.email,
         password: data.password,
         name: data.name.trim(),
       });
 
-      if (result.error) {
+      const timeoutPromise = new Promise<{ error: { message: string } }>((_, reject) =>
+        setTimeout(() => reject(new Error('Server request timed out. Please check database connectivity or try again.')), 12000)
+      );
+
+      const result: any = await Promise.race([signupPromise, timeoutPromise]);
+
+      if (result?.error) {
         setError(result.error.message || 'Failed to create account');
         return;
       }
@@ -71,8 +77,9 @@ export default function SignupPage() {
       }
 
       router.push('/');
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err?.message || 'Something went wrong. Please try again.');
     }
   };
 

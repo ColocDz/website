@@ -9,6 +9,10 @@ if (!dbUrl.startsWith('mongodb') && !dbUrl.startsWith('mongodb+srv')) {
   dbUrl = DEFAULT_MONGODB_URL;
 }
 
+if (!dbUrl.includes('serverSelectionTimeoutMS')) {
+  dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'serverSelectionTimeoutMS=5000&connectTimeoutMS=5000';
+}
+
 process.env.DATABASE_URL = dbUrl;
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
