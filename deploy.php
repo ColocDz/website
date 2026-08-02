@@ -3,19 +3,16 @@
 // Secure PHP Deployment Script for cPanel
 // ==========================================
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 ini_set('memory_limit', '1024M');
 ini_set('max_execution_time', 600);
 
-// 1. CHOOSE A STRONG SECRET TOKEN
+// 1. SECRET TOKEN
 define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
 
 // 2. TARGET DIRECTORY
 define('TARGET_DIR_NAME', 'repositories/website/standalone');
-
-header('Content-Type: application/json');
 
 function get_user_home() {
     if (isset($_SERVER['DOCUMENT_ROOT'])) {
@@ -27,18 +24,60 @@ function get_user_home() {
     return '/home/colocdz1';
 }
 
-// Check token
 $token = isset($_POST['token']) ? $_POST['token'] : (isset($_GET['token']) ? $_GET['token'] : null);
 if ($token !== DEPLOY_TOKEN) {
     http_response_code(403);
+    header('Content-Type: application/json');
     echo json_encode(['error' => 'Unauthorized token']);
     exit;
 }
 
-// Debug logs retrieval
+$home_dir = get_user_home();
+
+// Action: check
+if (isset($_GET['action']) && $_GET['action'] === 'check') {
+    header('Content-Type: text/plain');
+    echo "Detected Home Dir: " . $home_dir . "\n\n";
+    $paths = [
+        'repositories/website/server.js',
+        'repositories/website/standalone/server.js',
+    ];
+    echo "--- File Existence Check ---\n";
+    foreach ($paths as $p) {
+        $full = $home_dir . '/' . $p;
+        echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
+    }
+    echo "\n--- Scanning repositories/website/standalone ---\n";
+    $stDir = $home_dir . '/repositories/website/standalone';
+    if (is_dir($stDir)) {
+        print_r(scandir($stDir));
+    } else {
+        echo "repositories/website/standalone directory does not exist!\n";
+    }
+    exit;
+}
+
+// Action: restart
+if (isset($_GET['action']) && $_GET['action'] === 'restart') {
+    header('Content-Type: text/plain');
+    $paths = [
+        $home_dir . '/repositories/website/standalone/tmp/restart.txt',
+        $home_dir . '/repositories/website/tmp/restart.txt',
+    ];
+    foreach ($paths as $restart_file) {
+        $dir = dirname($restart_file);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        @file_put_contents($restart_file, time());
+    }
+    echo "Passenger restart trigger created successfully!\n";
+    echo "Please refresh https://colocdz.com now!";
+    exit;
+}
+
+// Action: log
 if (isset($_GET['action']) && $_GET['action'] === 'log') {
     header('Content-Type: text/plain');
-    $log_path = get_user_home() . '/logs/passenger.log';
+    $log_path = $home_dir . '/logs/passenger.log';
     if (file_exists($log_path)) {
         $lines = file($log_path);
         $search = isset($_GET['q']) ? $_GET['q'] : null;
@@ -58,118 +97,39 @@ if (isset($_GET['action']) && $_GET['action'] === 'log') {
     exit;
 }
 
-// Restart Passenger Node.js app
-if (isset($_GET['action']) && $_GET['action'] === 'restart') {
-    header('Content-Type: text/plain');
-    $home = get_user_home();
-    $paths = [
-        $home . '/repositories/website/standalone/tmp/restart.txt',
-        $home . '/repositories/website/tmp/restart.txt',
-    ];
-    foreach ($paths as $restart_file) {
-        $dir = dirname($restart_file);
-        if (!is_dir($dir)) @mkdir($dir, 0755, true);
-        @file_put_contents($restart_file, time());
+// Extraction Helper
+function do_extract($archivePath, $targetDir) {
+    if (!is_dir($targetDir)) {
+        @mkdir($targetDir, 0755, true);
     }
-    echo "Passenger restart trigger created at both locations!\n";
-    echo "Please refresh https://colocdz.com now!";
-    exit;
-}
-
-// File structure check
-if (isset($_GET['action']) && $_GET['action'] === 'check') {
-    header('Content-Type: text/plain');
-    $home = get_user_home();
-    echo "Detected Home Dir: " . $home . "\n\n";
-    $paths = [
-        'repositories/website/server.js',
-        'repositories/website/standalone/server.js',
-    ];
-    echo "--- File Existence Check ---\n";
-    foreach ($paths as $p) {
-        $full = $home . '/' . $p;
-        echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
-    }
-    echo "\n--- Scanning repositories/website ---";
-    $repoDir = $home . '/repositories/website';
-    if (is_dir($repoDir)) {
-        print_r(scandir($repoDir));
-    } else {
-        echo "\nrepositories/website directory does not exist!\n";
-    }
-    echo "\n--- Scanning repositories/website/standalone ---";
-    $stDir = $home . '/repositories/website/standalone';
-    if (is_dir($stDir)) {
-        print_r(scandir($stDir));
-    } else {
-        echo "\nrepositories/website/standalone directory does not exist!\n";
-    }
-    exit;
-}
-
-// Chunked upload handling
-$uploaded_file = null;
-if (isset($_POST['chunk_index']) && isset($_POST['total_chunks']) && isset($_FILES['file'])) {
-    $chunkIndex = intval($_POST['chunk_index']);
-    $totalChunks = intval($_POST['total_chunks']);
-    $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST['upload_id'] ?? 'default');
     
-    $tempDir = get_user_home() . '/tmp/uploads_' . $uploadId;
-    if (!is_dir($tempDir)) @mkdir($tempDir, 0755, true);
-    
-    $chunkFile = $tempDir . '/chunk_' . $chunkIndex;
-    move_uploaded_file($_FILES['file']['tmp_name'], $chunkFile);
-    
-    $allArrived = true;
-    for ($i = 0; $i < $totalChunks; $i++) {
-        if (!file_exists($tempDir . '/chunk_' . $i)) {
-            $allArrived = false;
-            break;
+    // Method 1: Try system tar command
+    if (function_exists('exec')) {
+        $cmd = "tar -xzf " . escapeshellarg($archivePath) . " -C " . escapeshellarg($targetDir) . " 2>&1";
+        $output = [];
+        $returnVar = 0;
+        @exec($cmd, $output, $returnVar);
+        if ($returnVar === 0 && file_exists($targetDir . '/server.js')) {
+            return "Extracted successfully via system tar command";
         }
     }
     
-    if (!$allArrived) {
-        echo json_encode(['success' => true, 'chunk' => $chunkIndex, 'assembled' => false]);
-        exit;
+    // Method 2: Try PharData
+    if (class_exists('PharData')) {
+        try {
+            $phar = new PharData($archivePath);
+            $phar->extractTo($targetDir, null, true);
+            if (file_exists($targetDir . '/server.js')) {
+                return "Extracted successfully via PharData";
+            }
+        } catch (Exception $e) {}
     }
     
-    // Reassemble full file
-    $assembledFile = $tempDir . '/complete.tar.gz';
-    $out = fopen($assembledFile, 'wb');
-    for ($i = 0; $i < $totalChunks; $i++) {
-        $cPath = $tempDir . '/chunk_' . $i;
-        $in = fopen($cPath, 'rb');
-        while (!feof($in)) {
-            fwrite($out, fread($in, 65536));
-        }
-        fclose($in);
-        @unlink($cPath);
-    }
-    fclose($out);
-    
-    $uploaded_file = $assembledFile;
-} else if (isset($_FILES['file'])) {
-    $uploaded_file = $_FILES['file']['tmp_name'];
-} else {
-    http_response_code(400);
-    echo json_encode(['error' => 'No file uploaded']);
-    exit;
+    // Method 3: Pure PHP Tar Stream Extractor
+    return extract_tar_gz_pure_php($archivePath, $targetDir);
 }
 
-$home_dir = get_user_home();
-$target_dir = $home_dir . '/' . TARGET_DIR_NAME;
-
-// Ensure target directory exists
-if (!is_dir($target_dir)) {
-    if (!mkdir($target_dir, 0755, true)) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Failed to create target directory: ' . $target_dir]);
-        exit;
-    }
-}
-
-// Helper to extract .tar.gz files in pure PHP streaming mode (uses < 5MB RAM)
-function extract_tar_gz($archivePath, $targetDir) {
+function extract_tar_gz_pure_php($archivePath, $targetDir) {
     if (!function_exists('gzopen')) {
         return 'The zlib PHP extension (gzopen function) is missing on this server.';
     }
@@ -256,37 +216,101 @@ function extract_tar_gz($archivePath, $targetDir) {
         }
     }
     gzclose($fp);
-    return $extracted_count;
+    return "Extracted " . $extracted_count . " files via pure PHP stream";
 }
 
-// Extract .tar.gz file
-$extractCount = extract_tar_gz($uploaded_file, $target_dir);
+// Upload Handling
+header('Content-Type: application/json');
 
-// Clean temp file
+$uploaded_archive = null;
+
+if (isset($_POST['chunk_index']) && isset($_POST['total_chunks']) && isset($_FILES['file'])) {
+    $chunkIndex = intval($_POST['chunk_index']);
+    $totalChunks = intval($_POST['total_chunks']);
+    $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST['upload_id'] ?? 'default');
+    
+    $tempDir = $home_dir . '/tmp/uploads_' . $uploadId;
+    if (!is_dir($tempDir)) @mkdir($tempDir, 0755, true);
+    
+    $chunkFile = $tempDir . '/chunk_' . $chunkIndex;
+    move_uploaded_file($_FILES['file']['tmp_name'], $chunkFile);
+    
+    $allArrived = true;
+    for ($i = 0; $i < $totalChunks; $i++) {
+        if (!file_exists($tempDir . '/chunk_' . $i)) {
+            $allArrived = false;
+            break;
+        }
+    }
+    
+    if (!$allArrived) {
+        echo json_encode(['success' => true, 'chunk' => $chunkIndex, 'assembled' => false]);
+        exit;
+    }
+    
+    // Reassemble full archive
+    $assembledFile = $tempDir . '/complete.tar.gz';
+    $out = @fopen($assembledFile, 'wb');
+    for ($i = 0; $i < $totalChunks; $i++) {
+        $cPath = $tempDir . '/chunk_' . $i;
+        $in = @fopen($cPath, 'rb');
+        if ($in) {
+            while (!feof($in)) {
+                fwrite($out, fread($in, 65536));
+            }
+            fclose($in);
+            @unlink($cPath);
+        }
+    }
+    if ($out) fclose($out);
+    
+    $uploaded_archive = $assembledFile;
+} else if (isset($_FILES['file'])) {
+    $uploaded_archive = $_FILES['file']['tmp_name'];
+} else {
+    http_response_code(400);
+    echo json_encode(['error' => 'No file uploaded']);
+    exit;
+}
+
+if (!$uploaded_archive || !file_exists($uploaded_archive)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Uploaded archive file is missing or unreadable']);
+    exit;
+}
+
+$target_dir = $home_dir . '/' . TARGET_DIR_NAME;
+
+// Extract
+$resultMessage = do_extract($uploaded_archive, $target_dir);
+
+// Cleanup temp assembled file
 if (isset($assembledFile) && file_exists($assembledFile)) {
     @unlink($assembledFile);
-    $dirToDel = dirname($assembledFile);
-    @rmdir($dirToDel);
+    @rmdir(dirname($assembledFile));
 }
 
-if (is_numeric($extractCount) && $extractCount > 0) {
-    // Automatically trigger Passenger restart
-    $paths = [
-        $home_dir . '/repositories/website/standalone/tmp/restart.txt',
-        $home_dir . '/repositories/website/tmp/restart.txt',
-    ];
-    foreach ($paths as $restart_file) {
-        $dir = dirname($restart_file);
-        if (!is_dir($dir)) @mkdir($dir, 0755, true);
-        @file_put_contents($restart_file, time());
-    }
-    echo json_encode([
-        'success' => true,
-        'message' => 'Deployment successful!',
-        'total_extracted' => $extractCount
-    ]);
-} else {
-    http_response_code(500);
-    echo json_encode(['error' => 'Extraction failed or extracted 0 files. Extracted count: ' . $extractCount]);
+// Self-update deploy.php in public_html
+$deployInTarget = $target_dir . '/deploy.php';
+$publicHtmlDeploy = $home_dir . '/public_html/deploy.php';
+if (file_exists($deployInTarget)) {
+    @copy($deployInTarget, $publicHtmlDeploy);
 }
+
+// Trigger Passenger Restart
+$restartPaths = [
+    $home_dir . '/repositories/website/standalone/tmp/restart.txt',
+    $home_dir . '/repositories/website/tmp/restart.txt',
+];
+foreach ($restartPaths as $rf) {
+    $d = dirname($rf);
+    if (!is_dir($d)) @mkdir($d, 0755, true);
+    @file_put_contents($rf, time());
+}
+
+echo json_encode([
+    'success' => true,
+    'message' => 'Deployment successful! ' . $resultMessage,
+    'target' => $target_dir
+]);
 exit;
