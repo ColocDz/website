@@ -145,7 +145,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: 'SQLite database cleared and fresh test data seeded successfully!',
+      message: 'MySQL database cleared and fresh test data seeded successfully!',
       seeded: {
         usersCount: 3,
         postsCount: 3,

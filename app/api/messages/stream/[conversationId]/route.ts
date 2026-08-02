@@ -15,15 +15,22 @@ export async function GET(
 
     const { conversationId } = await params;
 
-    // Verify user is part of the conversation
-    const conv = await prisma.conversation.findFirst({
+    const conv = await prisma.conversation.findUnique({
       where: {
         id: conversationId,
-        participants: { some: { id: session.user.id } },
       },
     });
 
-    if (!conv) {
+    let pIds: string[] = [];
+    if (conv) {
+      if (typeof conv.participantIds === 'string') {
+        try { pIds = JSON.parse(conv.participantIds); } catch (e) {}
+      } else if (Array.isArray(conv.participantIds)) {
+        pIds = conv.participantIds as any[];
+      }
+    }
+
+    if (!conv || !pIds.includes(session.user.id)) {
       return new Response('Conversation not found', { status: 404 });
     }
 
@@ -33,7 +40,6 @@ export async function GET(
 
     let lastMessageId: string | null = null;
 
-    // Retrieve initial message state
     const initial = await prisma.message.findFirst({
       where: { conversationId },
       orderBy: { createdAt: 'desc' },

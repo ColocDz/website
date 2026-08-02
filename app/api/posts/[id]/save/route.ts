@@ -35,7 +35,13 @@ export async function POST(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const savedPostIds: string[] = Array.isArray(user.savedPostIds) ? (user.savedPostIds as string[]) : [];
+    let savedPostIds: string[] = [];
+    if (typeof user.savedPostIds === 'string') {
+      try { savedPostIds = JSON.parse(user.savedPostIds); } catch (e) {}
+    } else if (Array.isArray(user.savedPostIds)) {
+      savedPostIds = user.savedPostIds as any[];
+    }
+
     const isSaved = savedPostIds.includes(postId);
 
     let updatedSavedPostIds: string[];

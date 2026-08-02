@@ -17,19 +17,23 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify the user is part of the conversation
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        participants: { some: { id: session.user.id } }
-      }
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId }
     });
 
-    if (!conversation) {
+    let pIds: string[] = [];
+    if (conversation) {
+      if (typeof conversation.participantIds === 'string') {
+        try { pIds = JSON.parse(conversation.participantIds); } catch (e) {}
+      } else if (Array.isArray(conversation.participantIds)) {
+        pIds = conversation.participantIds as any[];
+      }
+    }
+
+    if (!conversation || !pIds.includes(session.user.id)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Fetch messages for the conversation
     const messages = await prisma.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' }

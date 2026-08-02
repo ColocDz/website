@@ -147,10 +147,16 @@ export async function PUT(request: NextRequest) {
       }
 
       for (const existing of usersWithDescriptors) {
-        const exDesc = existing.faceDescriptor as number[] | null;
-        if (!exDesc || !Array.isArray(exDesc) || exDesc.length !== 128) continue;
+        if (!existing.faceDescriptor) continue;
+        let storedDesc: number[] = [];
+        if (typeof existing.faceDescriptor === 'string') {
+          try { storedDesc = JSON.parse(existing.faceDescriptor); } catch (e) {}
+        } else if (Array.isArray(existing.faceDescriptor)) {
+          storedDesc = existing.faceDescriptor as any[];
+        }
 
-        const dist = euclideanDistance(data.faceDescriptor, exDesc);
+        if (storedDesc.length !== 128) continue;
+        const dist = euclideanDistance(data.faceDescriptor, storedDesc);
         if (dist < 0.5) {
           return NextResponse.json({
             error: `This face matches an existing account (${existing.name} ${existing.lastName || ''}). Duplicate profiles are not permitted.`

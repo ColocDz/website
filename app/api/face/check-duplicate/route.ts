@@ -67,10 +67,17 @@ export async function POST(request: NextRequest) {
     let bestMatch: { userId: string; distance: number; name: string } | null = null;
 
     for (const user of usersWithDescriptors) {
-      const userDesc = user.faceDescriptor as number[] | null;
-      if (!userDesc || !Array.isArray(userDesc) || userDesc.length !== 128) continue;
+      if (!user.faceDescriptor) continue;
+      let storedDesc: number[] = [];
+      if (typeof user.faceDescriptor === 'string') {
+        try { storedDesc = JSON.parse(user.faceDescriptor); } catch (e) {}
+      } else if (Array.isArray(user.faceDescriptor)) {
+        storedDesc = user.faceDescriptor as any[];
+      }
 
-      const distance = euclideanDistance(descriptor, userDesc);
+      if (storedDesc.length !== 128) continue;
+
+      const distance = euclideanDistance(descriptor, storedDesc);
 
       if (distance < THRESHOLD) {
         if (!bestMatch || distance < bestMatch.distance) {

@@ -17,31 +17,44 @@ export async function PATCH(
 
     const userId = session.user.id;
 
-    // Verify the user is part of the conversation
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        participants: { some: { id: userId } }
-      },
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
     });
 
-    if (!conversation) {
+    let pIds: string[] = [];
+    if (conversation) {
+      if (typeof conversation.participantIds === 'string') {
+        try { pIds = JSON.parse(conversation.participantIds); } catch (e) {}
+      } else if (Array.isArray(conversation.participantIds)) {
+        pIds = conversation.participantIds as any[];
+      }
+    }
+
+    if (!conversation || !pIds.includes(userId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const archivedBy: string[] = Array.isArray(conversation.archivedBy) ? (conversation.archivedBy as string[]) : [];
-    const isArchived = archivedBy.includes(userId);
+    let archivedList: string[] = [];
+    if (typeof conversation.archivedBy === 'string') {
+      try { archivedList = JSON.parse(conversation.archivedBy); } catch (e) {}
+    } else if (Array.isArray(conversation.archivedBy)) {
+      archivedList = conversation.archivedBy as any[];
+    }
+
+    const isArchived = archivedList.includes(userId);
 
     let updatedArchivedBy: string[];
     if (isArchived) {
-      updatedArchivedBy = archivedBy.filter((id: string) => id !== userId);
+      updatedArchivedBy = archivedList.filter(id => id !== userId);
     } else {
-      updatedArchivedBy = [...archivedBy, userId];
+      updatedArchivedBy = [...archivedList, userId];
     }
 
     await prisma.conversation.update({
       where: { id: conversationId },
-      data: { archivedBy: updatedArchivedBy },
+      data: {
+        archivedBy: updatedArchivedBy,
+      },
     });
 
     return NextResponse.json({ archived: !isArchived });

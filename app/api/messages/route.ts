@@ -13,33 +13,79 @@ export async function GET(request: NextRequest) {
 
     const userId = session.user.id;
 
-    // Fetch conversations where the user is a participant
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        participants: { some: { id: userId } }
-      },
+    // Fetch all conversations
+    const allConversations = await prisma.conversation.findMany({
       include: {
-        participants: {
-          select: { id: true, name: true, lastName: true, email: true, image: true }
-        },
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1 // Only need the latest message for the list
+          take: 1
         }
       },
       orderBy: { updatedAt: 'desc' }
     });
 
+    // Filter conversations where the user is a participant
+    const conversations = allConversations.filter(conv => {
+      let pIds: string[] = [];
+      if (typeof conv.participantIds === 'string') {
+        try { pIds = JSON.parse(conv.participantIds); } catch (e) {}
+      } else if (Array.isArray(conv.participantIds)) {
+        pIds = conv.participantIds as any[];
+      }
+      return pIds.includes(userId);
+    });
+
+    // Collect all unique participant IDs (excluding current user)
+    const otherUserIds = Array.from(
+      new Set(
+        conversations
+          .map(conv => {
+            let pIds: string[] = [];
+            if (typeof conv.participantIds === 'string') {
+              try { pIds = JSON.parse(conv.participantIds); } catch (e) {}
+            } else if (Array.isArray(conv.participantIds)) {
+              pIds = conv.participantIds as any[];
+            }
+            return pIds.find(id => id !== userId);
+          })
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    // Fetch details of all other participants in a single batch query
+    const otherUsers = otherUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: otherUserIds } },
+          select: { id: true, name: true, lastName: true, email: true, image: true }
+        })
+      : [];
+
+    const userMap = new Map(otherUsers.map(user => [user.id, user]));
+
     const enrichedConversations = conversations.map((conv) => {
-      const otherUser = conv.participants.find(p => p.id !== userId) || null;
-      const archivedBy = Array.isArray(conv.archivedBy) ? (conv.archivedBy as string[]) : [];
+      let pIds: string[] = [];
+      if (typeof conv.participantIds === 'string') {
+        try { pIds = JSON.parse(conv.participantIds); } catch (e) {}
+      } else if (Array.isArray(conv.participantIds)) {
+        pIds = conv.participantIds as any[];
+      }
+
+      let archivedList: string[] = [];
+      if (typeof conv.archivedBy === 'string') {
+        try { archivedList = JSON.parse(conv.archivedBy); } catch (e) {}
+      } else if (Array.isArray(conv.archivedBy)) {
+        archivedList = conv.archivedBy as any[];
+      }
+
+      const otherUserId = pIds.find(id => id !== userId);
+      const otherUser = otherUserId ? userMap.get(otherUserId) || null : null;
       
       return {
         id: conv.id,
         otherUser,
         lastMessage: conv.messages[0] || null,
         updatedAt: conv.updatedAt,
-        archived: archivedBy.includes(userId),
+        archived: archivedList.includes(userId),
       };
     });
 
@@ -66,50 +112,48 @@ export async function POST(request: NextRequest) {
 
     let activeConversationId = conversationId;
 
-    // If no conversationId is provided, check if one exists or create a new one
     if (!activeConversationId) {
       if (!receiverId) {
         return NextResponse.json({ error: 'Receiver ID is required to start a new conversation' }, { status: 400 });
       }
 
-      // Check if conversation already exists between these two users
-      const existingConversation = await prisma.conversation.findFirst({
-        where: {
-          AND: [
-            { participants: { some: { id: session.user.id } } },
-            { participants: { some: { id: receiverId } } }
-          ]
+      const allConvs = await prisma.conversation.findMany();
+      const existingConversation = allConvs.find(conv => {
+        let pIds: string[] = [];
+        if (typeof conv.participantIds === 'string') {
+          try { pIds = JSON.parse(conv.participantIds); } catch (e) {}
+        } else if (Array.isArray(conv.participantIds)) {
+          pIds = conv.participantIds as any[];
         }
+        return pIds.includes(session.user.id) && pIds.includes(receiverId);
       });
 
       if (existingConversation) {
         activeConversationId = existingConversation.id;
       } else {
-        // Create new conversation
         const newConversation = await prisma.conversation.create({
           data: {
-            participants: {
-              connect: [{ id: session.user.id }, { id: receiverId }]
-            }
+            participantIds: [session.user.id, receiverId]
           }
         });
         activeConversationId = newConversation.id;
       }
     } else {
-      // Validate the user is part of the provided conversation
-      const conversation = await prisma.conversation.findFirst({
-        where: {
-          id: activeConversationId,
-          participants: { some: { id: session.user.id } }
+      const conversation = await prisma.conversation.findUnique({ where: { id: activeConversationId }});
+      let pIds: string[] = [];
+      if (conversation) {
+        if (typeof conversation.participantIds === 'string') {
+          try { pIds = JSON.parse(conversation.participantIds); } catch (e) {}
+        } else if (Array.isArray(conversation.participantIds)) {
+          pIds = conversation.participantIds as any[];
         }
-      });
+      }
 
-      if (!conversation) {
+      if (!conversation || !pIds.includes(session.user.id)) {
         return NextResponse.json({ error: 'Invalid conversation' }, { status: 403 });
       }
     }
 
-    // Create the message
     const message = await prisma.message.create({
       data: {
         content,
@@ -118,7 +162,6 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Update conversation's updatedAt
     await prisma.conversation.update({
       where: { id: activeConversationId },
       data: { updatedAt: new Date() }

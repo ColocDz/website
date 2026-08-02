@@ -8,25 +8,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Auth Models (required by Better Auth for MySQL) ───
+// ─── Auth Models (required by Better Auth) ───
 
 model User {
   id                String    @id @default(cuid())
-  name              String    @db.VarChar(255)
-  email             String    @unique @db.VarChar(255)
+  name              String
+  email             String    @unique
   emailVerified     Boolean   @default(false)
   image             String?   @db.Text
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   // Extended profile fields for ColocDZ
-  lastName          String?   @db.VarChar(255)
-  phone             String?   @db.VarChar(255)
-  gender            String?   @db.VarChar(50)
+  lastName          String?
+  phone             String?
+  gender            String?
   birthday          DateTime?
   bio               String?   @db.Text
-  wilaya            String?   @db.VarChar(255)
-  city              String?   @db.VarChar(255)
+  wilaya            String?
+  city              String?
   isPrivate         Boolean   @default(false)
   nameChanged       Boolean   @default(false)
   isArchived        Boolean   @default(false)
@@ -35,19 +35,18 @@ model User {
   faceVerifiedAt    DateTime?
   faceVerifiedUntil DateTime?
   faceImage         String?   @db.Text
-  faceDescriptor    Json?
-  password          String?   @db.Text
-  phoneOtp          String?   @db.VarChar(50)
+  faceDescriptor    Json?     // Array of 128 numbers
+  password          String?
+  phoneOtp          String?
   phoneOtpExpiry    DateTime?
   phoneVerified     Boolean   @default(false)
-  savedPostIds      Json?
+  savedPostIds      Json?     // Array of post IDs
 
   // Relations
   sessions          Session[]
   accounts          Account[]
   posts             Post[]
   sentMessages      Message[]        @relation("SentMessages")
-  conversations     Conversation[]   @relation("UserConversations")
   comments          Comment[]
 
   @@index([createdAt])
@@ -57,11 +56,11 @@ model User {
 model Session {
   id        String   @id @default(cuid())
   expiresAt DateTime
-  token     String   @unique @db.VarChar(255)
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  ipAddress String?  @db.VarChar(255)
-  userAgent String?  @db.Text
+  ipAddress String?
+  userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -71,8 +70,8 @@ model Session {
 
 model Account {
   id                    String    @id @default(cuid())
-  accountId             String    @db.VarChar(255)
-  providerId            String    @db.VarChar(255)
+  accountId             String
+  providerId            String
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?   @db.Text
@@ -80,8 +79,8 @@ model Account {
   idToken               String?   @db.Text
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
-  scope                 String?   @db.Text
-  password              String?   @db.Text
+  scope                 String?
+  password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -91,7 +90,7 @@ model Account {
 
 model Verification {
   id         String   @id @default(cuid())
-  identifier String   @db.VarChar(255)
+  identifier String
   value      String   @db.Text
   expiresAt  DateTime
   createdAt  DateTime @default(now())
@@ -104,24 +103,24 @@ model Verification {
 
 model Post {
   id          String   @id @default(cuid())
-  title       String   @db.VarChar(255)
-  type        String   @db.VarChar(100) // Apartment, House, Studio, Room, Shared Space
-  postType    String   @db.VarChar(100) // offer, request
-  searchType  String   @default("roommate") @db.VarChar(100) // "roommate" or "roommate_and_place"
+  title       String
+  type        String   // Apartment, House, Studio, Room, Shared Space
+  postType    String   // offer, request
+  searchType  String   @default("roommate") // "roommate" = has place, "roommate_and_place" = needs both
   description String   @db.Text
-  price       String?  @db.VarChar(100)
-  maxBudget   String?  @db.VarChar(100)
-  location    String?  @db.VarChar(255)
-  wilaya      String?  @db.VarChar(255)
+  price       String?
+  maxBudget   String?  // For roommate_and_place posts: max affordable rent
+  location    String?
+  wilaya      String?
   bedrooms    Int?
   bathrooms   Int?
-  amenities   Json?
-  necessities Json?
-  tags        Json?
-  images      Json?
+  amenities   Json?    // Array of amenities
+  necessities Json?    // Array of necessities
+  tags        Json?    // Array of tags
+  images      Json?    // Array of image URLs
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  status      String   @default("published") @db.VarChar(100)
+  status      String   @default("published") // published or draft
   isArchived  Boolean  @default(false)
 
   // Author relation
@@ -139,11 +138,8 @@ model Conversation {
   id             String    @id @default(cuid())
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  // Participants
-  participants   User[]    @relation("UserConversations")
-  participantIds Json?
-  archivedBy     Json?
+  participantIds Json?     // Array of user IDs
+  archivedBy     Json?     // Array of user IDs
   messages       Message[]
 
   @@index([updatedAt])
@@ -183,7 +179,7 @@ model Comment {
 
 model RateLimit {
   id        String   @id @default(cuid())
-  key       String   @db.VarChar(255)
+  key       String
   timestamp DateTime @default(now())
 
   @@index([key, timestamp])

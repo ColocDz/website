@@ -123,10 +123,16 @@ export async function PUT(request: NextRequest) {
     }
 
     for (const user of usersWithDescriptors) {
-      const userDesc = user.faceDescriptor as number[] | null;
-      if (!userDesc || !Array.isArray(userDesc) || userDesc.length !== 128) continue;
+      if (!user.faceDescriptor) continue;
+      let storedDesc: number[] = [];
+      if (typeof user.faceDescriptor === 'string') {
+        try { storedDesc = JSON.parse(user.faceDescriptor); } catch (e) {}
+      } else if (Array.isArray(user.faceDescriptor)) {
+        storedDesc = user.faceDescriptor as any[];
+      }
 
-      const dist = euclideanDistance(descriptor, userDesc);
+      if (storedDesc.length !== 128) continue;
+      const dist = euclideanDistance(descriptor, storedDesc);
       if (dist < 0.5) {
         data.status = 'failed';
         verificationTokens.set(token, data);
