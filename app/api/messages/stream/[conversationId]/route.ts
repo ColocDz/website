@@ -16,10 +16,10 @@ export async function GET(
     const { conversationId } = await params;
 
     // Verify user is part of the conversation
-    const conv = await prisma.conversation.findUnique({
+    const conv = await prisma.conversation.findFirst({
       where: {
         id: conversationId,
-        participantIds: { has: session.user.id },
+        participants: { some: { id: session.user.id } },
       },
     });
 

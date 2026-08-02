@@ -18,11 +18,14 @@ export async function GET(
     }
 
     // Verify the user is part of the conversation
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId }
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        participants: { some: { id: session.user.id } }
+      }
     });
 
-    if (!conversation || !conversation.participantIds.includes(session.user.id)) {
+    if (!conversation) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

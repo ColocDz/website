@@ -131,7 +131,6 @@ export async function PUT(request: NextRequest) {
       // Euclidean distance check against all stored descriptors
       const usersWithDescriptors = await prisma.user.findMany({
         where: {
-          faceDescriptor: { isEmpty: false },
           id: { not: user.id },
           isArchived: false,
         },
@@ -148,8 +147,10 @@ export async function PUT(request: NextRequest) {
       }
 
       for (const existing of usersWithDescriptors) {
-        if (existing.faceDescriptor.length !== 128) continue;
-        const dist = euclideanDistance(data.faceDescriptor, existing.faceDescriptor);
+        const exDesc = existing.faceDescriptor as number[] | null;
+        if (!exDesc || !Array.isArray(exDesc) || exDesc.length !== 128) continue;
+
+        const dist = euclideanDistance(data.faceDescriptor, exDesc);
         if (dist < 0.5) {
           return NextResponse.json({
             error: `This face matches an existing account (${existing.name} ${existing.lastName || ''}). Duplicate profiles are not permitted.`

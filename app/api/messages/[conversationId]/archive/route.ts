@@ -18,37 +18,31 @@ export async function PATCH(
     const userId = session.user.id;
 
     // Verify the user is part of the conversation
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        participants: { some: { id: userId } }
+      },
     });
 
-    if (!conversation || !conversation.participantIds.includes(userId)) {
+    if (!conversation) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const isArchived = conversation.archivedBy?.includes(userId) ?? false;
+    const archivedBy: string[] = Array.isArray(conversation.archivedBy) ? (conversation.archivedBy as string[]) : [];
+    const isArchived = archivedBy.includes(userId);
 
+    let updatedArchivedBy: string[];
     if (isArchived) {
-      // Un-archive: remove userId from archivedBy
-      await prisma.conversation.update({
-        where: { id: conversationId },
-        data: {
-          archivedBy: {
-            set: (conversation.archivedBy || []).filter((id: string) => id !== userId),
-          },
-        },
-      });
+      updatedArchivedBy = archivedBy.filter((id: string) => id !== userId);
     } else {
-      // Archive: add userId to archivedBy
-      await prisma.conversation.update({
-        where: { id: conversationId },
-        data: {
-          archivedBy: {
-            push: userId,
-          },
-        },
-      });
+      updatedArchivedBy = [...archivedBy, userId];
     }
+
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { archivedBy: updatedArchivedBy },
+    });
 
     return NextResponse.json({ archived: !isArchived });
   } catch (error) {

@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
     // Fetch all stored descriptors (exclude the current user)
     const usersWithDescriptors = await prisma.user.findMany({
       where: {
-        faceDescriptor: { isEmpty: false },
         id: { not: session.user.id },
         isArchived: false,
       },
@@ -68,9 +67,10 @@ export async function POST(request: NextRequest) {
     let bestMatch: { userId: string; distance: number; name: string } | null = null;
 
     for (const user of usersWithDescriptors) {
-      if (user.faceDescriptor.length !== 128) continue;
+      const userDesc = user.faceDescriptor as number[] | null;
+      if (!userDesc || !Array.isArray(userDesc) || userDesc.length !== 128) continue;
 
-      const distance = euclideanDistance(descriptor, user.faceDescriptor);
+      const distance = euclideanDistance(descriptor, userDesc);
 
       if (distance < THRESHOLD) {
         if (!bestMatch || distance < bestMatch.distance) {

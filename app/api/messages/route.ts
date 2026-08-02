@@ -16,9 +16,12 @@ export async function GET(request: NextRequest) {
     // Fetch conversations where the user is a participant
     const conversations = await prisma.conversation.findMany({
       where: {
-        participantIds: { has: userId },
+        participants: { some: { id: userId } }
       },
       include: {
+        participants: {
+          select: { id: true, name: true, lastName: true, email: true, image: true }
+        },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1 // Only need the latest message for the list
@@ -27,35 +30,16 @@ export async function GET(request: NextRequest) {
       orderBy: { updatedAt: 'desc' }
     });
 
-    // Collect all unique participant IDs (excluding current user)
-    const otherUserIds = Array.from(
-      new Set(
-        conversations
-          .map(conv => conv.participantIds.find(id => id !== userId))
-          .filter((id): id is string => Boolean(id))
-      )
-    );
-
-    // Fetch details of all other participants in a single batch query
-    const otherUsers = otherUserIds.length > 0
-      ? await prisma.user.findMany({
-          where: { id: { in: otherUserIds } },
-          select: { id: true, name: true, lastName: true, email: true, image: true }
-        })
-      : [];
-
-    const userMap = new Map(otherUsers.map(user => [user.id, user]));
-
     const enrichedConversations = conversations.map((conv) => {
-      const otherUserId = conv.participantIds.find(id => id !== userId);
-      const otherUser = otherUserId ? userMap.get(otherUserId) || null : null;
+      const otherUser = conv.participants.find(p => p.id !== userId) || null;
+      const archivedBy = Array.isArray(conv.archivedBy) ? (conv.archivedBy as string[]) : [];
       
       return {
         id: conv.id,
         otherUser,
         lastMessage: conv.messages[0] || null,
         updatedAt: conv.updatedAt,
-        archived: conv.archivedBy?.includes(userId) ?? false,
+        archived: archivedBy.includes(userId),
       };
     });
 
@@ -91,9 +75,10 @@ export async function POST(request: NextRequest) {
       // Check if conversation already exists between these two users
       const existingConversation = await prisma.conversation.findFirst({
         where: {
-          participantIds: {
-            hasEvery: [session.user.id, receiverId]
-          }
+          AND: [
+            { participants: { some: { id: session.user.id } } },
+            { participants: { some: { id: receiverId } } }
+          ]
         }
       });
 
@@ -103,15 +88,23 @@ export async function POST(request: NextRequest) {
         // Create new conversation
         const newConversation = await prisma.conversation.create({
           data: {
-            participantIds: [session.user.id, receiverId]
+            participants: {
+              connect: [{ id: session.user.id }, { id: receiverId }]
+            }
           }
         });
         activeConversationId = newConversation.id;
       }
     } else {
       // Validate the user is part of the provided conversation
-      const conversation = await prisma.conversation.findUnique({ where: { id: activeConversationId }});
-      if (!conversation || !conversation.participantIds.includes(session.user.id)) {
+      const conversation = await prisma.conversation.findFirst({
+        where: {
+          id: activeConversationId,
+          participants: { some: { id: session.user.id } }
+        }
+      });
+
+      if (!conversation) {
         return NextResponse.json({ error: 'Invalid conversation' }, { status: 403 });
       }
     }

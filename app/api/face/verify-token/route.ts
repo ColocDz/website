@@ -107,7 +107,6 @@ export async function PUT(request: NextRequest) {
     // Check for duplicate face
     const usersWithDescriptors = await prisma.user.findMany({
       where: {
-        faceDescriptor: { isEmpty: false },
         id: { not: data.userId },
         isArchived: false,
       },
@@ -124,8 +123,10 @@ export async function PUT(request: NextRequest) {
     }
 
     for (const user of usersWithDescriptors) {
-      if (user.faceDescriptor.length !== 128) continue;
-      const dist = euclideanDistance(descriptor, user.faceDescriptor);
+      const userDesc = user.faceDescriptor as number[] | null;
+      if (!userDesc || !Array.isArray(userDesc) || userDesc.length !== 128) continue;
+
+      const dist = euclideanDistance(descriptor, userDesc);
       if (dist < 0.5) {
         data.status = 'failed';
         verificationTokens.set(token, data);

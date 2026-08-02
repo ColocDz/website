@@ -17,7 +17,7 @@ export const auth = betterAuth({
     getBaseUrl(),
   ].filter(Boolean),
   database: prismaAdapter(prisma, {
-    provider: "mongodb",
+    provider: "mysql",
   }),
   advanced: {
     database: {
