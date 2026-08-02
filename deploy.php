@@ -86,8 +86,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'restart') {
     header('Content-Type: text/plain');
     $home = get_user_home();
     $paths = [
-        $home . '/repositories/website_v2/standalone/tmp/restart.txt',
-        $home . '/repositories/website_v2/tmp/restart.txt',
+        $home . '/repositories/website/standalone/tmp/restart.txt',
+        $home . '/repositories/website/tmp/restart.txt',
     ];
     foreach ($paths as $restart_file) {
         $dir = dirname($restart_file);
@@ -104,28 +104,28 @@ if (isset($_GET['action']) && $_GET['action'] === 'check') {
     header('Content-Type: text/plain');
     $home = get_user_home();
     $paths = [
-        'repositories/website_v2/server.js',
-        'repositories/website_v2/standalone/server.js',
+        'repositories/website/server.js',
+        'repositories/website/standalone/server.js',
     ];
     echo "--- File Existence Check ---\n";
     foreach ($paths as $p) {
         $full = $home . '/' . $p;
         echo $p . ": " . (file_exists($full) ? "EXISTS" : "NOT FOUND") . "\n";
     }
-    echo "\n--- Content of repositories/website_v2/standalone/server.js ---\n";
-    $rs = $home . '/repositories/website_v2/standalone/server.js';
+    echo "\n--- Content of repositories/website/standalone/server.js ---\n";
+    $rs = $home . '/repositories/website/standalone/server.js';
     if (file_exists($rs)) {
         echo file_get_contents($rs);
     } else {
         echo "server.js does not exist.\n";
     }
 
-    echo "\n--- Scanning repositories/website_v2/standalone ---\n";
-    $dir = $home . '/repositories/website_v2/standalone';
+    echo "\n--- Scanning repositories/website/standalone ---\n";
+    $dir = $home . '/repositories/website/standalone';
     if (is_dir($dir)) {
         print_r(scandir($dir));
         if (is_dir($dir . '/.next')) {
-            echo "\n--- Scanning repositories/website_v2/standalone/.next ---\n";
+            echo "\n--- Scanning repositories/website/standalone/.next ---\n";
             print_r(scandir($dir . '/.next'));
         } else {
             echo "\n--- .next directory DOES NOT EXIST in standalone! ---\n";
@@ -154,11 +154,6 @@ if (!is_dir($target_dir)) {
         exit;
     }
 }
-
-// Clean target directory of old files (keeping .env)
-clean_dir_force($target_dir);
-
-$uploaded_file = $_FILES['file']['tmp_name'];
 
 // Helper to extract .tar.gz files in pure PHP streaming mode (uses < 5MB RAM)
 function extract_tar_gz($archivePath, $targetDir) {
@@ -256,8 +251,8 @@ $result = extract_tar_gz($uploaded_file, $target_dir);
 if ($result === true) {
     // Automatically trigger Passenger restart
     $paths = [
-        $home_dir . '/repositories/website_v2/standalone/tmp/restart.txt',
-        $home_dir . '/repositories/website_v2/tmp/restart.txt',
+        $home_dir . '/repositories/website/standalone/tmp/restart.txt',
+        $home_dir . '/repositories/website/tmp/restart.txt',
     ];
     foreach ($paths as $restart_file) {
         $dir = dirname($restart_file);
