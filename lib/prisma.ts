@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 
-const DEFAULT_MYSQL_URL = "mysql://colocdz1_dbuser:MyStrongPassword123!@localhost:3306/colocdz1_db";
+const DEFAULT_MONGODB_URL = "mongodb+srv://colocdz:ugDtojEk84H1iWaM@cluster0.7o4uabo.mongodb.net/colocdz?retryWrites=true&w=majority";
 
-let dbUrl = process.env.DATABASE_URL || DEFAULT_MYSQL_URL;
+let dbUrl = process.env.DATABASE_URL || DEFAULT_MONGODB_URL;
 dbUrl = dbUrl.trim().replace(/^["']|["']$/g, '');
 
-if (!dbUrl.startsWith('mysql')) {
-  dbUrl = DEFAULT_MYSQL_URL;
+if (!dbUrl.startsWith('mongodb') && !dbUrl.startsWith('mongodb+srv')) {
+  dbUrl = DEFAULT_MONGODB_URL;
 }
 
 process.env.DATABASE_URL = dbUrl;

@@ -4,18 +4,18 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 // ─── Auth Models (required by Better Auth) ───
 
 model User {
-  id                String    @id @default(cuid())
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
   name              String
   email             String    @unique
   emailVerified     Boolean   @default(false)
-  image             String?   @db.Text
+  image             String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -24,7 +24,7 @@ model User {
   phone             String?
   gender            String?
   birthday          DateTime?
-  bio               String?   @db.Text
+  bio               String?
   wilaya            String?
   city              String?
   isPrivate         Boolean   @default(false)
@@ -34,7 +34,7 @@ model User {
   faceVerified      Boolean   @default(false)
   faceVerifiedAt    DateTime?
   faceVerifiedUntil DateTime?
-  faceImage         String?   @db.Text
+  faceImage         String?
   faceDescriptor    Json?     // Array of 128 numbers
   password          String?
   phoneOtp          String?
@@ -48,66 +48,55 @@ model User {
   posts             Post[]
   sentMessages      Message[]        @relation("SentMessages")
   comments          Comment[]
-
-  @@index([createdAt])
-  @@index([isArchived])
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   expiresAt DateTime
   token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
-  userId    String
+  userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
 }
 
 model Account {
-  id                    String    @id @default(cuid())
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
   accountId             String
   providerId            String
-  userId                String
+  userId                String    @db.ObjectId
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?   @db.Text
-  refreshToken          String?   @db.Text
-  idToken               String?   @db.Text
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
-  @@index([userId])
-  @@index([providerId, accountId])
 }
 
 model Verification {
-  id         String   @id @default(cuid())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   identifier String
-  value      String   @db.Text
+  value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  @@index([identifier])
 }
 
 // ─── Application Models ───
 
 model Post {
-  id          String   @id @default(cuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   type        String   // Apartment, House, Studio, Room, Shared Space
   postType    String   // offer, request
   searchType  String   @default("roommate") // "roommate" = has place, "roommate_and_place" = needs both
-  description String   @db.Text
+  description String
   price       String?
   maxBudget   String?  // For roommate_and_place posts: max affordable rent
   location    String?
@@ -118,69 +107,55 @@ model Post {
   necessities Json?    // Array of necessities
   tags        Json?    // Array of tags
   images      Json?    // Array of image URLs
+  rules       Json?    // Array of house rules
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   status      String   @default("published") // published or draft
   isArchived  Boolean  @default(false)
 
   // Author relation
-  authorId    String
+  authorId    String   @db.ObjectId
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments    Comment[]
-
-  @@index([status, isArchived, createdAt])
-  @@index([status, isArchived, createdAt, id])
-  @@index([authorId, isArchived])
-  @@index([wilaya, status, isArchived])
 }
 
 model Conversation {
-  id             String    @id @default(cuid())
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   participantIds Json?     // Array of user IDs
   archivedBy     Json?     // Array of user IDs
   messages       Message[]
-
-  @@index([updatedAt])
 }
 
 model Message {
-  id             String       @id @default(cuid())
-  content        String       @db.Text
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  content        String
   createdAt      DateTime     @default(now())
 
   // Sender
-  senderId       String
+  senderId       String       @db.ObjectId
   sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   // Conversation
-  conversationId String
+  conversationId String       @db.ObjectId
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@index([conversationId, createdAt])
-  @@index([senderId])
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  text      String   @db.Text
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  text      String
   createdAt DateTime @default(now())
 
-  postId    String
+  postId    String   @db.ObjectId
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  authorId  String
+  authorId  String   @db.ObjectId
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@index([postId, createdAt])
-  @@index([authorId])
 }
 
 model RateLimit {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   key       String
   timestamp DateTime @default(now())
-
-  @@index([key, timestamp])
 }
