@@ -33,6 +33,7 @@ export function Navbar({ brandName = 'ColocDz' }: NavbarProps) {
     { label: t('nav.messages'), href: '/messages' },
     { label: t('nav.myPosts'), href: '/profile' },
     { label: t('nav.addPost'), href: '/adding-post' },
+    { label: t('sidebar.settings') || 'Settings', href: '/settings' },
   ];
 
   const menuItems = isLoggedIn
@@ -105,13 +106,18 @@ export function Navbar({ brandName = 'ColocDz' }: NavbarProps) {
             {isPending ? (
               <div className="w-20 h-8 bg-gray-100/80 rounded-lg animate-pulse hidden md:block" />
             ) : isLoggedIn ? (
-              <div className="hidden md:flex items-center gap-4">
-                <Link href="/settings" className="text-on-surface-variant hover:text-primary transition-colors" title="Settings">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <div className="hidden md:flex items-center gap-3">
+                <Link 
+                  href="/settings" 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs transition-colors no-underline"
+                  title="Settings"
+                >
+                  <i className="fa-solid fa-gear text-sm" />
+                  <span>Settings</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="border border-error text-error hover:bg-error-container/20 px-6 py-2 rounded-lg font-label-caps text-[12px] tracking-widest uppercase scale-95 active:scale-90 transition-all"
+                  className="border border-error text-error hover:bg-error-container/20 px-4 py-1.5 rounded-lg font-label-caps text-[12px] tracking-widest uppercase scale-95 active:scale-90 transition-all"
                 >
                   {t('nav.logOut')}
                 </button>

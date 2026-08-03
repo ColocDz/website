@@ -26,8 +26,7 @@ export async function GET(
             bio: true,
             wilaya: true,
             city: true,
-            identityVerified: true,
-            faceVerified: true
+            phoneVerified: true
           }
         },
         comments: {

@@ -30,12 +30,8 @@ export async function getSession() {
           birthday: true,
           bio: true,
           isPrivate: true,
-          identityVerified: true,
-          faceVerified: true,
-          faceVerifiedAt: true,
-          faceVerifiedUntil: true,
-          faceImage: true,
           phoneVerified: true,
+          phoneVerifiedAt: true,
           savedPostIds: true,
         }
       });
@@ -73,12 +69,8 @@ export async function getSession() {
             birthday: true,
             bio: true,
             isPrivate: true,
-            identityVerified: true,
-            faceVerified: true,
-            faceVerifiedAt: true,
-            faceVerifiedUntil: true,
-            faceImage: true,
             phoneVerified: true,
+            phoneVerifiedAt: true,
             savedPostIds: true,
           }
         }

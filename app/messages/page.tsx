@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Send, Search, Archive, X } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { useSession } from '@/lib/auth-client';
+import PhoneOtpVerification from '@/components/phone-otp-verification';
 
 interface Message {
   id: string;
@@ -226,7 +227,7 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDesktop, setIsDesktop] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFaceVerified, setIsFaceVerified] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Conversation | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -250,7 +251,7 @@ export default function MessagesPage() {
         const userRes = await fetch('/api/user', { credentials: 'include' });
         if (userRes.ok) {
           const userData = await userRes.json();
-          setIsFaceVerified(!!userData.faceVerified);
+          setIsPhoneVerified(!!userData.phoneVerified);
         } else {
           console.warn('[Messages] /api/user failed:', userRes.status);
         }
@@ -463,19 +464,15 @@ export default function MessagesPage() {
         />
       )}
 
-      {!isFaceVerified ? (
+      {!isPhoneVerified ? (
         <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
-          <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm max-w-md w-full">
-            <h2 className="text-2xl font-bold text-red-800 mb-2">Face Verification Required</h2>
-            <p className="text-red-700 mb-6">
-              You need to verify your identity via face detection in settings before you can message other users.
-            </p>
-            <button
-              onClick={() => window.location.href = '/settings'}
-              className="w-full px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors"
-            >
-              Go to Face Verification
-            </button>
+          <div className="bg-white border border-gray-200 p-8 rounded-2xl text-center shadow-lg max-w-md w-full">
+            <PhoneOtpVerification 
+              initialPhone={session?.user?.phone || ''}
+              onVerified={() => {
+                setIsPhoneVerified(true);
+              }}
+            />
           </div>
         </div>
       ) : (

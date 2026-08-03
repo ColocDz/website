@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
           wilaya: true,
           city: true,
           isPrivate: true,
-          faceVerified: true,
-          identityVerified: true,
+          phoneVerified: true,
           phone: true,
         }
       });
