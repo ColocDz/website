@@ -77,23 +77,32 @@ function SettingsContent() {
     smsUrgent: false
   });
 
+  const verifyFaceParam = searchParams.get('verifyFace');
+
   // Responsive default activeTab setup
   useEffect(() => {
     if (tabQuery) {
       setActiveTab(tabQuery);
-      return;
+    } else {
+      const handleResize = () => {
+        if (window.innerWidth < 768) {
+          setActiveTab((prev) => (prev === 'personal' ? 'menu' : prev));
+        } else {
+          setActiveTab((prev) => (prev === 'menu' ? 'personal' : prev));
+        }
+      };
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setActiveTab((prev) => (prev === 'personal' ? 'menu' : prev));
-      } else {
-        setActiveTab((prev) => (prev === 'menu' ? 'personal' : prev));
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, [tabQuery]);
+
+  useEffect(() => {
+    if (verifyFaceParam === 'true') {
+      setActiveTab('personal');
+      setFaceModalOpen(true);
+    }
+  }, [verifyFaceParam]);
 
   useEffect(() => {
     async function fetchProfile() {

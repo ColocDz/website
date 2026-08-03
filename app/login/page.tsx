@@ -51,7 +51,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/');
+      window.location.href = '/';
     } catch (err: any) {
       console.error('[Login] Exception:', err);
       if (err?.message?.includes('fetch') || err?.message?.includes('network') || err?.message?.includes('Failed')) {

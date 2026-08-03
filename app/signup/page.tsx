@@ -76,7 +76,7 @@ export default function SignupPage() {
         console.error('Failed to save profile details:', profileErr);
       }
 
-      router.push('/');
+      window.location.href = '/';
     } catch (err: any) {
       console.error('Signup error:', err);
       setError(err?.message || 'Something went wrong. Please try again.');

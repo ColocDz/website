@@ -337,12 +337,33 @@ function ProfileContent() {
 
             {/* Verification badging */}
             <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${profile.faceVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-gray-100 text-gray-500'}`}>
-                {profile.faceVerified ? '✓ Face Verified' : 'Face Not Verified'}
-              </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${profile.identityVerified ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-gray-100 text-gray-500'}`}>
-                {profile.identityVerified ? '✓ Identity Verified' : 'Identity Not Verified'}
-              </span>
+              <button
+                type="button"
+                onClick={() => isOwnProfile && !profile.faceVerified && router.push('/settings?tab=personal&verifyFace=true')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  profile.faceVerified 
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                    : isOwnProfile 
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100' 
+                      : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {profile.faceVerified ? '✓ Face Verified' : isOwnProfile ? '⚡ Verify Face Now' : 'Face Not Verified'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => isOwnProfile && !profile.identityVerified && router.push('/settings?tab=idcard')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  profile.identityVerified 
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' 
+                    : isOwnProfile 
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200 cursor-pointer hover:bg-blue-100' 
+                      : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {profile.identityVerified ? '✓ Identity Verified' : isOwnProfile ? '🪪 Verify ID Now' : 'Identity Not Verified'}
+              </button>
             </div>
 
             {/* Privacy toggle for own profile */}
