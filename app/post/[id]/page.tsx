@@ -227,29 +227,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     <div className="bg-white min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Verification Block */}
-      {!isFaceVerified ? (
-        <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
-          <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm max-w-md w-full">
-            <h2 className="text-2xl font-bold text-red-800 mb-2">Face Verification Required</h2>
-            <p className="text-red-700 mb-6">
-              You need to verify your identity via face detection before you can view full post details or message authors.
-            </p>
-            <button
-              onClick={() => router.push('/settings')}
-              className="w-full px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors"
-            >
-              Go to Face Verification
-            </button>
-            <button
-              onClick={() => router.push('/posts')}
-              className="w-full px-6 py-3 mt-3 bg-white border border-gray-300 text-gray-700 rounded font-bold hover:bg-gray-50 transition-colors"
-            >
-              Back to listings
-            </button>
-          </div>
-        </div>
-      ) : errorMsg || !post ? (
+      {errorMsg || !post ? (
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h2>
@@ -259,6 +237,17 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         </div>
       ) : (
         <div className="flex-1 bg-gray-50 pb-12">
+          {!isFaceVerified && (
+            <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 text-center text-amber-800 text-sm font-medium flex items-center justify-center gap-3">
+              <span>⚡ Complete Face Verification to unlock direct host messaging and full contact access.</span>
+              <button 
+                onClick={() => router.push('/settings?tab=personal&verifyFace=true')}
+                className="underline font-bold hover:text-amber-900"
+              >
+                Verify Now →
+              </button>
+            </div>
+          )}
           {/* Header Bar */}
           <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
             <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">

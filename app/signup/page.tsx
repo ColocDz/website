@@ -44,41 +44,37 @@ export default function SignupPage() {
     setError('');
 
     try {
-      const signupPromise = signUp.email({
-        email: data.email,
-        password: data.password,
-        name: data.name.trim(),
-      });
-
-      const timeoutPromise = new Promise<{ error: { message: string } }>((_, reject) =>
-        setTimeout(() => reject(new Error('Server request timed out. Please check database connectivity or try again.')), 12000)
+      await signUp.email(
+        {
+          email: data.email,
+          password: data.password,
+          name: `${data.name.trim()} ${data.lastName?.trim() || ''}`.trim(),
+        },
+        {
+          onSuccess: async () => {
+            try {
+              await fetch('/api/user', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  lastName: data.lastName,
+                  phone: data.phoneNumber,
+                  gender: data.gender,
+                }),
+              });
+            } catch (profileErr) {
+              console.error('Failed to save profile details:', profileErr);
+            }
+            window.location.href = '/';
+          },
+          onError: (ctx) => {
+            console.error('Signup auth error:', ctx.error);
+            setError(ctx.error.message || 'Failed to create account. Email may already be registered.');
+          },
+        }
       );
-
-      const result: any = await Promise.race([signupPromise, timeoutPromise]);
-
-      if (result?.error) {
-        setError(result.error.message || 'Failed to create account');
-        return;
-      }
-
-      // Save additional profile details (gender, phone, lastName)
-      try {
-        await fetch('/api/user', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lastName: data.lastName,
-            phone: data.phoneNumber,
-            gender: data.gender,
-          }),
-        });
-      } catch (profileErr) {
-        console.error('Failed to save profile details:', profileErr);
-      }
-
-      window.location.href = '/';
     } catch (err: any) {
-      console.error('Signup error:', err);
+      console.error('Signup exception:', err);
       setError(err?.message || 'Something went wrong. Please try again.');
     }
   };

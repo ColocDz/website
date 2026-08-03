@@ -53,26 +53,37 @@ function MobileVerifyContent() {
     }
   }, []);
 
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
+
   const startCamera = async () => {
     setErrorMsg('');
     setCapturedImage(null);
     setCapturedDescriptor(null);
     try {
       if (!faceApi) await loadModels();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 640 } }
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' }
+        });
+      } catch (e1) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('muted', 'true');
         await videoRef.current.play();
       }
       setStatus('camera');
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {
-        setErrorMsg('Camera access denied. Please allow camera permissions.');
+        setErrorMsg('Camera access denied. Please allow camera permissions in your browser.');
       } else {
-        setErrorMsg('Failed to access camera.');
+        setErrorMsg('Failed to access camera. Please check browser permissions.');
       }
     }
   };

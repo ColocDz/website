@@ -105,6 +105,12 @@ function SettingsContent() {
   }, [verifyFaceParam]);
 
   useEffect(() => {
+    if (!isPending && !session?.user) {
+      window.location.href = '/login';
+    }
+  }, [session, isPending]);
+
+  useEffect(() => {
     async function fetchProfile() {
       try {
         const res = await fetch('/api/user');

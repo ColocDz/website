@@ -31,27 +31,26 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const result = await signIn.email({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (result.error) {
-        const msg = result.error.message || '';
-        const code = result.error.code || '';
-        console.warn('[Login] Auth error:', { message: msg, code });
-        
-        if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials') || msg.toLowerCase().includes('password')) {
-          setError('Incorrect email or password. Please try again.');
-        } else if (code === 'MISSING_OR_NULL_ORIGIN' || msg.includes('Origin')) {
-          setError('Connection error. Please refresh the page and try again.');
-        } else {
-          setError(msg || 'Sign in failed. Please try again.');
+      await signIn.email(
+        {
+          email: data.email,
+          password: data.password,
+        },
+        {
+          onSuccess: () => {
+            window.location.href = '/';
+          },
+          onError: (ctx) => {
+            const msg = ctx.error.message || '';
+            console.warn('[Login] Auth error:', ctx.error);
+            if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials') || msg.toLowerCase().includes('password')) {
+              setError('Incorrect email or password. Please try again.');
+            } else {
+              setError(msg || 'Sign in failed. Please try again.');
+            }
+          },
         }
-        return;
-      }
-
-      window.location.href = '/';
+      );
     } catch (err: any) {
       console.error('[Login] Exception:', err);
       if (err?.message?.includes('fetch') || err?.message?.includes('network') || err?.message?.includes('Failed')) {
