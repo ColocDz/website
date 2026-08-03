@@ -39,8 +39,24 @@ model User {
   password          String?
   phoneOtp          String?
   phoneOtpExpiry    DateTime?
-  phoneVerified     Boolean   @default(false)
   savedPostIds      Json?     // Array of post IDs
+
+  // National ID Verification
+  nin               String?   // 18-digit Algerian NIN
+  ninHash           String?   // SHA-256 hash to enforce 1 ID per account
+  idCardNumber      String?   // ID Card Serial Number
+  idIssueDate       DateTime?
+  idExpiryDate      DateTime?
+  idCardFrontImage  String?
+  idCardBackImage   String?
+  identityVerifiedAt DateTime?
+
+  // IP & Geo Location Security
+  lastIpAddress     String?
+  registrationIp    String?
+  ipCountry         String?   // e.g. "DZ"
+  ipCity            String?
+  isVpnOrProxy      Boolean   @default(false)
 
   // Relations
   sessions          Session[]
