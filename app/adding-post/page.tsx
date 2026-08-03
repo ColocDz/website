@@ -59,8 +59,7 @@ function AddingPostFormContent() {
   const [errorMsg, setErrorMsg] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isFaceVerified, setIsFaceVerified] = useState<boolean | null>(null);
-  const [isIdVerified, setIsIdVerified] = useState<boolean>(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState<boolean | null>(null);
   const [postCount, setPostCount] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -106,8 +105,7 @@ function AddingPostFormContent() {
         const res = await fetch('/api/user');
         if (res.ok) {
           const u = await res.json();
-          setIsFaceVerified(!!u.faceVerified);
-          setIsIdVerified(!!u.identityVerified);
+          setIsPhoneVerified(!!u.phoneVerified);
           setPostCount(u.postCount || 0);
         }
       } catch { console.error('Failed to check verification status'); }
@@ -203,19 +201,13 @@ function AddingPostFormContent() {
 
       {errorMsg && <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded">{errorMsg}</div>}
 
-      {isFaceVerified === null ? (
+      {isPhoneVerified === null ? (
         <div className="text-center py-12 text-gray-500">Checking verification status...</div>
-      ) : !isFaceVerified ? (
-        <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm">
-          <h2 className="text-xl font-bold text-red-800 mb-2">Face Verification Required</h2>
-          <p className="text-red-700 mb-6">You need to verify your identity via real-time face detection in settings before you can create posts.</p>
-          <button onClick={() => router.push('/settings')} className="px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors">Go to Settings</button>
-        </div>
-      ) : (!editId && postCount >= 3 && !isIdVerified) ? (
-        <div className="bg-red-50 border border-red-200 p-8 rounded-xl text-center shadow-sm">
-          <h2 className="text-xl font-bold text-red-800 mb-2">Identity Verification Required</h2>
-          <p className="text-red-700 mb-6">You have already published {postCount} posts. To publish more than 3 posts, you must verify your identity by uploading your National ID Card in settings.</p>
-          <button onClick={() => router.push('/settings')} className="px-6 py-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-colors">Go to Settings to Upload ID</button>
+      ) : !isPhoneVerified ? (
+        <div className="bg-amber-50 border border-amber-200 p-8 rounded-2xl text-center shadow-sm">
+          <h2 className="text-xl font-bold text-amber-900 mb-2">Phone SMS Verification Required</h2>
+          <p className="text-amber-800 mb-6">You need to verify your mobile number via 6-digit SMS code in settings before you can publish listings.</p>
+          <button onClick={() => router.push('/settings?tab=personal&verifyPhone=true')} className="px-6 py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors">Verify Phone Number Now →</button>
         </div>
       ) : (
         <form className="space-y-8">

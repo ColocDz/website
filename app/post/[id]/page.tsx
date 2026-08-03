@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Navbar } from '@/components/layout/navbar';
 import { useSession } from '@/lib/auth-client';
+import PhoneOtpVerification from '@/components/phone-otp-verification';
 
 interface Comment {
   id: string;
@@ -148,8 +149,17 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
+
   const handleMessageAuthor = () => {
-    if (!session || !post) return;
+    if (!session || !post) {
+      router.push('/login');
+      return;
+    }
+    if (!isPhoneVerified) {
+      setPhoneModalOpen(true);
+      return;
+    }
     setMessageModalOpen(true);
   };
 
@@ -749,6 +759,28 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
                 <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Phone Verification Modal Popup */}
+      {phoneModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setPhoneModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 font-bold text-xl p-2 z-10"
+            >
+              ✕
+            </button>
+            <PhoneOtpVerification 
+              initialPhone={session?.user?.phone || ''}
+              onVerified={() => {
+                setIsPhoneVerified(true);
+                setPhoneModalOpen(false);
+                setMessageModalOpen(true);
+              }}
+            />
           </div>
         </div>
       )}
