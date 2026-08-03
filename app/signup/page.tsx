@@ -48,23 +48,13 @@ export default function SignupPage() {
         {
           email: data.email,
           password: data.password,
-          name: `${data.name.trim()} ${data.lastName?.trim() || ''}`.trim(),
-        },
+          name: data.name.trim(),
+          lastName: data.lastName.trim(),
+          phone: data.phoneNumber.trim(),
+          gender: data.gender,
+        } as any,
         {
-          onSuccess: async () => {
-            try {
-              await fetch('/api/user', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  lastName: data.lastName,
-                  phone: data.phoneNumber,
-                  gender: data.gender,
-                }),
-              });
-            } catch (profileErr) {
-              console.error('Failed to save profile details:', profileErr);
-            }
+          onSuccess: () => {
             window.location.href = '/';
           },
           onError: (ctx) => {

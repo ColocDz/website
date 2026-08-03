@@ -22,6 +22,22 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "mongodb",
   }),
+  user: {
+    additionalFields: {
+      lastName: {
+        type: "string",
+        required: false,
+      },
+      phone: {
+        type: "string",
+        required: false,
+      },
+      gender: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
   advanced: {
     database: {
       generateId: false,
