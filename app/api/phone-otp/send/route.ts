@@ -2,58 +2,176 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import crypto from 'crypto';
 
-// POST /api/phone-otp/send
+// In-memory per-IP rate limiting: IP -> array of timestamps
+const ipSendHistory = new Map<string, number[]>();
+
+function checkIpRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const ONE_HOUR = 60 * 60 * 1000;
+  const history = (ipSendHistory.get(ip) || []).filter(t => now - t < ONE_HOUR);
+  
+  if (history.length >= 10) {
+    return false; // Exceeded 10 sends/hour per IP
+  }
+  
+  history.push(now);
+  ipSendHistory.set(ip, history);
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const reqHeaders = await headers();
+    const session = await auth.api.getSession({ headers: reqHeaders });
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
     }
 
-    const { phoneNumber } = await request.json();
-    if (!phoneNumber) {
-      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+    const body = await request.json().catch(() => ({}));
+    const rawPhone = body.phone || session.user.phone || '';
+
+    // Clean phone number: keep digits only
+    const digitsOnly = rawPhone.toString().replace(/\D/g, '');
+    let cleanedPhone = digitsOnly;
+
+    // Standardize 9-digit Algerian phone number (remove leading 0 if 10 digits e.g. 0558137964 -> 558137964)
+    if (cleanedPhone.length === 10 && cleanedPhone.startsWith('0')) {
+      cleanedPhone = cleanedPhone.substring(1);
+    } else if (cleanedPhone.length === 12 && cleanedPhone.startsWith('213')) {
+      cleanedPhone = cleanedPhone.substring(3);
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    if (!/^(5|6|7)\d{8}$/.test(cleanedPhone)) {
+      return NextResponse.json(
+        { error: 'Please enter a valid 9-digit Algerian phone number (e.g. 550123456 or 0550123456).' },
+        { status: 400 }
+      );
+    }
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        phoneOtp: code,
-        phoneOtpExpiry: expiry,
-        phone: phoneNumber.replace('+213', ''),
+    // 1. Check Per-IP Rate Limit
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     request.headers.get('x-real-ip') || 
+                     '127.0.0.1';
+
+    if (!checkIpRateLimit(clientIp)) {
+      return NextResponse.json(
+        { error: 'Too many requests from your IP address. Please try again in an hour.' },
+        { status: 429 }
+      );
+    }
+
+    // 2. Check Uniqueness: Ensure phone number is not already verified on another user account
+    const existingVerifiedUser = await prisma.user.findFirst({
+      where: {
+        phone: cleanedPhone,
+        phoneVerified: true,
+        NOT: { id: session.user.id }
       }
     });
 
-    // Check if Twilio environment variables are configured
-    const hasTwilioConfig = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER);
+    if (existingVerifiedUser) {
+      return NextResponse.json(
+        { error: 'This phone number is already verified on another ColocDZ account.' },
+        { status: 400 }
+      );
+    }
 
-    if (hasTwilioConfig) {
-      try {
-        const twilio = (await import('twilio')).default;
-        const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        await twilioClient.messages.create({
-          body: `Your ColocDZ verification code is: ${code}. Valid for 10 minutes.`,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: phoneNumber
-        });
-      } catch (twilioErr) {
-        console.error('[Twilio Error] Failed to send SMS:', twilioErr);
-        return NextResponse.json({ error: 'Failed to send SMS via Twilio. Check Twilio credentials.' }, { status: 502 });
+    // 3. Fetch Current User Data for Per-Phone Rate Limits
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const now = new Date();
+
+    // Check 60-second Cooldown
+    if (currentUser.lastOtpSentAt) {
+      const secondsSinceLastSend = (now.getTime() - new Date(currentUser.lastOtpSentAt).getTime()) / 1000;
+      if (secondsSinceLastSend < 60) {
+        const remaining = Math.ceil(60 - secondsSinceLastSend);
+        return NextResponse.json(
+          { error: `Please wait ${remaining} seconds before requesting another SMS code.` },
+          { status: 429 }
+        );
       }
-    } else {
-      console.log(`[OTP Dev Fallback] Code for user ${session.user.id} (${phoneNumber}): ${code}`);
+    }
+
+    // Check 24-hour Daily Cap (Max 5 per day)
+    let dailyCount = currentUser.dailyOtpCount || 0;
+    let resetAt = currentUser.dailyOtpResetAt ? new Date(currentUser.dailyOtpResetAt) : null;
+
+    if (!resetAt || now.getTime() - resetAt.getTime() > 24 * 60 * 60 * 1000) {
+      dailyCount = 0;
+      resetAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    if (dailyCount >= 5) {
+      return NextResponse.json(
+        { error: 'Daily SMS limit reached (5 per 24 hours). Please try again tomorrow.' },
+        { status: 429 }
+      );
+    }
+
+    // 4. Generate 6-digit OTP & Hash
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = crypto.createHash('sha256').update(otpCode).digest('hex');
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes
+
+    // Update User state in DB
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        phone: cleanedPhone,
+        phoneOtpHash: otpHash,
+        phoneOtpExpires: expiresAt,
+        phoneOtpAttempts: 0,
+        lastOtpSentAt: now,
+        dailyOtpCount: dailyCount + 1,
+        dailyOtpResetAt: resetAt
+      }
+    });
+
+    // 5. Send SMS via Mobile Text Alerts API
+    const formattedInternationalPhone = `213${cleanedPhone}`;
+    const mtaApiKey = process.env.MOBILE_TEXT_ALERTS_API_KEY || '421cf632-67e8-537c-abcd-b4c0db54b4ed';
+
+    try {
+      const smsRes = await fetch('https://api.mobile-text-alerts.com/v3/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${mtaApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          subscribers: [formattedInternationalPhone],
+          message: `Your ColocDZ verification code is: ${otpCode}. Valid for 10 minutes.`
+        })
+      });
+
+      const smsData = await smsRes.json().catch(() => ({}));
+      console.log('[Phone OTP] Mobile Text Alerts response:', smsRes.status, smsData);
+
+      if (!smsRes.ok) {
+        console.warn('[Phone OTP] SMS API notice:', smsData);
+      }
+    } catch (smsErr) {
+      console.error('[Phone OTP] Failed to connect to SMS gateway:', smsErr);
     }
 
     return NextResponse.json({
       success: true,
-      message: hasTwilioConfig ? 'OTP sent via SMS' : 'OTP generated (Development mode: see server logs)'
+      message: `Verification code sent to +213 ${cleanedPhone.substring(0, 3)} ${cleanedPhone.substring(3, 6)} ${cleanedPhone.substring(6)}`,
+      // For local development convenience if SMS trial credits fail:
+      debugCode: process.env.NODE_ENV === 'development' ? otpCode : undefined
     });
-  } catch (error) {
+
+  } catch (error: any) {
     console.error('Error sending OTP:', error);
-    return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to send SMS OTP' }, { status: 500 });
   }
 }

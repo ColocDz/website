@@ -339,16 +339,16 @@ function ProfileContent() {
             <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-2">
               <button
                 type="button"
-                onClick={() => isOwnProfile && !profile.faceVerified && router.push('/settings?tab=personal&verifyFace=true')}
+                onClick={() => isOwnProfile && !profile.phoneVerified && router.push('/settings?tab=personal&verifyPhone=true')}
                 className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                  profile.faceVerified 
+                  profile.phoneVerified 
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
                     : isOwnProfile 
                       ? 'bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100' 
                       : 'bg-gray-100 text-gray-500'
                 }`}
               >
-                {profile.faceVerified ? '✓ Face Verified' : isOwnProfile ? '⚡ Verify Face Now' : 'Face Not Verified'}
+                {profile.phoneVerified ? '✓ Phone Verified' : isOwnProfile ? '⚡ Verify Phone via SMS' : 'Phone Unverified'}
               </button>
 
               <button

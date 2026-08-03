@@ -67,7 +67,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
   const [post, setPost] = useState<PostDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
-  const [isFaceVerified, setIsFaceVerified] = useState<boolean | null>(null);
+  const [isPhoneVerified, setIsPhoneVerified] = useState<boolean | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -85,22 +85,22 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         const userRes = await fetch('/api/user');
         if (userRes.ok) {
           const userData = await userRes.json();
-          setIsFaceVerified(!!userData.faceVerified);
+          setIsPhoneVerified(!!userData.phoneVerified);
           const savedIds = userData.savedPostIds || [];
           setIsSaved(savedIds.includes(unwrappedParams.id));
         } else {
-          setIsFaceVerified(false);
+          setIsPhoneVerified(false);
         }
       } catch (error) {
-        console.error('Failed to check face status');
-        setIsFaceVerified(false);
+        console.error('Failed to check phone status');
+        setIsPhoneVerified(false);
       }
     }
     
     if (session) {
       checkIdentity();
     } else if (session === null) {
-      setIsFaceVerified(false); // guest user
+      setIsPhoneVerified(false); // guest user
     }
   }, [session, unwrappedParams.id]);
 
@@ -210,7 +210,7 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  if (isLoading || isFaceVerified === null) {
+  if (isLoading || isPhoneVerified === null) {
     return (
       <div className="bg-white min-h-screen">
         <Navbar />
@@ -237,14 +237,14 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         </div>
       ) : (
         <div className="flex-1 bg-gray-50 pb-12">
-          {!isFaceVerified && (
+          {!isPhoneVerified && (
             <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 text-center text-amber-800 text-sm font-medium flex items-center justify-center gap-3">
-              <span>⚡ Complete Face Verification to unlock direct host messaging and full contact access.</span>
+              <span>⚡ Verify your phone number via SMS to unlock direct host messaging and full contact details.</span>
               <button 
-                onClick={() => router.push('/settings?tab=personal&verifyFace=true')}
+                onClick={() => router.push('/settings?tab=personal&verifyPhone=true')}
                 className="underline font-bold hover:text-amber-900"
               >
-                Verify Now →
+                Verify SMS Code →
               </button>
             </div>
           )}

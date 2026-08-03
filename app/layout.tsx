@@ -25,7 +25,6 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <I18nProvider>
-          <FaceModelPreloader />
           {children}
         </I18nProvider>
       </body>

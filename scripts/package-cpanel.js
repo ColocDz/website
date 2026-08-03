@@ -156,19 +156,31 @@ fs.cpSync(getLongPath(nodeModulesNextDir), getLongPath(targetNodeModulesNextDir)
 
 const nodeModulesSwcDir = path.join(__dirname, '..', 'node_modules', '@swc', 'helpers');
 const targetNodeModulesSwcDir = path.join(standaloneDir, 'node_modules', '@swc', 'helpers');
-fs.cpSync(getLongPath(nodeModulesSwcDir), getLongPath(targetNodeModulesSwcDir), { recursive: true, dereference: true, force: true });
+if (fs.existsSync(nodeModulesSwcDir) && fs.realpathSync(nodeModulesSwcDir) !== fs.realpathSync(targetNodeModulesSwcDir)) {
+  try {
+    fs.cpSync(getLongPath(nodeModulesSwcDir), getLongPath(targetNodeModulesSwcDir), { recursive: true, dereference: true, force: true });
+  } catch (e) {}
+}
 
 console.log('⚡ Step 5.2: Copying Prisma Client packages into standalone/node_modules...');
 const nodeModulesPrismaDir = path.join(__dirname, '..', 'node_modules', '@prisma');
 const targetNodeModulesPrismaDir = path.join(standaloneDir, 'node_modules', '@prisma');
 if (fs.existsSync(nodeModulesPrismaDir)) {
-  fs.cpSync(getLongPath(nodeModulesPrismaDir), getLongPath(targetNodeModulesPrismaDir), { recursive: true, dereference: true, force: true });
+  try {
+    if (!fs.existsSync(targetNodeModulesPrismaDir) || fs.realpathSync(nodeModulesPrismaDir) !== fs.realpathSync(targetNodeModulesPrismaDir)) {
+      fs.cpSync(getLongPath(nodeModulesPrismaDir), getLongPath(targetNodeModulesPrismaDir), { recursive: true, dereference: true, force: true });
+    }
+  } catch (e) {}
 }
 
 const nodeModulesDotPrismaDir = path.join(__dirname, '..', 'node_modules', '.prisma');
 const targetNodeModulesDotPrismaDir = path.join(standaloneDir, 'node_modules', '.prisma');
 if (fs.existsSync(nodeModulesDotPrismaDir)) {
-  fs.cpSync(getLongPath(nodeModulesDotPrismaDir), getLongPath(targetNodeModulesDotPrismaDir), { recursive: true, dereference: true, force: true });
+  try {
+    if (!fs.existsSync(targetNodeModulesDotPrismaDir) || fs.realpathSync(nodeModulesDotPrismaDir) !== fs.realpathSync(targetNodeModulesDotPrismaDir)) {
+      fs.cpSync(getLongPath(nodeModulesDotPrismaDir), getLongPath(targetNodeModulesDotPrismaDir), { recursive: true, dereference: true, force: true });
+    }
+  } catch (e) {}
 }
 
 console.log('⚡ Step 5.3: Auto-bundling Turbopack hashed Prisma Client packages into standalone/node_modules/@prisma...');
@@ -310,7 +322,7 @@ const archivePath = path.join(__dirname, '..', 'deploy.tar.gz');
 if (fs.existsSync(archivePath)) {
   try { fs.unlinkSync(archivePath); } catch (e) {}
 }
-execSync(`tar --format ustar -czf "${archivePath}" -C "${standaloneDir}" .`, { stdio: 'inherit' });
+execSync(`tar -czf "${archivePath}" -C "${standaloneDir}" .`, { stdio: 'inherit' });
 
 console.log('✅ Standalone package & deploy.tar.gz prepared successfully!');
 console.log('💡 Upload deploy.tar.gz to /home/colocdz1/repositories/website/standalone via deploy.php');

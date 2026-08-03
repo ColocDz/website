@@ -30,33 +30,16 @@ model User {
   isPrivate         Boolean   @default(false)
   nameChanged       Boolean   @default(false)
   isArchived        Boolean   @default(false)
-  identityVerified  Boolean   @default(false)
-  faceVerified      Boolean   @default(false)
-  faceVerifiedAt    DateTime?
-  faceVerifiedUntil DateTime?
-  faceImage         String?
-  faceDescriptor    Json?     // Array of 128 numbers
-  password          String?
-  phoneOtp          String?
-  phoneOtpExpiry    DateTime?
+  // Phone OTP Verification fields for ColocDZ
+  phoneVerified     Boolean   @default(false)
+  phoneVerifiedAt   DateTime?
+  phoneOtpHash      String?
+  phoneOtpExpires   DateTime?
+  phoneOtpAttempts  Int       @default(0)
+  lastOtpSentAt     DateTime?
+  dailyOtpCount     Int       @default(0)
+  dailyOtpResetAt   DateTime?
   savedPostIds      Json?     // Array of post IDs
-
-  // National ID Verification
-  nin               String?   // 18-digit Algerian NIN
-  ninHash           String?   // SHA-256 hash to enforce 1 ID per account
-  idCardNumber      String?   // ID Card Serial Number
-  idIssueDate       DateTime?
-  idExpiryDate      DateTime?
-  idCardFrontImage  String?
-  idCardBackImage   String?
-  identityVerifiedAt DateTime?
-
-  // IP & Geo Location Security
-  lastIpAddress     String?
-  registrationIp    String?
-  ipCountry         String?   // e.g. "DZ"
-  ipCity            String?
-  isVpnOrProxy      Boolean   @default(false)
 
   // Relations
   sessions          Session[]

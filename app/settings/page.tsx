@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Bell, Lock, User, Upload, IdCard, AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { authClient, useSession, signOut } from '@/lib/auth-client';
-import FaceVerification from '@/components/face-verification';
+import PhoneOtpVerification from '@/components/phone-otp-verification';
 import { useI18n } from '@/lib/i18n';
 
 const wilayas = [
@@ -49,9 +49,7 @@ function SettingsContent() {
     gender: '',
     birthday: '',
     nameChanged: false,
-    identityVerified: false,
-    faceVerified: false,
-    faceImage: ''
+    phoneVerified: false,
   });
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -60,15 +58,6 @@ function SettingsContent() {
 
   const [faceModalOpen, setFaceModalOpen] = useState(false);
   const [idCardImage, setIdCardImage] = useState('');
-  const [idBackImage, setIdBackImage] = useState('');
-  const idBackFileInputRef = useRef<HTMLInputElement>(null);
-
-  const [idForm, setIdForm] = useState({
-    nin: '',
-    idCardNumber: '',
-    idIssueDate: '',
-    idExpiryDate: '',
-  });
 
   // Password fields
   const [currentPassword, setCurrentPassword] = useState('');
@@ -136,9 +125,7 @@ function SettingsContent() {
             gender: data.gender || '',
             birthday: data.birthday ? new Date(data.birthday).toISOString().split('T')[0] : '',
             nameChanged: data.nameChanged || false,
-            identityVerified: data.identityVerified || false,
-            faceVerified: data.faceVerified || false,
-            faceImage: data.faceImage || '',
+            phoneVerified: data.phoneVerified || false,
           });
         }
       } catch (error) {
@@ -225,24 +212,6 @@ function SettingsContent() {
         if (event.target?.result) {
           const compressed = await compressImage(event.target.result as string);
           setIdCardImage(compressed);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleIdBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMsg('Image size must be less than 5MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        if (event.target?.result) {
-          const compressed = await compressImage(event.target.result as string);
-          setIdBackImage(compressed);
         }
       };
       reader.readAsDataURL(file);
@@ -381,49 +350,28 @@ function SettingsContent() {
   };
 
   const handleVerifyIdentity = async () => {
-    const cleanedNin = (idForm.nin || '').replace(/\D/g, '');
-    if (cleanedNin.length !== 18) {
-      setErrorMsg('Please enter a valid 18-digit Algerian National Identification Number (NIN).');
-      return;
-    }
-
-    if (!idForm.idCardNumber || idForm.idCardNumber.trim().length < 5) {
-      setErrorMsg('Please enter your National ID Card Serial Number.');
-      return;
-    }
-
-    if (!idForm.idIssueDate || !idForm.idExpiryDate) {
-      setErrorMsg('Please select your ID Card Issue and Expiration dates.');
+    if (!profile.name || !profile.lastName || !profile.birthday || !profile.gender || !profile.wilaya) {
+      setErrorMsg('Please complete all your personal information before verifying your identity.');
       return;
     }
 
     if (!idCardImage) {
-      setErrorMsg('Please upload a clear photo of the front of your National ID card.');
+      setErrorMsg('Please upload a photo of your National ID card.');
       return;
     }
 
     setIsSaving(true);
-    setErrorMsg('');
     try {
-      const res = await fetch('/api/user/verify-identity', {
-        method: 'POST',
+      const res = await fetch('/api/user', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nin: cleanedNin,
-          idCardNumber: idForm.idCardNumber.trim(),
-          idIssueDate: idForm.idIssueDate,
-          idExpiryDate: idForm.idExpiryDate,
-          frontImage: idCardImage,
-          backImage: idBackImage || null,
-        })
+        body: JSON.stringify({ ...profile, identityVerified: true })
       });
       
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to verify National ID');
+      if (!res.ok) throw new Error('Failed to verify identity');
       
-      setProfile(prev => ({ ...prev, identityVerified: true, faceVerified: true }));
-      setErrorMsg('National ID verified successfully! ✓');
-      setTimeout(() => setErrorMsg(''), 4500);
+      setProfile({ ...profile, identityVerified: true });
+      setErrorMsg('');
       router.refresh();
     } catch (error: any) {
       setErrorMsg(error.message);
@@ -665,35 +613,12 @@ function SettingsContent() {
                   </div>
                 </div>
 
-                {/* Face Verification Section */}
-                <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{t('settings.faceVerification')}</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {t('settings.faceVerificationDesc')}
-                  </p>
-                  {profile.faceVerified ? (
-                    <div className="flex items-center gap-3">
-                      <div className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-sm">
-                        Face Verified ✓
-                      </div>
-                      {profile.faceImage && (
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden border border-emerald-300">
-                          <Image src={profile.faceImage} alt="Face verification snapshot" fill unoptimized className="object-cover" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setFaceModalOpen(true);
-                      }}
-                      className="px-6 py-2.5 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors animate-pulse"
-                    >
-                      {t('settings.startFaceVerification')}
-                    </button>
-                  )}
-                </div>
+                {/* Phone OTP Verification Section */}
+                <PhoneOtpVerification 
+                  initialPhone={profile.phone} 
+                  isAlreadyVerified={profile.phoneVerified} 
+                  onVerified={() => setProfile(prev => ({ ...prev, phoneVerified: true }))}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -1022,109 +947,35 @@ function SettingsContent() {
                 </div>
 
                 {!profile.identityVerified && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-6">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">Verify National Identity</h3>
-                      <p className="text-sm text-gray-600">
-                        Enter your 18-digit Algerian National Identification Number (NIN), ID card serial number, dates, and clear photo of your ID card.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
-                          18-Digit NIN (الرقم الوطني التعريفي) <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          maxLength={18}
-                          value={idForm.nin}
-                          onChange={(e) => setIdForm({ ...idForm, nin: e.target.value.replace(/\D/g, '') })}
-                          placeholder="e.g. 109820001234567890"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none font-mono text-sm"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Found on the front top of your Algerian National ID card.</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
-                          ID Card Serial Number (رقم البطاقة) <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={idForm.idCardNumber}
-                          onChange={(e) => setIdForm({ ...idForm, idCardNumber: e.target.value })}
-                          placeholder="e.g. 12345678"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Issue Date (تاريخ الإصدار)</label>
-                        <input
-                          type="date"
-                          value={idForm.idIssueDate}
-                          onChange={(e) => setIdForm({ ...idForm, idIssueDate: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Expiry Date (تاريخ انتهاء الصلاحية)</label>
-                        <input
-                          type="date"
-                          value={idForm.idExpiryDate}
-                          onChange={(e) => setIdForm({ ...idForm, idExpiryDate: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black outline-none text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-3">
-                        <label className="block text-sm font-semibold text-gray-900">ID Card Photo (Front) <span className="text-red-500">*</span></label>
-                        <button
-                          type="button"
-                          onClick={() => idFileInputRef.current?.click()}
-                          className="w-full py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
-                        >
-                          {idCardImage ? '✓ Front Photo Attached' : 'Upload Front Side'}
-                        </button>
-                        <input
-                          type="file"
-                          ref={idFileInputRef}
-                          onChange={handleIdUpload}
-                          accept="image/*"
-                          className="hidden"
-                        />
-                      </div>
-
-                      <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-3">
-                        <label className="block text-sm font-semibold text-gray-900">ID Card Photo (Back - Optional)</label>
-                        <button
-                          type="button"
-                          onClick={() => idBackFileInputRef.current?.click()}
-                          className="w-full py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
-                        >
-                          {idBackImage ? '✓ Back Photo Attached' : 'Upload Back Side'}
-                        </button>
-                        <input
-                          type="file"
-                          ref={idBackFileInputRef}
-                          onChange={handleIdBackUpload}
-                          accept="image/*"
-                          className="hidden"
-                        />
-                      </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Upload ID to Verify</h3>
+                    <p className="text-sm text-gray-600 mb-6">Please upload a clear picture of your National ID card. Ensure all text is readable and the photo is clear.</p>
+                    
+                    <div className="flex gap-4 items-center mb-6">
+                      <button 
+                        onClick={() => idFileInputRef.current?.click()}
+                        className="px-6 py-2 bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-50 font-medium"
+                      >
+                        {t('settings.chooseFile')}
+                      </button>
+                      <span className="text-sm text-gray-500">
+                        {idCardImage ? t('settings.fileChosen') : t('settings.noFileChosen')}
+                      </span>
+                      <input 
+                        type="file" 
+                        ref={idFileInputRef} 
+                        onChange={handleIdUpload} 
+                        accept="image/*" 
+                        className="hidden" 
+                      />
                     </div>
 
                     <button 
                       onClick={handleVerifyIdentity}
-                      disabled={isSaving || !idCardImage || idForm.nin.length !== 18}
-                      className="w-full py-3.5 bg-black text-white rounded-lg font-bold hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-md text-base"
+                      disabled={isSaving || !idCardImage}
+                      className="w-full py-3 bg-black text-white rounded font-bold hover:bg-gray-800 disabled:opacity-50 transition-colors"
                     >
-                      {isSaving ? t('settings.submittingId') : 'Submit National ID Verification'}
+                      {isSaving ? t('settings.submittingId') : t('settings.submitId')}
                     </button>
                   </div>
                 )}
@@ -1133,25 +984,6 @@ function SettingsContent() {
           </div>
         )}
       </div>
-
-      {faceModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl relative">
-            <button
-              onClick={() => setFaceModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 font-bold text-xl p-2"
-            >
-              ✕
-            </button>
-            <h2 className="text-xl font-bold mb-4">Complete Face Verification</h2>
-            <FaceVerification 
-              isAlreadyVerified={profile.faceVerified} 
-              onVerified={handleFaceVerified} 
-              initialPhone={profile.phone}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
