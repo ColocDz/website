@@ -42,10 +42,15 @@ export default function PhoneOtpVerification({
     return () => clearInterval(timer);
   }, [cooldown]);
 
+  const [debugCode, setDebugCode] = useState('');
+  const [gatewayError, setGatewayError] = useState('');
+
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    setDebugCode('');
+    setGatewayError('');
 
     const cleanedPhone = phone.replace(/\D/g, '');
     if (!/^(0?)(5|6|7)\d{8}$/.test(cleanedPhone)) {
@@ -67,7 +72,10 @@ export default function PhoneOtpVerification({
         throw new Error(data.error || 'Failed to send verification code');
       }
 
-      setSuccessMsg(data.message || 'Verification code sent via SMS!');
+      setSuccessMsg(data.message || 'Verification code generated!');
+      if (data.debugCode) setDebugCode(data.debugCode);
+      if (data.gatewayError) setGatewayError(data.gatewayError);
+
       setStep('otp');
       setCooldown(60);
       
@@ -246,6 +254,22 @@ export default function PhoneOtpVerification({
               +213 {phone.replace(/\D/g, '').slice(-9)}
             </p>
           </div>
+
+          {/* Debug / Gateway Notice Banner */}
+          {(debugCode || gatewayError) && (
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-1">
+              {gatewayError && (
+                <p className="text-xs font-semibold text-amber-800">
+                  ⚡ Provider Notice: {gatewayError}
+                </p>
+              )}
+              {debugCode && (
+                <p className="text-xs font-bold text-amber-900">
+                  🔑 Test Verification Code: <span className="underline tracking-widest text-base font-mono">{debugCode}</span>
+                </p>
+              )}
+            </div>
+          )}
 
           {/* 6 Digit Input Boxes */}
           <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>

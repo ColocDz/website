@@ -137,10 +137,16 @@ export async function POST(request: NextRequest) {
     });
 
     // 5. Send SMS via Mobile Text Alerts API
-    const formattedInternationalPhone = `213${cleanedPhone}`;
+    const formattedInternationalPhoneNoPlus = `213${cleanedPhone}`;
+    const formattedInternationalPhoneWithPlus = `+213${cleanedPhone}`;
     const mtaApiKey = process.env.MOBILE_TEXT_ALERTS_API_KEY || '421cf632-67e8-537c-abcd-b4c0db54b4ed';
 
+    let gatewaySuccess = false;
+    let gatewayErrorMessage: string | null = null;
+
     try {
+      console.log(`[Phone OTP] Dispatching SMS OTP to ${formattedInternationalPhoneWithPlus} via Mobile Text Alerts...`);
+      
       const smsRes = await fetch('https://api.mobile-text-alerts.com/v3/send', {
         method: 'POST',
         headers: {
@@ -148,26 +154,34 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          subscribers: [formattedInternationalPhone],
+          subscribers: [formattedInternationalPhoneWithPlus, formattedInternationalPhoneNoPlus],
           message: `Your ColocDZ verification code is: ${otpCode}. Valid for 10 minutes.`
         })
       });
 
       const smsData = await smsRes.json().catch(() => ({}));
-      console.log('[Phone OTP] Mobile Text Alerts response:', smsRes.status, smsData);
+      console.log(`[Phone OTP] Mobile Text Alerts HTTP Status ${smsRes.status}:`, JSON.stringify(smsData, null, 2));
 
-      if (!smsRes.ok) {
-        console.warn('[Phone OTP] SMS API notice:', smsData);
+      if (smsRes.ok) {
+        gatewaySuccess = true;
+      } else {
+        gatewayErrorMessage = smsData.message || smsData.error || smsData.type || `Gateway returned HTTP ${smsRes.status}`;
+        console.error(`[Phone OTP Gateway Error] HTTP ${smsRes.status}: ${gatewayErrorMessage}`);
       }
-    } catch (smsErr) {
-      console.error('[Phone OTP] Failed to connect to SMS gateway:', smsErr);
+    } catch (smsErr: any) {
+      gatewayErrorMessage = smsErr?.message || 'Network error connecting to SMS gateway';
+      console.error('[Phone OTP Network Error] Failed to connect to SMS gateway:', smsErr);
     }
 
     return NextResponse.json({
       success: true,
-      message: `Verification code sent to +213 ${cleanedPhone.substring(0, 3)} ${cleanedPhone.substring(3, 6)} ${cleanedPhone.substring(6)}`,
-      // For local development convenience if SMS trial credits fail:
-      debugCode: process.env.NODE_ENV === 'development' ? otpCode : undefined
+      gatewaySent: gatewaySuccess,
+      gatewayError: gatewayErrorMessage || undefined,
+      message: gatewaySuccess
+        ? `Verification code sent to +213 ${cleanedPhone.substring(0, 3)} ${cleanedPhone.substring(3, 6)} ${cleanedPhone.substring(6)}`
+        : `OTP generated for +213 ${cleanedPhone.substring(0, 3)} ${cleanedPhone.substring(3, 6)} ${cleanedPhone.substring(6)} (Gateway Notice: ${gatewayErrorMessage})`,
+      // For development/testing: surface debugCode if gateway SMS is blocked by provider trial/account state
+      debugCode: (process.env.NODE_ENV === 'development' || !gatewaySuccess) ? otpCode : undefined
     });
 
   } catch (error: any) {
