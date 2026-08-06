@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          subscribers: [formattedInternationalPhoneWithPlus, formattedInternationalPhoneNoPlus],
+          subscribers: [formattedInternationalPhoneNoPlus],
           message: `Your ColocDZ verification code is: ${otpCode}. Valid for 10 minutes.`
         })
       });
