@@ -39,21 +39,10 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    database: {
-      generateId: false,
-    },
     disableOriginCheck: true,
   },
   emailAndPassword: {
     enabled: true,
-    password: {
-      hash: async (password: string) => {
-        return await bcrypt.hash(password, 10);
-      },
-      verify: async ({ password, hash }) => {
-        return await bcrypt.compare(password, hash);
-      }
-    }
   },
   socialProviders: {
     google: {
