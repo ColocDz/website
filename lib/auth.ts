@@ -10,6 +10,12 @@ const getBaseUrl = () => {
   return "https://colocdz.com";
 };
 
+/**
+ * ColocDZ Authentication Configuration
+ * STABLE BASELINE v2.0.0 - Complete App Functionality
+ * Better-Auth + Prisma MongoDB + Google OAuth + Email Credentials
+ */
+
 export const auth = betterAuth({
   baseURL: getBaseUrl(),
   secret: process.env.BETTER_AUTH_SECRET || "colocdz-secret-key-change-me-in-production-2026",

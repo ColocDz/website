@@ -4,6 +4,14 @@ A modern web application for finding colocation opportunities in Algeria. **Prod
 
 ---
 
+### 📌 STABLE RELEASE BASELINE (v2.0.0 - Complete App Functionality)
+- **Status**: ✅ All features 100% verified & working in production.
+- **Authentication**: Email/Password Sign In & Sign Up (scrypt engine) + Google OAuth2.
+- **Verification**: Phone SMS & WhatsApp OTP via Unimatrix (multi-channel fallback for Algerian `+213` networks: Mobilis `06`, Djezzy `07`, Ooredoo `05`).
+- **Core Functionality**: Post Search & Filtering, Post Creation, Unverified Save Posts, Host Messaging Guard, Navigation Settings, and User Profiles.
+
+---
+
 ## 🎯 Problem
 There is a need to find trustworthy people to share housing with, while also securing the best prices in desired locations.
 
