@@ -248,7 +248,7 @@ export default function PhoneOtpVerification({
         <form onSubmit={handleVerifyOtp} className="space-y-6">
           <div className="text-center space-y-2">
             <p className="text-xs text-gray-600">
-              Enter the 6-digit verification code sent via SMS to:
+              Enter the 6-digit verification code sent via SMS or WhatsApp to:
             </p>
             <p className="font-bold text-gray-900 text-sm dir-ltr">
               +213 {phone.replace(/\D/g, '').slice(-9)}
