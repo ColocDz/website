@@ -1,49 +1,33 @@
-import crypto from 'crypto';
+async function runTest() {
+  const accessKeyId = 'S1QejJjBK5F6YCWsfpbRMR';
+  const to = '+213558137964';
+  const otpCode = '852963';
 
-export async function sendUnimatrixSms({
-  accessKeyId,
-  accessKeySecret,
-  to,
-  otpCode
-}: {
-  accessKeyId: string;
-  accessKeySecret?: string;
-  to: string;
-  otpCode: string;
-}) {
-  let apiUrl = `https://api.unimtx.com/?action=sms.message.send&accessKeyId=${encodeURIComponent(accessKeyId)}`;
-
-  if (accessKeySecret) {
-    const timestamp = Date.now();
-    const nonce = crypto.randomBytes(8).toString('hex');
-    const algorithm = 'hmac-sha256';
-
-    const paramsToSign: Record<string, string> = {
-      accessKeyId,
-      action: 'sms.message.send',
-      algorithm,
-      nonce,
-      timestamp: timestamp.toString(),
-    };
-
-    const sortedKeys = Object.keys(paramsToSign).sort();
-    const stringToSign = sortedKeys.map(k => `${k}=${paramsToSign[k]}`).join('&');
-    const signature = crypto.createHmac('sha256', accessKeySecret).update(stringToSign).digest('base64');
-
-    apiUrl = `https://api.unimtx.com/?action=sms.message.send&accessKeyId=${encodeURIComponent(accessKeyId)}&algorithm=${algorithm}&timestamp=${timestamp}&nonce=${nonce}&signature=${encodeURIComponent(signature)}`;
+  console.log('--- Test 1: otp.send ---');
+  try {
+    const res1 = await fetch(`https://api.unimtx.com/?action=otp.send&accessKeyId=${encodeURIComponent(accessKeyId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, code: otpCode })
+    });
+    const data1 = await res1.json();
+    console.log('Status 1:', res1.status, data1);
+  } catch (e: any) {
+    console.error('Error 1:', e.message);
   }
 
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      to,
-      text: `Your ColocDZ verification code is: ${otpCode}. Valid for 10 minutes.`
-    })
-  });
-
-  const data = await res.json().catch(() => ({}));
-  return { status: res.status, data };
+  console.log('--- Test 2: sms.message.send with content ---');
+  try {
+    const res2 = await fetch(`https://api.unimtx.com/?action=sms.message.send&accessKeyId=${encodeURIComponent(accessKeyId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, content: `Your verification code is ${otpCode}, valid for 10 minutes.` })
+    });
+    const data2 = await res2.json();
+    console.log('Status 2:', res2.status, data2);
+  } catch (e: any) {
+    console.error('Error 2:', e.message);
+  }
 }
+
+runTest();

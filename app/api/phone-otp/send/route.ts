@@ -136,68 +136,63 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 5. Send SMS via Unimatrix (UniMTX) Gateway
+    // 5. Send SMS via Unimatrix (UniMTX) Gateway (action=otp.send)
     const formattedE164Phone = `+213${cleanedPhone}`;
-    const unimtxAccessKeyId = process.env.UNIMATRIX_ACCESS_KEY_ID || process.env.UNIMTX_ACCESS_KEY_ID || process.env.MOBILE_TEXT_ALERTS_API_KEY || '';
+    const unimtxAccessKeyId = process.env.UNIMATRIX_ACCESS_KEY_ID || process.env.UNIMTX_ACCESS_KEY_ID || 'S1QejJjBK5F6YCWsfpbRMR';
     const unimtxSecret = process.env.UNIMATRIX_ACCESS_KEY_SECRET || process.env.UNIMTX_ACCESS_KEY_SECRET || '';
 
     let gatewaySuccess = false;
     let gatewayErrorMessage: string | null = null;
 
-    if (unimtxAccessKeyId) {
-      try {
-        console.log(`[Phone OTP] Dispatching SMS via Unimatrix to ${formattedE164Phone}...`);
+    try {
+      console.log(`[Phone OTP] Dispatching SMS via Unimatrix to ${formattedE164Phone}...`);
+      
+      let apiUrl = `https://api.unimtx.com/?action=otp.send&accessKeyId=${encodeURIComponent(unimtxAccessKeyId)}`;
+      
+      // HMAC Signature Mode (if Secret provided)
+      if (unimtxSecret) {
+        const timestamp = Date.now();
+        const nonce = crypto.randomBytes(8).toString('hex');
+        const algorithm = 'hmac-sha256';
         
-        let apiUrl = `https://api.unimtx.com/?action=sms.message.send&accessKeyId=${encodeURIComponent(unimtxAccessKeyId)}`;
+        const paramsToSign: Record<string, string> = {
+          accessKeyId: unimtxAccessKeyId,
+          action: 'otp.send',
+          algorithm,
+          nonce,
+          timestamp: timestamp.toString(),
+        };
         
-        // HMAC Signature Mode (if Secret provided)
-        if (unimtxSecret) {
-          const timestamp = Date.now();
-          const nonce = crypto.randomBytes(8).toString('hex');
-          const algorithm = 'hmac-sha256';
-          
-          const paramsToSign: Record<string, string> = {
-            accessKeyId: unimtxAccessKeyId,
-            action: 'sms.message.send',
-            algorithm,
-            nonce,
-            timestamp: timestamp.toString(),
-          };
-          
-          const sortedKeys = Object.keys(paramsToSign).sort();
-          const stringToSign = sortedKeys.map(k => `${k}=${paramsToSign[k]}`).join('&');
-          const signature = crypto.createHmac('sha256', unimtxSecret).update(stringToSign).digest('base64');
-          
-          apiUrl = `https://api.unimtx.com/?action=sms.message.send&accessKeyId=${encodeURIComponent(unimtxAccessKeyId)}&algorithm=${algorithm}&timestamp=${timestamp}&nonce=${nonce}&signature=${encodeURIComponent(signature)}`;
-        }
-
-        const smsRes = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            to: formattedE164Phone,
-            text: `Your ColocDZ verification code is: ${otpCode}. Valid for 10 minutes.`
-          })
-        });
-
-        const smsData = await smsRes.json().catch(() => ({}));
-        console.log(`[Phone OTP] Unimatrix HTTP Status ${smsRes.status}:`, JSON.stringify(smsData, null, 2));
-
-        if (smsRes.ok && (smsData.code === '0' || smsData.code === 0)) {
-          gatewaySuccess = true;
-        } else {
-          gatewayErrorMessage = smsData.message || smsData.error || `Unimatrix Code ${smsData.code || smsRes.status}`;
-          console.error(`[Phone OTP Gateway Error] Unimatrix HTTP ${smsRes.status}: ${gatewayErrorMessage}`);
-        }
-      } catch (smsErr: any) {
-        gatewayErrorMessage = smsErr?.message || 'Network error connecting to Unimatrix gateway';
-        console.error('[Phone OTP Network Error] Failed to connect to Unimatrix gateway:', smsErr);
+        const sortedKeys = Object.keys(paramsToSign).sort();
+        const stringToSign = sortedKeys.map(k => `${k}=${paramsToSign[k]}`).join('&');
+        const signature = crypto.createHmac('sha256', unimtxSecret).update(stringToSign).digest('base64');
+        
+        apiUrl = `https://api.unimtx.com/?action=otp.send&accessKeyId=${encodeURIComponent(unimtxAccessKeyId)}&algorithm=${algorithm}&timestamp=${timestamp}&nonce=${nonce}&signature=${encodeURIComponent(signature)}`;
       }
-    } else {
-      gatewayErrorMessage = 'UNIMATRIX_ACCESS_KEY_ID is not configured in environment variables.';
-      console.warn('[Phone OTP] UNIMATRIX_ACCESS_KEY_ID is not configured.');
+
+      const smsRes = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to: formattedE164Phone,
+          code: otpCode
+        })
+      });
+
+      const smsData = await smsRes.json().catch(() => ({}));
+      console.log(`[Phone OTP] Unimatrix HTTP Status ${smsRes.status}:`, JSON.stringify(smsData, null, 2));
+
+      if (smsRes.ok && (smsData.code === '0' || smsData.code === 0)) {
+        gatewaySuccess = true;
+      } else {
+        gatewayErrorMessage = smsData.message || smsData.error || `Unimatrix Code ${smsData.code || smsRes.status}`;
+        console.error(`[Phone OTP Gateway Error] Unimatrix HTTP ${smsRes.status}: ${gatewayErrorMessage}`);
+      }
+    } catch (smsErr: any) {
+      gatewayErrorMessage = smsErr?.message || 'Network error connecting to Unimatrix gateway';
+      console.error('[Phone OTP Network Error] Failed to connect to Unimatrix gateway:', smsErr);
     }
 
     return NextResponse.json({
