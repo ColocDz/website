@@ -46,9 +46,9 @@ export default function SignupPage() {
     try {
       await signUp.email(
         {
-          email: data.email,
+          email: data.email.toLowerCase().trim(),
           password: data.password,
-          name: data.name.trim(),
+          name: `${data.name.trim()} ${data.lastName.trim()}`,
           lastName: data.lastName.trim(),
           phone: data.phoneNumber.trim(),
           gender: data.gender,
@@ -59,13 +59,18 @@ export default function SignupPage() {
           },
           onError: (ctx) => {
             console.error('Signup auth error:', ctx.error);
-            setError(ctx.error.message || 'Failed to create account. Email may already be registered.');
+            const msg = ctx.error.message || '';
+            if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('exists')) {
+              setError('An account with this email address already exists. Please sign in instead.');
+            } else {
+              setError(msg || 'Failed to create account. Please check your inputs and try again.');
+            }
           },
         }
       );
     } catch (err: any) {
       console.error('Signup exception:', err);
-      setError(err?.message || 'Something went wrong. Please try again.');
+      setError(err?.message || 'Something went wrong. Please check your connection and try again.');
     }
   };
 
@@ -88,8 +93,9 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
-              {error}
+            <div className="mb-4 p-3.5 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs text-center flex items-center justify-center gap-2 shadow-lg animate-shake">
+              <span className="text-base">⚠️</span>
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
