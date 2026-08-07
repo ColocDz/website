@@ -177,7 +177,9 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           to: formattedE164Phone,
-          code: otpCode
+          code: otpCode,
+          intent: 'login',
+          channel: 'auto'
         })
       });
 

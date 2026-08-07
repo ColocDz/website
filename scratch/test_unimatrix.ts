@@ -1,32 +1,19 @@
 async function runTest() {
   const accessKeyId = 'S1QejJjBK5F6YCWsfpbRMR';
   const to = '+213558137964';
-  const otpCode = '852963';
+  const otpCode = '951357';
 
-  console.log('--- Test 1: otp.send ---');
+  console.log('--- Test 3: otp.send with intent: login ---');
   try {
-    const res1 = await fetch(`https://api.unimtx.com/?action=otp.send&accessKeyId=${encodeURIComponent(accessKeyId)}`, {
+    const res3 = await fetch(`https://api.unimtx.com/?action=otp.send&accessKeyId=${encodeURIComponent(accessKeyId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to, code: otpCode })
+      body: JSON.stringify({ to, code: otpCode, intent: 'login', channel: 'auto' })
     });
-    const data1 = await res1.json();
-    console.log('Status 1:', res1.status, data1);
+    const data3 = await res3.json();
+    console.log('Status 3:', res3.status, data3);
   } catch (e: any) {
-    console.error('Error 1:', e.message);
-  }
-
-  console.log('--- Test 2: sms.message.send with content ---');
-  try {
-    const res2 = await fetch(`https://api.unimtx.com/?action=sms.message.send&accessKeyId=${encodeURIComponent(accessKeyId)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to, content: `Your verification code is ${otpCode}, valid for 10 minutes.` })
-    });
-    const data2 = await res2.json();
-    console.log('Status 2:', res2.status, data2);
-  } catch (e: any) {
-    console.error('Error 2:', e.message);
+    console.error('Error 3:', e.message);
   }
 }
 
