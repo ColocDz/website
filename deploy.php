@@ -97,18 +97,53 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_perms') {
 // Action: restart
 if (isset($_GET['action']) && $_GET['action'] === 'restart') {
     header('Content-Type: text/plain');
-    $paths = [
+    $restart_file_paths = [
         $home_dir . '/repositories/website/standalone/tmp/restart.txt',
         $home_dir . '/repositories/website/tmp/restart.txt',
     ];
-    foreach ($paths as $restart_file) {
-        $dir = dirname($restart_file);
-        if (!is_dir($dir)) @mkdir($dir, 0755, true);
-        @file_put_contents($restart_file, time());
+    foreach ($restart_file_paths as $rf) {
+        $d = dirname($rf);
+        if (!is_dir($d)) @mkdir($d, 0755, true);
+        @file_put_contents($rf, time());
     }
     echo "Passenger restart trigger created successfully!\n";
     echo "Please refresh https://colocdz.com now!";
     exit;
+}
+
+// Action: pull (Automated Git Pull & Passenger Restart)
+if (isset($_GET['action']) && $_GET['action'] === 'pull') {
+    header('Content-Type: text/plain');
+    $target_repo = $home_dir . '/repositories/website';
+    
+    if (function_exists('exec')) {
+        $cmds = [
+            "cd " . escapeshellarg($target_repo) . " && git fetch origin Deploy 2>&1",
+            "cd " . escapeshellarg($target_repo) . " && git checkout -f Deploy 2>&1",
+            "cd " . escapeshellarg($target_repo) . " && git pull origin Deploy 2>&1",
+        ];
+        
+        echo "=== Running Automated Git Pull for Deploy Branch ===\n";
+        foreach ($cmds as $cmd) {
+            $output = [];
+            $ret = 0;
+            @exec($cmd, $output, $ret);
+            echo "$ " . $cmd . "\n";
+            echo implode("\n", $output) . "\n\n";
+        }
+
+        // Trigger Passenger restart
+        $rf = $target_repo . '/tmp/restart.txt';
+        $d = dirname($rf);
+        if (!is_dir($d)) @mkdir($d, 0755, true);
+        @file_put_contents($rf, time());
+
+        echo "✅ Git Pull & Passenger restart complete!\n";
+        exit;
+    } else {
+        echo "exec() is disabled on this server. Use Chunked Upload via deploy.php instead.\n";
+        exit;
+    }
 }
 
 // Action: log
