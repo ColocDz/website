@@ -21,6 +21,24 @@ if (passengerSocket && isNaN(Number(passengerSocket))) {
   delete process.env.PORT;
 }
 
+// Register all potential node_modules candidate paths into Node CommonJS search paths
+const nodeModulesCandidates = [
+  path.join(__dirname, 'node_modules'),
+  path.join(__dirname, 'standalone', 'node_modules'),
+  path.join(__dirname, '.next', 'standalone', 'node_modules')
+];
+
+for (const nm of nodeModulesCandidates) {
+  if (fs.existsSync(nm)) {
+    if (!module.paths.includes(nm)) {
+      module.paths.unshift(nm);
+    }
+    if (require.main && !require.main.paths.includes(nm)) {
+      require.main.paths.unshift(nm);
+    }
+  }
+}
+
 // Locate standalone server entry point
 let standaloneServer = null;
 const candidatePaths = [
@@ -37,26 +55,19 @@ for (const p of candidatePaths) {
 
 if (standaloneServer) {
   const standaloneDir = path.dirname(standaloneServer);
-  const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
-
-  // Push standalone/node_modules directly into module search paths
-  if (fs.existsSync(standaloneNodeModules)) {
-    if (!module.paths.includes(standaloneNodeModules)) {
-      module.paths.unshift(standaloneNodeModules);
-    }
-    if (require.main && !require.main.paths.includes(standaloneNodeModules)) {
-      require.main.paths.unshift(standaloneNodeModules);
-    }
-  }
-
   process.chdir(standaloneDir);
   require(standaloneServer);
 } else {
-  const next = require('next');
-  const app = next({ dev: false });
-  const handle = app.getRequestHandler();
+  try {
+    const next = require('next');
+    const app = next({ dev: false, dir: __dirname });
+    const handle = app.getRequestHandler();
 
-  app.prepare().then(() => {
-    http.createServer((req, res) => handle(req, res)).listen(passengerSocket || 3000);
-  });
+    app.prepare().then(() => {
+      http.createServer((req, res) => handle(req, res)).listen(passengerSocket || 3000);
+    });
+  } catch (e) {
+    console.error('Failed to start Next.js server:', e);
+  }
 }
+
