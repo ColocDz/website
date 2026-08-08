@@ -21,20 +21,11 @@ if (passengerSocket && isNaN(Number(passengerSocket))) {
   delete process.env.PORT;
 }
 
-// Add standalone node_modules to Node.js module resolution search paths
-const searchPaths = [
-  path.join(__dirname, '.next', 'standalone', 'node_modules'),
-  path.join(__dirname, 'standalone', 'node_modules'),
-  path.join(__dirname, 'node_modules'),
-];
-process.env.NODE_PATH = searchPaths.join(path.delimiter) + (process.env.NODE_PATH ? path.delimiter + process.env.NODE_PATH : '');
-Module._initPaths();
-
 // Locate standalone server entry point
 let standaloneServer = null;
 const candidatePaths = [
-  path.join(__dirname, '.next', 'standalone', 'server.js'),
-  path.join(__dirname, 'standalone', 'server.js')
+  path.join(__dirname, 'standalone', 'server.js'),
+  path.join(__dirname, '.next', 'standalone', 'server.js')
 ];
 
 for (const p of candidatePaths) {
@@ -46,6 +37,18 @@ for (const p of candidatePaths) {
 
 if (standaloneServer) {
   const standaloneDir = path.dirname(standaloneServer);
+  const standaloneNodeModules = path.join(standaloneDir, 'node_modules');
+
+  // Push standalone/node_modules directly into module search paths
+  if (fs.existsSync(standaloneNodeModules)) {
+    if (!module.paths.includes(standaloneNodeModules)) {
+      module.paths.unshift(standaloneNodeModules);
+    }
+    if (require.main && !require.main.paths.includes(standaloneNodeModules)) {
+      require.main.paths.unshift(standaloneNodeModules);
+    }
+  }
+
   process.chdir(standaloneDir);
   require(standaloneServer);
 } else {

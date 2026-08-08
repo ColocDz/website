@@ -112,7 +112,16 @@ const setupHeader = `(function() {
     try { fs.copyFileSync(deploySrc, deployDest); } catch (e) {}
   }
   const Module = require('module');
-  process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
+  const nodeModulesPath = path.join(standaloneDir, 'node_modules');
+  if (fs.existsSync(nodeModulesPath)) {
+    if (!module.paths.includes(nodeModulesPath)) {
+      module.paths.unshift(nodeModulesPath);
+    }
+    if (require.main && !require.main.paths.includes(nodeModulesPath)) {
+      require.main.paths.unshift(nodeModulesPath);
+    }
+  }
+  process.env.NODE_PATH = nodeModulesPath + path.delimiter + (process.env.NODE_PATH || '');
   Module._initPaths();
 
   const origResolve = Module._resolveFilename;
