@@ -88,20 +88,24 @@ const setupHeader = `(function() {
   const path = require('path');
   const http = require('http');
   const standaloneDir = __dirname;
+  const passengerSocket = process.env.PORT;
 
   // Intercept http.Server.prototype.listen for Phusion Passenger named pipe sockets
   const origListen = http.Server.prototype.listen;
   http.Server.prototype.listen = function(...args) {
-    const passengerPort = process.env.PORT;
-    if (passengerPort && isNaN(Number(passengerPort))) {
-      if (typeof args[0] === 'number' || (typeof args[0] === 'string' && isNaN(Number(args[0])))) {
-        args[0] = passengerPort;
-        if (typeof args[1] === 'string') {
-          args.splice(1, 1);
-        }
+    if (passengerSocket && isNaN(Number(passengerSocket))) {
+      args[0] = passengerSocket;
+      if (typeof args[1] === 'string') {
+        args.splice(1, 1);
       }
     }
     return origListen.apply(this, args);
+  };
+
+  if (passengerSocket && isNaN(Number(passengerSocket))) {
+    delete process.env.PORT;
+  }
+
   const deploySrc = path.join(standaloneDir, 'deploy.php');
   const deployDest = path.resolve(standaloneDir, '../../../public_html/deploy.colocdz.com/deploy.php');
   if (fs.existsSync(deploySrc)) {
@@ -129,7 +133,7 @@ const setupHeader = `(function() {
 
 `;
 
-if (!originalContent.includes('deployDest')) {
+if (!originalContent.includes('passengerSocket')) {
   fs.writeFileSync(standaloneServerFile, setupHeader + originalContent, 'utf8');
 }
 

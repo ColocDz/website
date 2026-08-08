@@ -3,20 +3,23 @@ const path = require('path');
 const http = require('http');
 const Module = require('module');
 
+const passengerSocket = process.env.PORT;
+
 // Intercept http.Server.prototype.listen for Phusion Passenger named pipe sockets
 const origListen = http.Server.prototype.listen;
 http.Server.prototype.listen = function(...args) {
-  const passengerPort = process.env.PORT;
-  if (passengerPort && isNaN(Number(passengerPort))) {
-    if (typeof args[0] === 'number' || (typeof args[0] === 'string' && isNaN(Number(args[0])))) {
-      args[0] = passengerPort;
-      if (typeof args[1] === 'string') {
-        args.splice(1, 1);
-      }
+  if (passengerSocket && isNaN(Number(passengerSocket))) {
+    args[0] = passengerSocket;
+    if (typeof args[1] === 'string') {
+      args.splice(1, 1);
     }
   }
   return origListen.apply(this, args);
 };
+
+if (passengerSocket && isNaN(Number(passengerSocket))) {
+  delete process.env.PORT;
+}
 
 const originalRequire = Module.prototype.require;
 Module.prototype.require = function(request) {
@@ -57,7 +60,7 @@ if (fs.existsSync(standaloneServer)) {
     const handle = app.getRequestHandler();
 
     app.prepare().then(() => {
-      http.createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
+      http.createServer((req, res) => handle(req, res)).listen(passengerSocket || 3000);
     });
   }
 }
