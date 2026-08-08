@@ -12,7 +12,7 @@ ini_set('max_execution_time', 600);
 define('DEPLOY_TOKEN', 'c8f7a9d2b4e3f5a1c0d9e8b7a6f5e4d3');
 
 // 2. TARGET DIRECTORY
-define('TARGET_DIR_NAME', 'repositories/website/standalone');
+define('TARGET_DIR_NAME', 'repositories/website');
 
 function get_user_home() {
     if (isset($_SERVER['DOCUMENT_ROOT'])) {

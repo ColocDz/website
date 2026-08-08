@@ -41,18 +41,23 @@ Module.prototype.require = function(request) {
 const standaloneDir = path.join(__dirname, 'standalone');
 const standaloneServer = path.join(standaloneDir, 'server.js');
 
-process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
-Module._initPaths();
-
 if (fs.existsSync(standaloneServer)) {
+  process.env.NODE_PATH = path.join(standaloneDir, 'node_modules') + path.delimiter + (process.env.NODE_PATH || '');
+  Module._initPaths();
   process.chdir(standaloneDir);
   require(standaloneServer);
 } else {
-  const next = require('next');
-  const app = next({ dev: false });
-  const handle = app.getRequestHandler();
+  const nextServer = path.join(__dirname, '.next', 'standalone', 'server.js');
+  if (fs.existsSync(nextServer)) {
+    process.chdir(path.join(__dirname, '.next', 'standalone'));
+    require(nextServer);
+  } else {
+    const next = require('next');
+    const app = next({ dev: false });
+    const handle = app.getRequestHandler();
 
-  app.prepare().then(() => {
-    http.createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
-  });
+    app.prepare().then(() => {
+      http.createServer((req, res) => handle(req, res)).listen(process.env.PORT || 3000);
+    });
+  }
 }
