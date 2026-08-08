@@ -73,6 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'fix_perms') {
     echo "Permissions fixed to 0755/0644 and Passenger restarted successfully!";
     exit;
 }
+if (isset($_GET['action']) && $_GET['action'] === 'debug') {
     header('Content-Type: text/plain');
     echo "Detected Home Dir: " . $home_dir . "\n\n";
     $paths = [
